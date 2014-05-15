@@ -1,0 +1,31 @@
+{
+  "name": "meteor-job",
+  "version": "0.0.0",
+  "description": "WIP! Class for Meteor jobCollection jobs for use both within Meteori.js and with pure node.js workers",
+  "main": "lib/job_class.js",
+  "dependencies": {
+  },
+  "devDependencies": {
+        "coffee-script": ">=1.7.1",
+        "mocha": "1.18.2"
+  },
+  "scripts": {
+    "prepublish": "coffee --compile --output lib/ src/",
+    "test": "echo \"Error: no tests specified yet, requires Meteor.js to test.\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "github.com:vsivsi/meteor-job.git"
+  },
+  "keywords": [
+  ],
+  "engine": {
+    "node": ">=0.10.28"
+  },
+  "readmeFilename": "README.md",
+  "bugs": {
+    "url": "https://github.com/vsivsi/meteor-job/issues"
+  },
+  "author": "Vaughn Iverson",
+  "license": "MIT/X11"
+}
