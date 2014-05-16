@@ -1,7 +1,7 @@
 {
   "name": "meteor-job",
   "version": "0.0.0",
-  "description": "WIP! Class for Meteor jobCollection jobs for use both within Meteori.js and with pure node.js workers",
+  "description": "WIP! Class for Meteor jobCollection jobs for use both within meteor.js and with pure node.js workers",
   "main": "lib/job_class.js",
   "dependencies": {
   },
@@ -15,7 +15,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "github.com:vsivsi/meteor-job.git"
+    "url": "https://github.com:vsivsi/meteor-job.git"
   },
   "keywords": [
   ],
