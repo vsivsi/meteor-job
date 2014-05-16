@@ -65,8 +65,8 @@ class Job
     if cb and typeof cb is 'function'
       @ddp_apply "getWork_#{root}", [type, max], (err, res) =>
         return cb err if err
-        if res?.docs?
-          jobs = (new Job(root, doc.type, doc.data, doc) for doc in res.docs) or []
+        if res?
+          jobs = (new Job(root, doc.type, doc.data, doc) for doc in res) or []
           if options.maxJobs?
             console.log "Sending many"
             return cb null, jobs
@@ -78,8 +78,8 @@ class Job
           return cb null, null
     else
       res = @ddp_apply "getWork_#{root}", [type, max]
-      if res?.docs?.length
-        jobs = (new Job(root, doc.type, doc.data, doc) for doc in res.docs) or []
+      if res?
+        jobs = (new Job(root, doc.type, doc.data, doc) for doc in res) or []
         if options.maxJobs?
           return jobs
         else
