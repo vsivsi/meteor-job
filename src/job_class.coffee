@@ -109,7 +109,7 @@ class Job
         data: data
         status: 'waiting'
         updated: new Date()
-      @priority().attempts().after().progress().depends().log("Created")
+      @priority().retry().repeat(0).after().progress().depends().log("Created")
       @.data = @_doc.data  # Make data a little easier to get to
       return @
 
@@ -141,9 +141,10 @@ class Job
 
   # Sets the number of attempted runs of this job and
   # the time to wait between successive attempts
-  attempts: (num = 1, msWait = 5*60*1000) ->
-    if typeof num is 'number' and num >= 1
-      attempts = num
+  # Default, do not retry
+  retry: (num = 0, msWait = 5*60*1000) ->
+    if typeof num is 'number' and num > 0
+      attempts = num + 1
     else
       attempts = 1
     if typeof msWait is 'number' and msWait >= 0
@@ -154,6 +155,24 @@ class Job
     @_doc.attempts = attempts
     @_doc.attemptsWait = attemptsWait
     @_doc.attempted ?= 0
+    return @
+
+  # Sets the number of times to repeatedly run this job
+  # and the time to wait between successive runs
+  # Default, run forever...
+  repeat: (num = 9007199254740992, msWait = 5*60*1000) ->
+    if typeof num is 'number' and num >= 0
+      repeats = num
+    else
+      repeats = 0
+    if typeof msWait is 'number' and msWait >= 0
+      repeatsWait = msWait
+    else
+      repeatsWait = 5*60*1000
+
+    @_doc.repeats = repeats
+    @_doc.repeatsWait = repeatsWait
+    @_doc.repeated ?= 0
     return @
 
   # Sets the delay before this job can run after it is saved
