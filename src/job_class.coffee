@@ -247,7 +247,8 @@ class Job
     if cb and typeof cb is 'function'
       @ddp_apply "getLog_#{@root}", [@_doc.id], (err, doc) =>
         return cb err if err
-        return cb new Error "Refresh failed, doc not found" unless doc?
+        return cb new Error "Refresh failed, doc not found"
+        unless doc?
           return cb null, doc.log
         else
           return cb null, null
