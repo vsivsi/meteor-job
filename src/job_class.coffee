@@ -62,7 +62,7 @@ class Job
     type = [type] if typeof type is 'string'
     max = max?[0] or 1
     if cb and typeof cb is 'function'
-      @ddp_apply "getWork_#{root}", type, max, (err, res) =>
+      @ddp_apply "getWork_#{root}", [type, max], (err, res) =>
         return cb err if err
         if res?.docs?.length
           jobs = (new Job(root, doc.type, doc.data, doc) for doc in res.docs)
@@ -73,7 +73,7 @@ class Job
         else
           return cb null, null
     else
-      res = @ddp_apply "getWork_#{root}", type, max
+      res = @ddp_apply "getWork_#{root}", [type, max]
       if res?.docs?.length
         jobs = (new Job(root, doc.type, doc.data, doc) for doc in res.docs)
         if max is 1
