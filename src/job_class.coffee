@@ -43,16 +43,14 @@ class Job
       @ddp_apply "getJob_#{root}", [id], (err, doc) =>
         return cb err if err
         if doc
-          job = new Job root, doc.type, doc.data
-          job._doc = doc
+          job = new Job root, doc.type, doc.data, doc
           return cb null, job
         else
           return cb null, null
     else
       doc = @ddp_apply "getJob_#{root}", [id]
       if doc
-        job = new Job root, doc.type, doc.data
-        job._doc = doc
+        job = new Job root, doc.type, doc.data, doc
         return job
       else
         return null
@@ -65,31 +63,36 @@ class Job
       @ddp_apply "getWork_#{root}", [type], (err, doc) =>
         return cb err if err
         if doc
-          job = new Job root, doc.type, doc.data
-          job._doc = doc
+          job = new Job root, doc.type, doc.data, doc
           return cb null, job
         else
           return cb null, null
     else
       doc = @ddp_apply "getWork_#{root}", [type]
       if doc
-        job = new Job root, doc.type, doc.data
-        job._doc = doc
+        job = new Job root, doc.type, doc.data, doc
         return job
       else
         return null
 
   # Job class instance constructor. When "new Job(...)" is run
-  constructor: (@root, type, data) ->
+  constructor: (@root, type, data, doc = null) ->
     unless @ instanceof Job
       return new job @root, type, data
     @ddp_apply = Job.ddp_apply
-    unless typeof data is 'object' and
+    unless typeof doc is 'object' and
+           typeof data is 'object' and
            typeof type is 'string' and
            typeof @root is 'string'
-      console.error "new Job: bad parameter(s), #{@root} #{type}, #{data}"
+      console.error "new Job: bad parameter(s), #{@root} #{type}, #{data}, #{doc}"
       return null
-    else
+    else if doc?  # This case is used to create local Job objects from DDP calls
+      unless @_doc.type is type and @_doc.data is data
+        console.error "rebuild Job: bad parameter(s), #{@root} #{type}, #{data}, #{doc}"
+        return null
+      @_doc = doc
+      @.data = data
+    else  # This is the normal "create a new object" case
       @_doc =
         id: null
         runId: null
@@ -98,6 +101,7 @@ class Job
         status: 'waiting'
         updated: new Date()
       @priority().attempts().after().progress().depends().log("Created")
+      @.data = @_doc.data  # Make data a little easier to get to
       return @
 
   # Adds a run dependancy on one or more existing jobs to this job
