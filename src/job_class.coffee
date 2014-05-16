@@ -87,7 +87,7 @@ class Job
       console.error "new Job: bad parameter(s), #{@root} #{type}, #{data}, #{doc}"
       return null
     else if doc?  # This case is used to create local Job objects from DDP calls
-      unless @_doc.type is type and @_doc.data is data
+      unless doc.type is type and doc.data is data
         console.error "rebuild Job: bad parameter(s), #{@root} #{type}, #{data}, #{doc}"
         return null
       @_doc = doc
