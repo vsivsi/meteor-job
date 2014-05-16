@@ -68,13 +68,10 @@ class Job
         if res?
           jobs = (new Job(root, doc.type, doc.data, doc) for doc in res) or []
           if options.maxJobs?
-            console.log "Sending many"
             return cb null, jobs
           else
-            console.log "Sending 1"
             return cb null, jobs[0]
         else
-          console.log "Sending none"
           return cb null, null
     else
       res = @ddp_apply "getWork_#{root}", [type, max]
