@@ -58,28 +58,32 @@ class Job
   # Creates a job object by reserving the next available job of
   # the specified 'type' from the server queue root
   # returns null if no such job exists
-  @getWork: (root, type, max..., cb) ->
+  @getWork: (root, type, options..., cb) ->
     type = [type] if typeof type is 'string'
-    max = max?[0] or 1
+    options = options?[0] or {}
+    max = options.maxJobs or 1
     if cb and typeof cb is 'function'
       @ddp_apply "getWork_#{root}", [type, max], (err, res) =>
         return cb err if err
-        if res?.docs?.length
-          jobs = (new Job(root, doc.type, doc.data, doc) for doc in res.docs)
-          if max is 1
-            return cb null, jobs[0]
-          else
+        if res?.docs?
+          jobs = (new Job(root, doc.type, doc.data, doc) for doc in res.docs) or []
+          if options.maxJobs?
+            console.log "Sending many"
             return cb null, jobs
+          else
+            console.log "Sending 1"
+            return cb null, jobs[0]
         else
+          console.log "Sending none"
           return cb null, null
     else
       res = @ddp_apply "getWork_#{root}", [type, max]
       if res?.docs?.length
-        jobs = (new Job(root, doc.type, doc.data, doc) for doc in res.docs)
-        if max is 1
-          return jobs[0]
-        else
+        jobs = (new Job(root, doc.type, doc.data, doc) for doc in res.docs) or []
+        if options.maxJobs?
           return jobs
+        else
+          return jobs[0]
       else
         return null
 
