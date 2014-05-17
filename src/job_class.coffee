@@ -103,7 +103,6 @@ class Job
       @.data = data
     else  # This is the normal "create a new object" case
       @_doc =
-        _id: null
         runId: null
         type : type
         data: data
