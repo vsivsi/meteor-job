@@ -287,18 +287,32 @@ class Job
       else
         return null
 
-  # Indicate to ther server than this run has finished. If it failed, provide an error message.
-  done: (err, cb) ->
+  # Indicate to the server than this run has successfully finished.
+  done: (cb) ->
     if @_doc._id? and @_doc.runId?
       if cb and typeof cb is 'function'
-        @ddp_apply "jobDone_#{@root}", [@_doc._id, @_doc.runId, err], (err, res) =>
+        @ddp_apply "jobDone_#{@root}", [@_doc._id, @_doc.runId], (err, res) =>
         return cb err if err
         return cb null, res
       else
-        res = @ddp_apply "jobDone_#{@root}", [@_doc._id, @_doc.runId, err]
+        res = @ddp_apply "jobDone_#{@root}", [@_doc._id, @_doc.runId]
         return res
     else
       console.warn "Can't finish an unsaved job"
+    return null
+
+  # Indicate to the server than this run has failed and provide an error message.
+  fail: (err, cb) ->
+    if @_doc._id? and @_doc.runId?
+      if cb and typeof cb is 'function'
+        @ddp_apply "jobFail_#{@root}", [@_doc._id, @_doc.runId, err], (err, res) =>
+        return cb err if err
+        return cb null, res
+      else
+        res = @ddp_apply "jobFail_#{@root}", [@_doc._id, @_doc.runId, err]
+        return res
+    else
+      console.warn "Can't fail an unsaved job"
     return null
 
   # Pause this job, only Ready and Waiting jobs can be paused
