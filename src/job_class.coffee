@@ -103,7 +103,7 @@ class Job
       @.data = data
     else  # This is the normal "create a new object" case
       @_doc =
-        id: null
+        _id: null
         runId: null
         type : type
         data: data
@@ -291,11 +291,11 @@ class Job
   done: (err, cb) ->
     if @_doc._id? and @_doc.runId?
       if cb and typeof cb is 'function'
-        @ddp_apply "jobDone_#{@root}", [@_doc._id, @_doc.runId, err, @attemptsWait], (err, res) =>
+        @ddp_apply "jobDone_#{@root}", [@_doc._id, @_doc.runId, err], (err, res) =>
         return cb err if err
         return cb null, res
       else
-        res = @ddp_apply "jobDone_#{@root}", [@_doc._id, @_doc.runId, err, @attemptsWait]
+        res = @ddp_apply "jobDone_#{@root}", [@_doc._id, @_doc.runId, err]
         return res
     else
       console.warn "Can't finish an unsaved job"
