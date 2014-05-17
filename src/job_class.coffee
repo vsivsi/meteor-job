@@ -17,6 +17,7 @@ class Job
 
   @jobStatuses: [
     'waiting'
+    'paused'
     'ready'
     'running'
     'failed'
@@ -298,6 +299,21 @@ class Job
         return res
     else
       console.warn "Can't finish an unsaved job"
+    return null
+
+  # Pause this job, only Ready and Waiting jobs can be paused
+  # Calling this toggles the paused state. Unpaused jobs go to waiting
+  pause: (cb) ->
+    if @_doc._id?
+      if cb and typeof cb is 'function'
+        @ddp_apply "jobPause_#{@root}", [@_doc._id], (err, res) =>
+        return cb err if err
+        return cb null, res
+      else
+        res = @ddp_apply "jobPause_#{@root}", [@_doc._id]
+        return res
+    else
+      console.warn "Can't pause an unsaved job"
     return null
 
   # Cancel this job if it is running or able to run (waiting, ready)
