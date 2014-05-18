@@ -41,10 +41,10 @@ class Job
     unless typeof msWait is 'number' and msWait >= 0
       msWait = 60*1000
     if cb and typeof cb is 'function'
-      @ddp_apply "shutdownJobs_#{root}", [msWait], (err, res) =>
+      @ddp_apply "stopJobs_#{root}", [msWait], (err, res) =>
         return cb err, res
     else
-      res = @ddp_apply "shutdownJobs_#{root}", [msWait]
+      res = @ddp_apply "stopJobs_#{root}", [msWait]
       return res
 
   # Creates a job object by id from the server queue root
