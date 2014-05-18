@@ -37,7 +37,7 @@ class Job
     else
       console.error "Bad ddp object in Job.setDDP()"
 
-  @shutdown: (root, msWait, cb) ->
+  @stopJobs: (root, msWait, cb) ->
     unless typeof msWait is 'number' and msWait >= 0
       msWait = 60*1000
     if cb and typeof cb is 'function'
