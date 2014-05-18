@@ -25,6 +25,11 @@ class Job
     'completed'
   ]
 
+  @jobStatusCancellable: [ 'running', 'ready', 'waiting', 'paused' ]
+  @jobStatusPausable: [ 'ready', 'waiting', 'paused' ]
+  @jobStatusRemovable:   [ 'cancelled', 'completed', 'failed' ]
+  @jobStatusRestartable: [ 'cancelled', 'failed' ]
+
   # Automatically work within Meteor, otherwise see @setDDP below
   @ddp_apply: Meteor?.apply
 
