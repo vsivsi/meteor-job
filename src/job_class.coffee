@@ -279,21 +279,17 @@ class Job
       id
 
   # Refresh the local job state with the server job queue's version
-  refresh: (cb) ->
+  refresh: (options..., cb) ->
+    options = options?[0] ? {}
+    if typeof options isnt 'object'
+      return retHelp new Error("Bad options parameter"), null, cb
     if @_doc._id?
-      if cb and typeof cb is 'function'
-        @ddp_apply "getJob_#{@root}", [@_doc._id], (err, doc) =>
-          return cb err if err
-          return cb new Error "Refresh failed, doc not found" unless doc?
-          @_doc = doc
-          return cb null, true
-      else
-        doc = @ddp_apply "getJob_#{@root}", [@_doc._id]
+      return methodCall root, "getJob", [@_doc._id, options], cb, (doc) =>
         if doc?
           @_doc = doc
-          return true
+          true
         else
-          return false
+          false
     else
       console.warn "Can't refresh an unsaved job"
       return false
