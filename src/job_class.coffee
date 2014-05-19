@@ -233,7 +233,9 @@ class Job
     if typeof options isnt 'object'
       return retHelp new Error("Bad options parameter"), null, cb
     options.level ?= 'default'
+    console.log "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
     if options.echo?
+      console.log "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$"
       delete options.echo
       out = "LOG: #{options.level}, #{@_doc._id} #{@_doc.runId} #{message}"
       switch options.level
