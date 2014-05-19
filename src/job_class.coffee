@@ -18,7 +18,7 @@ retHelp = (err, ret, cb) ->
 
 methodCall = (method, params, cb, after = ((ret) -> ret)) ->
   if cb and typeof cb is 'function'
-    Job.ddp_apply "method", params, (err, res) =>
+    Job.ddp_apply method, params, (err, res) =>
       return cb err if err
       cb null, after(res)
   else
@@ -74,7 +74,7 @@ class Job
     options = params?[0] ? {}
     if typeof options isnt 'object'
       return retHelp new Error("Bad options parameter"), null, cb
-    options.msWait ?= 60*1000
+    options.timeout ?= 60*1000
     methodCall "stopJobs_#{root}", [options], cb
 
   # Creates a job object by id from the server queue root
