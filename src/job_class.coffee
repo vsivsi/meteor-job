@@ -176,7 +176,9 @@ class Job
   # the time to wait between successive attempts
   # Default, do not retry
   retry: (options) ->
-    [options] = optionsHelp options
+    if typeof options isnt 'object'
+      console.error "Bad options object", options
+      options = {}
     if typeof options.retries is 'number' and options.retries > 0
       options.retries++
     else
@@ -194,7 +196,9 @@ class Job
   # and the time to wait between successive runs
   # Default, run forever...
   repeat: (options) ->
-    [options] = optionsHelp options
+    if typeof options isnt 'object'
+      console.error "Bad options object", options
+      options = {}
     unless typeof options.repeats is 'number' and options.repeats >= 0
       options.repeats = Job.forever
 
