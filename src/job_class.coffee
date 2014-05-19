@@ -42,6 +42,14 @@ class Job
     else
       console.error "Bad ddp object in Job.setDDP()"
 
+  @startJobs: (root, cb) ->
+    if cb and typeof cb is 'function'
+      @ddp_apply "startJobs_#{root}", [], (err, res) =>
+        return cb err, res
+    else
+      res = @ddp_apply "startJobs_#{root}", []
+      return res
+
   @stopJobs: (root, msWait, cb) ->
     unless typeof msWait is 'number' and msWait >= 0
       msWait = 60*1000
