@@ -149,7 +149,7 @@ class Job
     return @
 
   # Set the run priority of this job
-  priority: (level = 0, cb) ->
+  priority: (level = 0) ->
     if typeof level is 'string'
       priority = Job.jobPriorities[level] ? 0
     else if typeof level is 'number'
@@ -163,50 +163,58 @@ class Job
   # Sets the number of attempted runs of this job and
   # the time to wait between successive attempts
   # Default, do not retry
-  retry: (msWait = 5*60*1000, num = Job.forever) ->
-    if typeof num is 'number' and num > 0
-      retries = num + 1
-    else
-      retries = 1
-    if typeof msWait is 'number' and msWait >= 0
-      retryWait = msWait
-    else
-      retryWait = 5*60*1000
+  retry: (options) ->
+    options = options?[0] ? {}
+    if typeof options isnt 'object'
+      return retHelp new Error("Bad options parameter"), null, cb
 
-    @_doc.retries = retries
-    @_doc.retryWait = retryWait
+    msWait = 5*60*1000
+
+    if typeof options.retries is 'number' and options.retries > 0
+      options.retries++
+    else
+      options.retries = Job.forever
+
+    unless typeof options.retryWait is 'number' and options.retryWait >= 0
+      options.retryWait = 5*60*1000
+
+    @_doc.retries = options.retries
+    @_doc.retryWait = options.retryWait
     @_doc.retried ?= 0
     return @
 
   # Sets the number of times to repeatedly run this job
   # and the time to wait between successive runs
   # Default, run forever...
-  repeat: (msWait = 5*60*1000, num = Job.forever) ->
-    if typeof num is 'number' and num >= 0
-      repeats = num
-    else
-      repeats = 0
-    if typeof msWait is 'number' and msWait >= 0
-      repeatWait = msWait
-    else
-      repeatWait = 5*60*1000
+  repeat: (options) ->
+    options = options?[0] ? {}
+    if typeof options isnt 'object'
+      return retHelp new Error("Bad options parameter"), null, cb
 
-    @_doc.repeats = repeats
-    @_doc.repeatWait = repeatWait
+    if typeof options.repeats is 'number' and options.repeats > 0
+      options.repeats++
+    else
+      options.repeats = Job.forever
+
+    unless typeof options.repeatWait is 'number' and options.repeatWait >= 0
+      options.repeatWait = 5*60*1000
+
+    @_doc.repeats = options.repeats
+    @_doc.repeatWait = options.repeatWait
     @_doc.repeated ?= 0
     return @
 
   # Sets the delay before this job can run after it is saved
-  delay: (milliseconds = 0, cb) ->
-    unless typeof milliseconds is 'number' and milliseconds >= 0
-      milliseconds = 0
-    if typeof milliseconds is 'number' and milliseconds >= 0
-      return @after new Date(new Date().valueOf() + milliseconds), cb
+  delay: (wait = 0) ->
+    unless typeof wait is 'number' and wait >= 0
+      wait = 0
+    if typeof wait is 'number' and wait >= 0
+      return @after new Date(new Date().valueOf() + wait)
     else
-      return @after new Date(), cb
+      return @after new Date()
 
   # Sets a time after which this job can run once it is saved
-  after: (time, cb) ->
+  after: (time) ->
     if typeof time is 'object' and time instanceof Date
       after = time
     else
