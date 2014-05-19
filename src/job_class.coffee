@@ -297,29 +297,23 @@ class Job
       return false
 
   # Indicate to the server than this run has successfully finished.
-  done: (cb) ->
+  done: (options..., cb) ->
+    options = options?[0] ? {}
+    if typeof options isnt 'object'
+      return retHelp new Error("Bad options parameter"), null, cb
     if @_doc._id? and @_doc.runId?
-      if cb and typeof cb is 'function'
-        @ddp_apply "jobDone_#{@root}", [@_doc._id, @_doc.runId], (err, res) =>
-        return cb err if err
-        return cb null, res
-      else
-        res = @ddp_apply "jobDone_#{@root}", [@_doc._id, @_doc.runId]
-        return res
+      return methodCall root, "jobDone", [@_doc._id, @_doc.runId, options], cb
     else
       console.warn "Can't finish an unsaved job"
     return null
 
   # Indicate to the server than this run has failed and provide an error message.
-  fail: (err, cb) ->
+  fail: (err, options..., cb) ->
+    options = options?[0] ? {}
+    if typeof options isnt 'object'
+      return retHelp new Error("Bad options parameter"), null, cb
     if @_doc._id? and @_doc.runId?
-      if cb and typeof cb is 'function'
-        @ddp_apply "jobFail_#{@root}", [@_doc._id, @_doc.runId, err], (err, res) =>
-        return cb err if err
-        return cb null, res
-      else
-        res = @ddp_apply "jobFail_#{@root}", [@_doc._id, @_doc.runId, err]
-        return res
+      return methodCall root, "jobFail", [@_doc._id, @_doc.runId, err, options], cb
     else
       console.warn "Can't fail an unsaved job"
     return null
