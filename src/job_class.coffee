@@ -6,7 +6,11 @@
 
 # Exports Job object
 
+# This is the JS max int value = 2^53
+
 class Job
+
+  @forever = 9007199254740992
 
   @jobPriorities:
     low: 10
@@ -165,7 +169,7 @@ class Job
   # Sets the number of attempted runs of this job and
   # the time to wait between successive attempts
   # Default, do not retry
-  retry: (msWait = 5*60*1000, num = 9007199254740992) ->
+  retry: (msWait = 5*60*1000, num = Job.forever) ->
     if typeof num is 'number' and num > 0
       retries = num + 1
     else
@@ -183,7 +187,7 @@ class Job
   # Sets the number of times to repeatedly run this job
   # and the time to wait between successive runs
   # Default, run forever...
-  repeat: (msWait = 5*60*1000, num = 9007199254740992) ->
+  repeat: (msWait = 5*60*1000, num = Job.forever) ->
     if typeof num is 'number' and num >= 0
       repeats = num
     else
