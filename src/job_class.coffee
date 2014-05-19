@@ -229,11 +229,12 @@ class Job
 
   # Write a message to this job's log.
   log: (message, options..., cb) ->
+    console.log "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+    console.warn options
     options = options?[0] ? {}
     if typeof options isnt 'object'
       return retHelp new Error("Bad options parameter"), null, cb
     options.level ?= 'default'
-    console.log "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
     if options.echo?
       console.log "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$"
       delete options.echo
