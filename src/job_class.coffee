@@ -18,12 +18,13 @@ retHelp = (err, ret, cb) ->
 
 methodCall = (root, method, params, cb, after = ((ret) -> ret)) ->
   console.warn "Calling: #{method}_#{root} with: ", params
+  name = "#{method}_#{root}"
   if cb and typeof cb is 'function'
-    Job.ddp_apply "#{method}_#{root}", params, (err, res) =>
+    Job.ddp_apply name, params, (err, res) =>
       return cb err if err
       cb null, after(res)
   else
-    return after(Job.ddp_apply "method", params)
+    return after(Job.ddp_apply name, params)
 
 class Job
 
@@ -76,7 +77,7 @@ class Job
     if typeof options isnt 'object'
       return retHelp new Error("Bad options parameter"), null, cb
     options.timeout ?= 60*1000
-    methodCall root,"stopJobs", [options], cb
+    methodCall root, "stopJobs", [options], cb
 
   # Creates a job object by id from the server queue root
   # returns null if no such job exists
