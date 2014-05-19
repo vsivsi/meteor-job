@@ -16,10 +16,10 @@ retHelp = (err, ret, cb) ->
   else
     throw err
 
-methodCall = (method, params, cb, after = ((ret) -> ret)) ->
-  console.warn "Calling: #{method} with: ", params
+methodCall = (root, method, params, cb, after = ((ret) -> ret)) ->
+  console.warn "Calling: #{method}_#{root} with: ", params
   if cb and typeof cb is 'function'
-    Job.ddp_apply method, params, (err, res) =>
+    Job.ddp_apply "#{method}_#{root}", params, (err, res) =>
       return cb err if err
       cb null, after(res)
   else
@@ -68,7 +68,7 @@ class Job
     options = options?[0] ? {}
     if typeof options isnt 'object'
       return retHelp new Error("Bad options parameter"), null, cb
-    methodCall "startJobs_#{root}", [options], cb
+    methodCall root, "startJobs", [options], cb
 
   # Stop the job queue, stop all running jobs
   @stopJobs: (root, options..., cb) ->
@@ -76,7 +76,7 @@ class Job
     if typeof options isnt 'object'
       return retHelp new Error("Bad options parameter"), null, cb
     options.timeout ?= 60*1000
-    methodCall "stopJobs_#{root}", [options], cb
+    methodCall root,"stopJobs", [options], cb
 
   # Creates a job object by id from the server queue root
   # returns null if no such job exists
@@ -84,7 +84,7 @@ class Job
     options = options?[0] ? {}
     if typeof options isnt 'object'
       return retHelp new Error("Bad options parameter"), null, cb
-    methodCall "getJob_#{root}", [id, options], cb, (doc) =>
+    methodCall root, "getJob", [id, options], cb, (doc) =>
       if doc
         new Job root, doc.type, doc.data, doc
       else
@@ -98,7 +98,7 @@ class Job
     if typeof options isnt 'object'
       return retHelp new Error("Bad options parameter"), null, cb
     type = [type] if typeof type is 'string'
-    methodCall "getWork_#{root}", [type, options], cb, (res) =>
+    methodCall root, "getWork", [type, options], cb, (res) =>
       jobs = (new Job(root, doc.type, doc.data, doc) for doc in res) or []
       if options.maxJobs?
         return jobs
