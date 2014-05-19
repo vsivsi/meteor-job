@@ -264,7 +264,7 @@ class Job
   # Save this job to the server job queue Collection it will also resave a modified job if the
   # job is not running and hasn't completed.
   save: (cb) ->
-    console.log "About to submit a job"
+    console.log "About to submit a job", @_doc
     if cb and typeof cb is 'function'
       @ddp_apply "jobSubmit_#{@root}", [@_doc], (err, id) =>
         return cb err if err
