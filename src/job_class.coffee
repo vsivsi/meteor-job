@@ -8,13 +8,13 @@
 
 # This is the JS max int value = 2^53
 
-retHelp = (err, ret, cb) ->
-  if cb and typeof cb is 'function'
-    return cb err, ret
-  else unless err
-    return ret
-  else
-    throw err
+# retHelp = (err, ret, cb) ->
+#   if cb and typeof cb is 'function'
+#     return cb err, ret
+#   else unless err
+#     return ret
+#   else
+#     throw err
 
 methodCall = (root, method, params, cb, after = ((ret) -> ret)) ->
   console.warn "Calling: #{root}_#{method} with: ", params
@@ -25,6 +25,17 @@ methodCall = (root, method, params, cb, after = ((ret) -> ret)) ->
       cb null, after(res)
   else
     return after(Job.ddp_apply name, params)
+
+optionsHelp = (options, cb) ->
+  if cb? and typeof cb isnt 'function'
+    options = cb
+    cb = undefined
+  else
+    options = options?[0] ? {}
+  if typeof options isnt 'object'
+    console.error "Bad options object", options
+    options = {}
+  return [options, cb]
 
 class Job
 
@@ -74,25 +85,19 @@ class Job
 
   # Start the job queue
   @startJobs: (root, options..., cb) ->
-    options = options?[0] ? {}
-    if typeof options isnt 'object'
-      return retHelp new Error("Bad options parameter"), null, cb
+    [options, cb] = optionsHelp options, cb
     methodCall root, "startJobs", [options], cb
 
   # Stop the job queue, stop all running jobs
   @stopJobs: (root, options..., cb) ->
-    options = params?[0] ? {}
-    if typeof options isnt 'object'
-      return retHelp new Error("Bad options parameter"), null, cb
+    [options, cb] = optionsHelp options, cb
     options.timeout ?= 60*1000
     methodCall root, "stopJobs", [options], cb
 
   # Creates a job object by id from the server queue root
   # returns null if no such job exists
   @getJob: (root, id, options..., cb) ->
-    options = options?[0] ? {}
-    if typeof options isnt 'object'
-      return retHelp new Error("Bad options parameter"), null, cb
+    [options, cb] = optionsHelp options, cb
     options.getLog ?= false
     methodCall root, "getJob", [id, options], cb, (doc) =>
       if doc
@@ -104,9 +109,7 @@ class Job
   # the specified 'type' from the server queue root
   # returns null if no such job exists
   @getWork: (root, type, options..., cb) ->
-    options = options?[0] ? {}
-    if typeof options isnt 'object'
-      return retHelp new Error("Bad options parameter"), null, cb
+    [options, cb] = optionsHelp options, cb
     type = [type] if typeof type is 'string'
     methodCall root, "getWork", [type, options], cb, (res) =>
       jobs = (new Job(root, doc.type, doc.data, doc) for doc in res) or []
@@ -173,10 +176,7 @@ class Job
   # the time to wait between successive attempts
   # Default, do not retry
   retry: (options) ->
-    options = options ? {}
-    if typeof options isnt 'object'
-      return retHelp new Error("Bad options parameter"), null, cb
-
+    [options] = optionsHelp options
     if typeof options.retries is 'number' and options.retries > 0
       options.retries++
     else
@@ -194,10 +194,7 @@ class Job
   # and the time to wait between successive runs
   # Default, run forever...
   repeat: (options) ->
-    options = options ? {}
-    if typeof options isnt 'object'
-      return retHelp new Error("Bad options parameter"), null, cb
-
+    [options] = optionsHelp options
     unless typeof options.repeats is 'number' and options.repeats >= 0
       options.repeats = Job.forever
 
@@ -229,11 +226,7 @@ class Job
 
   # Write a message to this job's log.
   log: (message, options..., cb) ->
-    console.log "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-    console.warn options
-    options = options?[0] ? {}
-    if typeof options isnt 'object'
-      return retHelp new Error("Bad options parameter"), null, cb
+    [options, cb] = optionsHelp options, cb
     options.level ?= 'default'
     if options.echo?
       console.log "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$"
@@ -253,9 +246,7 @@ class Job
   # Indicate progress made for a running job. This is important for
   # long running jobs so the scheduler doesn't assume they are dead
   progress: (completed = 0, total = 1, options..., cb) ->
-    options = options?[0] ? {}
-    if typeof options isnt 'object'
-      return retHelp new Error("Bad options parameter"), null, cb
+    [options, cb] = optionsHelp options, cb
     if (typeof completed is 'number' and
         typeof total is 'number' and
         completed >= 0 and
@@ -280,9 +271,7 @@ class Job
   # Save this job to the server job queue Collection it will also resave a modified job if the
   # job is not running and hasn't completed.
   save: (options..., cb) ->
-    options = options?[0] ? {}
-    if typeof options isnt 'object'
-      return retHelp new Error("Bad options parameter"), null, cb
+    [options, cb] = optionsHelp options, cb
     console.log "About to submit a job", @_doc
     return methodCall root, "jobSave", [@_doc, options], cb, (id) =>
       if id
@@ -291,9 +280,7 @@ class Job
 
   # Refresh the local job state with the server job queue's version
   refresh: (options..., cb) ->
-    options = options?[0] ? {}
-    if typeof options isnt 'object'
-      return retHelp new Error("Bad options parameter"), null, cb
+    [options, cb] = optionsHelp options, cb
     options.getLog ?= false
     if @_doc._id?
       return methodCall root, "getJob", [@_doc._id, options], cb, (doc) =>
@@ -308,9 +295,7 @@ class Job
 
   # Indicate to the server than this run has successfully finished.
   done: (options..., cb) ->
-    options = options?[0] ? {}
-    if typeof options isnt 'object'
-      return retHelp new Error("Bad options parameter"), null, cb
+    [options, cb] = optionsHelp options, cb
     if @_doc._id? and @_doc.runId?
       return methodCall root, "jobDone", [@_doc._id, @_doc.runId, options], cb
     else
@@ -319,9 +304,7 @@ class Job
 
   # Indicate to the server than this run has failed and provide an error message.
   fail: (err, options..., cb) ->
-    options = options?[0] ? {}
-    if typeof options isnt 'object'
-      return retHelp new Error("Bad options parameter"), null, cb
+    [options, cb] = optionsHelp options, cb
     if @_doc._id? and @_doc.runId?
       return methodCall root, "jobFail", [@_doc._id, @_doc.runId, err, options], cb
     else
@@ -331,9 +314,7 @@ class Job
   # Pause this job, only Ready and Waiting jobs can be paused
   # Calling this toggles the paused state. Unpaused jobs go to waiting
   pause: (options..., cb) ->
-    options = options?[0] ? {}
-    if typeof options isnt 'object'
-      return retHelp new Error("Bad options parameter"), null, cb
+    [options, cb] = optionsHelp options, cb
     if @_doc._id?
       return methodCall root, "jobPause", [@_doc._id, options], cb
     else
@@ -342,9 +323,7 @@ class Job
 
   # Cancel this job if it is running or able to run (waiting, ready)
   cancel: (options..., cb) ->
-    options = options?[0] ? {}
-    if typeof options isnt 'object'
-      return retHelp new Error("Bad options parameter"), null, cb
+    [options, cb] = optionsHelp options, cb
     options.antecedents ?= true
     if @_doc._id?
       return methodCall root, "jobCancel", [@_doc._id, options], cb
@@ -354,9 +333,7 @@ class Job
 
   # Restart a failed or cancelled job
   restart: (options..., cb) ->
-    options = options?[0] ? {}
-    if typeof options isnt 'object'
-      return retHelp new Error("Bad options parameter"), null, cb
+    [options, cb] = optionsHelp options, cb
     options.retries ?= 1
     options.dependents ?= true
     if @_doc._id?
@@ -367,9 +344,7 @@ class Job
 
   # Remove a job that is not able to run (completed, cancelled, failed) from the queue
   remove: (options..., cb) ->
-    options = options?[0] ? {}
-    if typeof options isnt 'object'
-      return retHelp new Error("Bad options parameter"), null, cb
+    [options, cb] = optionsHelp options, cb
     if @_doc._id?
       return methodCall root, "jobRemove", [@_doc._id, options], cb
     else
