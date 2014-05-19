@@ -8,6 +8,22 @@
 
 # This is the JS max int value = 2^53
 
+retHelp = (err, ret, cb) ->
+  if cb and typeof cb is 'function'
+    return cb err, ret
+  else unless err
+    return ret
+  else
+    throw err
+
+methodCall = (method, params, cb, after = ((ret) -> ret)) ->
+  if cb and typeof cb is 'function'
+    Job.ddp_apply "method", params, (err, res) =>
+      return cb err if err
+      cb null, after(res)
+  else
+    return after(Job.ddp_apply "method", params)
+
 class Job
 
   @forever = 9007199254740992
@@ -46,71 +62,45 @@ class Job
     else
       console.error "Bad ddp object in Job.setDDP()"
 
-  @startJobs: (root, cb) ->
-    if cb and typeof cb is 'function'
-      @ddp_apply "startJobs_#{root}", [], (err, res) =>
-        return cb err, res
-    else
-      res = @ddp_apply "startJobs_#{root}", []
-      return res
+  @startJobs: (root, options..., cb) ->
+    options = options?[0] ? {}
+    if typeof options isnt 'object'
+      return retHelp new Error("Bad options parameter"), null, cb
+    methodCall "startJobs_#{root}", [options], cb
 
-  @stopJobs: (root, msWait, cb) ->
-    unless typeof msWait is 'number' and msWait >= 0
-      msWait = 60*1000
-    if cb and typeof cb is 'function'
-      @ddp_apply "stopJobs_#{root}", [msWait], (err, res) =>
-        return cb err, res
-    else
-      res = @ddp_apply "stopJobs_#{root}", [msWait]
-      return res
+  @stopJobs: (root, options..., cb) ->
+    options = params?[0] ? {}
+    if typeof options isnt 'object'
+      return retHelp new Error("Bad options parameter"), null, cb
+    options.msWait ?= 60*1000
+    methodCall "stopJobs_#{root}", [options], cb
 
   # Creates a job object by id from the server queue root
   # returns null if no such job exists
-  @getJob: (root, id, cb) ->
-    if cb and typeof cb is 'function'
-      @ddp_apply "getJob_#{root}", [id], (err, doc) =>
-        return cb err if err
-        if doc
-          job = new Job root, doc.type, doc.data, doc
-          return cb null, job
-        else
-          return cb null, null
-    else
-      doc = @ddp_apply "getJob_#{root}", [id]
+  @getJob: (root, id, options..., cb) ->
+    options = options?[0] ? {}
+    if typeof options isnt 'object'
+      return retHelp new Error("Bad options parameter"), null, cb
+    methodCall "getJob_#{root}", [id, options], cb, (doc) =>
       if doc
-        job = new Job root, doc.type, doc.data, doc
-        return job
+        new Job root, doc.type, doc.data, doc
       else
-        return null
+        null
 
   # Creates a job object by reserving the next available job of
   # the specified 'type' from the server queue root
   # returns null if no such job exists
   @getWork: (root, type, options..., cb) ->
+    options = options?[0] ? {}
+    if typeof options isnt 'object'
+      return retHelp new Error("Bad options parameter"), null, cb
     type = [type] if typeof type is 'string'
-    options = options?[0] or {}
-    max = options.maxJobs or 1
-    if cb and typeof cb is 'function'
-      @ddp_apply "getWork_#{root}", [type, max], (err, res) =>
-        return cb err if err
-        if res?
-          jobs = (new Job(root, doc.type, doc.data, doc) for doc in res) or []
-          if options.maxJobs?
-            return cb null, jobs
-          else
-            return cb null, jobs[0]
-        else
-          return cb null, null
-    else
-      res = @ddp_apply "getWork_#{root}", [type, max]
-      if res?
-        jobs = (new Job(root, doc.type, doc.data, doc) for doc in res) or []
-        if options.maxJobs?
-          return jobs
-        else
-          return jobs[0]
+    methodCall "getWork_#{root}", [type, options], cb, (res) =>
+      jobs = (new Job(root, doc.type, doc.data, doc) for doc in res) or []
+      if options.maxJobs?
+        return jobs
       else
-        return null
+        return jobs[0]
 
   # Job class instance constructor. When "new Job(...)" is run
   constructor: (@root, type, data, doc = null) ->
