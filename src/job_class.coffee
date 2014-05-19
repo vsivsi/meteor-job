@@ -62,12 +62,14 @@ class Job
     else
       console.error "Bad ddp object in Job.setDDP()"
 
+  # Start the job queue
   @startJobs: (root, options..., cb) ->
     options = options?[0] ? {}
     if typeof options isnt 'object'
       return retHelp new Error("Bad options parameter"), null, cb
     methodCall "startJobs_#{root}", [options], cb
 
+  # Stop the job queue, stop all running jobs
   @stopJobs: (root, options..., cb) ->
     options = params?[0] ? {}
     if typeof options isnt 'object'
