@@ -258,6 +258,7 @@ class Job
         return methodCall root, "jobProgress", [@_doc._id, @_doc.runId, completed, total, options], cb, (res) =>
           if res
             @_doc.progress = progress
+          res
       else
         @_doc.progress = progress
         return @
@@ -267,18 +268,15 @@ class Job
 
   # Save this job to the server job queue Collection it will also resave a modified job if the
   # job is not running and hasn't completed.
-  save: (cb) ->
+  save: (options..., cb) ->
+    options = options?[0] ? {}
+    if typeof options isnt 'object'
+      return retHelp new Error("Bad options parameter"), null, cb
     console.log "About to submit a job", @_doc
-    if cb and typeof cb is 'function'
-      @ddp_apply "jobSubmit_#{@root}", [@_doc], (err, id) =>
-        return cb err if err
+    return methodCall root, "jobSave", [@_doc, options], cb, (id) =>
+      if id
         @_doc._id = id
-        return cb null, id
-      return true
-    else
-      id = @ddp_apply "jobSubmit_#{@root}", [@_doc]
-      @_doc._id = id
-      return id
+      id
 
   # Refresh the local job state with the server job queue's version
   refresh: (cb) ->
