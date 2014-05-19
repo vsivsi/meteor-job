@@ -130,7 +130,7 @@ class Job
         data: data
         status: 'waiting'
         updated: new Date()
-      @priority().retry(0,0).repeat(0,0).after().progress().depends().log("Created")
+      @priority().retry({retries: 0}).repeat({repeats: 0}).after().progress().depends().log("Created")
       @.data = @_doc.data  # Make data a little easier to get to
       return @
 
@@ -167,8 +167,6 @@ class Job
     options = options?[0] ? {}
     if typeof options isnt 'object'
       return retHelp new Error("Bad options parameter"), null, cb
-
-    msWait = 5*60*1000
 
     if typeof options.retries is 'number' and options.retries > 0
       options.retries++
