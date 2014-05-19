@@ -47,6 +47,14 @@ class Job
     'completed'
   ]
 
+  @jobLogLevels: [
+    'default'
+    'success'
+    'info'
+    'warning'
+    'danger'
+  ]
+
   @jobStatusCancellable: [ 'running', 'ready', 'waiting', 'paused' ]
   @jobStatusPausable: [ 'ready', 'waiting', 'paused' ]
   @jobStatusRemovable:   [ 'cancelled', 'completed', 'failed' ]
@@ -219,19 +227,17 @@ class Job
     return @
 
   # Write a message to this job's log.
-  log: (message, cb) ->
+  log: (message, options..., cb) ->
+    options = options?[0] ? {}
+    if typeof options isnt 'object'
+      return retHelp new Error("Bad options parameter"), null, cb
+    options.level ?= 'default'
     if @_doc._id?
-      if cb and typeof cb is 'function'
-        @ddp_apply "jobLog_#{@root}", [@_doc._id, @_doc.runId, message], (err, res) =>
-          return cb err if err
-          return cb null, res
-      else
-        res = @ddp_apply "jobLog_#{@root}", [@_doc._id, @_doc.runId, message]
-        return res
-    else
+      methodCall root, "jobLog", [@_doc._id, @_doc.runId, message, options], cb
+    else  # Log can be called on an unsaved job
       @_doc.log ?= []
       @_doc.log.push { time: new Date(), runId: null, message: message }
-      return @
+      return @  # Allow call chaining in this case
 
   # Indicate progress made for a running job. This is important for
   # long running jobs so the scheduler doesn't assume they are dead
