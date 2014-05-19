@@ -320,60 +320,48 @@ class Job
 
   # Pause this job, only Ready and Waiting jobs can be paused
   # Calling this toggles the paused state. Unpaused jobs go to waiting
-  pause: (cb) ->
+  pause: (options..., cb) ->
+    options = options?[0] ? {}
+    if typeof options isnt 'object'
+      return retHelp new Error("Bad options parameter"), null, cb
     if @_doc._id?
-      if cb and typeof cb is 'function'
-        @ddp_apply "jobPause_#{@root}", [@_doc._id], (err, res) =>
-        return cb err if err
-        return cb null, res
-      else
-        res = @ddp_apply "jobPause_#{@root}", [@_doc._id]
-        return res
+      return methodCall root, "jobPause", [@_doc._id, options], cb
     else
       console.warn "Can't pause an unsaved job"
     return null
 
   # Cancel this job if it is running or able to run (waiting, ready)
-  cancel: (params..., cb) ->
-    antecedents = params?[0] ? false
+  cancel: (options..., cb) ->
+    options = options?[0] ? {}
+    if typeof options isnt 'object'
+      return retHelp new Error("Bad options parameter"), null, cb
+    options.antecedents ?= true
     if @_doc._id?
-      if cb and typeof cb is 'function'
-        @ddp_apply "jobCancel_#{@root}", [@_doc._id, antecedents], (err, res) =>
-        return cb err if err
-        return cb null, res
-      else
-        res = @ddp_apply "jobCancel_#{@root}", [@_doc._id, antecedents]
-        return res
+      return methodCall root, "jobCancel", [@_doc._id, options], cb
     else
       console.warn "Can't cancel an unsaved job"
     return null
 
   # Restart a failed or cancelled job
-  restart: (params..., cb) ->
-    retries = params?[0] ? 1
-    dependents = params?[1] ? false
+  restart: (options..., cb) ->
+    options = options?[0] ? {}
+    if typeof options isnt 'object'
+      return retHelp new Error("Bad options parameter"), null, cb
+    options.retries ?= 1
+    options.dependents ?= true
     if @_doc._id?
-      if cb and typeof cb is 'function'
-        @ddp_apply "jobRestart_#{@root}", [@_doc._id, retries, dependents], (err, res) =>
-        return cb err if err
-        return cb null, res
-      else
-        res = @ddp_apply "jobRestart_#{@root}", [@_doc._id, retries, dependents]
-        return res
+      return methodCall root, "jobRestart", [@_doc._id, options], cb
     else
       console.warn "Can't restart an unsaved job"
     return null
 
   # Remove a job that is not able to run (completed, cancelled, failed) from the queue
-  remove: (cb) ->
+  remove: (options..., cb) ->
+    options = options?[0] ? {}
+    if typeof options isnt 'object'
+      return retHelp new Error("Bad options parameter"), null, cb
     if @_doc._id?
-      if cb and typeof cb is 'function'
-        @ddp_apply "jobRemove_#{@root}", [@_doc._id], (err, res) =>
-        return cb err if err
-        return cb null, res
-      else
-        res = @ddp_apply "jobRemove_#{@root}", [@_doc._id]
-        return res
+      return methodCall root, "jobRemove", [@_doc._id, options], cb
     else
       console.warn "Can't remove an unsaved job"
     return null
