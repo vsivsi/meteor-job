@@ -236,7 +236,7 @@ class Job
       methodCall root, "jobLog", [@_doc._id, @_doc.runId, message, options], cb
     else  # Log can be called on an unsaved job
       @_doc.log ?= []
-      @_doc.log.push { time: new Date(), runId: null, message: message }
+      @_doc.log.push { time: new Date(), runId: null, level: 'success', message: message }
       return @  # Allow call chaining in this case
 
   # Indicate progress made for a running job. This is important for
