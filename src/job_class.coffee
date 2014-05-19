@@ -17,6 +17,7 @@ retHelp = (err, ret, cb) ->
     throw err
 
 methodCall = (method, params, cb, after = ((ret) -> ret)) ->
+  console.warn "Calling: #{method} with: ", params
   if cb and typeof cb is 'function'
     Job.ddp_apply method, params, (err, res) =>
       return cb err if err
