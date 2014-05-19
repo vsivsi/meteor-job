@@ -93,6 +93,7 @@ class Job
     options = options?[0] ? {}
     if typeof options isnt 'object'
       return retHelp new Error("Bad options parameter"), null, cb
+    options.getLog ?= false
     methodCall root, "getJob", [id, options], cb, (doc) =>
       if doc
         new Job root, doc.type, doc.data, doc
@@ -283,6 +284,7 @@ class Job
     options = options?[0] ? {}
     if typeof options isnt 'object'
       return retHelp new Error("Bad options parameter"), null, cb
+    options.getLog ?= false
     if @_doc._id?
       return methodCall root, "getJob", [@_doc._id, options], cb, (doc) =>
         if doc?
@@ -293,24 +295,6 @@ class Job
     else
       console.warn "Can't refresh an unsaved job"
       return false
-
-  # Fetches a job's current log array by id from the server
-  # queue root returns null if no such job exists
-  getLog: (cb) ->
-    if cb and typeof cb is 'function'
-      @ddp_apply "getLog_#{@root}", [@_doc.id], (err, doc) =>
-        return cb err if err
-        return cb new Error "Refresh failed, doc not found"
-        unless doc?
-          return cb null, doc.log
-        else
-          return cb null, null
-    else
-      doc = @ddp_apply "getLog_#{@root}", [@_doc.id]
-      if doc
-        return doc.log
-      else
-        return null
 
   # Indicate to the server than this run has successfully finished.
   done: (cb) ->
