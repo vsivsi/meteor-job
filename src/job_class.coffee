@@ -358,14 +358,15 @@ class Job
     return null
 
   # Cancel this job if it is running or able to run (waiting, ready)
-  cancel: (cb) ->
+  cancel: (params..., cb) ->
+    antecedents = params?[0] ? false
     if @_doc._id?
       if cb and typeof cb is 'function'
-        @ddp_apply "jobCancel_#{@root}", [@_doc._id], (err, res) =>
+        @ddp_apply "jobCancel_#{@root}", [@_doc._id, antecedents], (err, res) =>
         return cb err if err
         return cb null, res
       else
-        res = @ddp_apply "jobCancel_#{@root}", [@_doc._id]
+        res = @ddp_apply "jobCancel_#{@root}", [@_doc._id, antecedents]
         return res
     else
       console.warn "Can't cancel an unsaved job"
@@ -373,14 +374,15 @@ class Job
 
   # Restart a failed or cancelled job
   restart: (params..., cb) ->
-    attempts = params?[0] ? 1
+    retries = params?[0] ? 1
+    dependents = params?[1] ? false
     if @_doc._id?
       if cb and typeof cb is 'function'
-        @ddp_apply "jobRestart_#{@root}", [@_doc._id, attempts], (err, res) =>
+        @ddp_apply "jobRestart_#{@root}", [@_doc._id, retries, dependents], (err, res) =>
         return cb err if err
         return cb null, res
       else
-        res = @ddp_apply "jobRestart_#{@root}", [@_doc._id, attempts]
+        res = @ddp_apply "jobRestart_#{@root}", [@_doc._id, retries, dependents]
         return res
     else
       console.warn "Can't restart an unsaved job"
