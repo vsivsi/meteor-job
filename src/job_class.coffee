@@ -233,6 +233,13 @@ class Job
     if typeof options isnt 'object'
       return retHelp new Error("Bad options parameter"), null, cb
     options.level ?= 'default'
+    if options.echo?
+      delete options.echo
+      out = "LOG: #{options.level}, #{@_doc._id} #{@_doc.runId} #{message}"
+      switch options.level
+        when 'danger' then console.error out
+        when 'warning' then console.warn out
+        else console.log out
     if @_doc._id?
       return methodCall root, "jobLog", [@_doc._id, @_doc.runId, message, options], cb
     else  # Log can be called on an unsaved job
