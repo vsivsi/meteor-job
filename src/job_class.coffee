@@ -189,9 +189,7 @@ class Job
     if typeof options isnt 'object'
       return retHelp new Error("Bad options parameter"), null, cb
 
-    if typeof options.repeats is 'number' and options.repeats >= 0
-      options.repeats++
-    else
+    unless typeof options.repeats is 'number' and options.repeats >= 0
       options.repeats = Job.forever
 
     unless typeof options.repeatWait is 'number' and options.repeatWait >= 0
