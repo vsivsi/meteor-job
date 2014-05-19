@@ -164,7 +164,7 @@ class Job
   # the time to wait between successive attempts
   # Default, do not retry
   retry: (options) ->
-    options = options?[0] ? {}
+    options = options ? {}
     if typeof options isnt 'object'
       return retHelp new Error("Bad options parameter"), null, cb
 
@@ -185,7 +185,7 @@ class Job
   # and the time to wait between successive runs
   # Default, run forever...
   repeat: (options) ->
-    options = options?[0] ? {}
+    options = options ? {}
     if typeof options isnt 'object'
       return retHelp new Error("Bad options parameter"), null, cb
 
