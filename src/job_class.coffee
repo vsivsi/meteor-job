@@ -233,7 +233,7 @@ class Job
       return retHelp new Error("Bad options parameter"), null, cb
     options.level ?= 'default'
     if @_doc._id?
-      methodCall root, "jobLog", [@_doc._id, @_doc.runId, message, options], cb
+      return methodCall root, "jobLog", [@_doc._id, @_doc.runId, message, options], cb
     else  # Log can be called on an unsaved job
       @_doc.log ?= []
       @_doc.log.push { time: new Date(), runId: null, level: 'success', message: message }
@@ -241,23 +241,23 @@ class Job
 
   # Indicate progress made for a running job. This is important for
   # long running jobs so the scheduler doesn't assume they are dead
-  progress: (completed = 0, total = 1, cb) ->
+  progress: (completed = 0, total = 1, options..., cb) ->
+    options = options?[0] ? {}
+    if typeof options isnt 'object'
+      return retHelp new Error("Bad options parameter"), null, cb
     if (typeof completed is 'number' and
         typeof total is 'number' and
         completed >= 0 and
         total > 0 and
         total >= completed)
-      progress = { completed: completed, total: total, percent: 100*completed/total }
+      progress =
+        completed: completed
+        total: total
+        percent: 100*completed/total
       if @_doc._id? and @_doc.runId?
-        if cb and typeof cb is 'function'
-          @ddp_apply "jobProgress_#{@root}", [@_doc._id, @_doc.runId, progress], (err, res) =>
-            return cb err if err
+        return methodCall root, "jobProgress", [@_doc._id, @_doc.runId, completed, total, options], cb, (res) =>
+          if res
             @_doc.progress = progress
-            return cb null, res
-        else
-          res = @ddp_apply "jobProgress_#{@root}", [@_doc._id, @_doc.runId, progress]
-          @_doc.progress = progress
-          return res
       else
         @_doc.progress = progress
         return @
