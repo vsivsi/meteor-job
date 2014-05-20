@@ -6,8 +6,6 @@
 
 # Exports Job object
 
-# This is the JS max int value = 2^53
-
 # retHelp = (err, ret, cb) ->
 #   if cb and typeof cb is 'function'
 #     return cb err, ret
@@ -39,6 +37,7 @@ optionsHelp = (options, cb) ->
 
 class Job
 
+  # This is the JS max int value = 2^53
   @forever = 9007199254740992
 
   @jobPriorities:
@@ -242,7 +241,7 @@ class Job
         when 'warning' then console.warn out
         else console.log out
     if @_doc._id?
-      return methodCall root, "jobLog", [@_doc._id, @_doc.runId, message, options], cb
+      return methodCall @root, "jobLog", [@_doc._id, @_doc.runId, message, options], cb
     else  # Log can be called on an unsaved job
       @_doc.log ?= []
       @_doc.log.push { time: new Date(), runId: null, level: 'success', message: message }
@@ -262,7 +261,7 @@ class Job
         total: total
         percent: 100*completed/total
       if @_doc._id? and @_doc.runId?
-        return methodCall root, "jobProgress", [@_doc._id, @_doc.runId, completed, total, options], cb, (res) =>
+        return methodCall @root, "jobProgress", [@_doc._id, @_doc.runId, completed, total, options], cb, (res) =>
           if res
             @_doc.progress = progress
           res
@@ -278,7 +277,7 @@ class Job
   save: (options..., cb) ->
     [options, cb] = optionsHelp options, cb
     console.log "About to submit a job", @_doc
-    return methodCall root, "jobSave", [@_doc, options], cb, (id) =>
+    return methodCall @root, "jobSave", [@_doc, options], cb, (id) =>
       if id
         @_doc._id = id
       id
@@ -288,7 +287,7 @@ class Job
     [options, cb] = optionsHelp options, cb
     options.getLog ?= false
     if @_doc._id?
-      return methodCall root, "getJob", [@_doc._id, options], cb, (doc) =>
+      return methodCall @root, "getJob", [@_doc._id, options], cb, (doc) =>
         if doc?
           @_doc = doc
           true
@@ -302,7 +301,7 @@ class Job
   done: (options..., cb) ->
     [options, cb] = optionsHelp options, cb
     if @_doc._id? and @_doc.runId?
-      return methodCall root, "jobDone", [@_doc._id, @_doc.runId, options], cb
+      return methodCall @root, "jobDone", [@_doc._id, @_doc.runId, options], cb
     else
       console.warn "Can't finish an unsaved job"
     return null
@@ -312,7 +311,7 @@ class Job
     [options, cb] = optionsHelp options, cb
     options.fatal ?= false
     if @_doc._id? and @_doc.runId?
-      return methodCall root, "jobFail", [@_doc._id, @_doc.runId, err, options], cb
+      return methodCall @root, "jobFail", [@_doc._id, @_doc.runId, err, options], cb
     else
       console.warn "Can't fail an unsaved job"
     return null
@@ -322,7 +321,7 @@ class Job
   pause: (options..., cb) ->
     [options, cb] = optionsHelp options, cb
     if @_doc._id?
-      return methodCall root, "jobPause", [@_doc._id, options], cb
+      return methodCall @root, "jobPause", [@_doc._id, options], cb
     else
       console.warn "Can't pause an unsaved job"
     return null
@@ -332,7 +331,7 @@ class Job
     [options, cb] = optionsHelp options, cb
     options.antecedents ?= true
     if @_doc._id?
-      return methodCall root, "jobCancel", [@_doc._id, options], cb
+      return methodCall @root, "jobCancel", [@_doc._id, options], cb
     else
       console.warn "Can't cancel an unsaved job"
     return null
@@ -343,7 +342,7 @@ class Job
     options.retries ?= 1
     options.dependents ?= true
     if @_doc._id?
-      return methodCall root, "jobRestart", [@_doc._id, options], cb
+      return methodCall @root, "jobRestart", [@_doc._id, options], cb
     else
       console.warn "Can't restart an unsaved job"
     return null
@@ -352,7 +351,7 @@ class Job
   remove: (options..., cb) ->
     [options, cb] = optionsHelp options, cb
     if @_doc._id?
-      return methodCall root, "jobRemove", [@_doc._id, options], cb
+      return methodCall @root, "jobRemove", [@_doc._id, options], cb
     else
       console.warn "Can't remove an unsaved job"
     return null
