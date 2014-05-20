@@ -139,7 +139,7 @@ class Job
     [options, cb] = optionsHelp options, cb
     options.antecedents ?= true
     retVal = false
-    cbRetVal
+    cbRetVal = false
     cbCount = 0
     cbErr = null
     max = 32
