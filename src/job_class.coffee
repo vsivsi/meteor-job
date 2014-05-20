@@ -97,9 +97,9 @@ class Job
   # returns null if no such job exists
   @makeJob: (root, doc) ->
     if root? and typeof root is 'string' and
-       doc? and typeof doc is 'object' and doc.type? and
-       typeof doc.type is 'string' and doc.data? and
-       typeof doc.data is 'object' and doc._id?
+        doc? and typeof doc is 'object' and doc.type? and
+        typeof doc.type is 'string' and doc.data? and
+        typeof doc.data is 'object' and doc._id?
       new Job root, doc.type, doc.data, doc
     else
       null
@@ -114,6 +114,40 @@ class Job
         new Job root, doc.type, doc.data, doc
       else
         null
+
+  # Like the above, but takes an array of ids, returns array of jobs
+  @getJobs: (root, ids, options..., cb) ->
+    [options, cb] = optionsHelp options, cb
+    options.getLog ?= false
+    methodCall root, "getJob", [ids, options], cb, (doc) =>
+      if doc
+        (new Job(root, d.type, d.data, d) for d in doc)
+      else
+        null
+
+  # Pause this job, only Ready and Waiting jobs can be paused
+  # Calling this toggles the paused state. Unpaused jobs go to waiting
+  @pauseJobs: (root, ids, options..., cb) ->
+    [options, cb] = optionsHelp options, cb
+    return methodCall root, "jobPause", [ids, options], cb
+
+  # Cancel this job if it is running or able to run (waiting, ready)
+  @cancelJobs: (root, ids, options..., cb) ->
+    [options, cb] = optionsHelp options, cb
+    options.antecedents ?= true
+    return methodCall root, "jobCancel", [ids, options], cb
+
+  # Restart a failed or cancelled job
+  @restartJobs: (root, ids, options..., cb) ->
+    [options, cb] = optionsHelp options, cb
+    options.retries ?= 1
+    options.dependents ?= true
+    return methodCall root, "jobRestart", [ids, options], cb
+
+  # Remove a job that is not able to run (completed, cancelled, failed) from the queue
+  @removeJobs: (root, ids, options..., cb) ->
+    [options, cb] = optionsHelp options, cb
+    return methodCall root, "jobRemove", [ids, options], cb
 
   # Creates a job object by reserving the next available job of
   # the specified 'type' from the server queue root
