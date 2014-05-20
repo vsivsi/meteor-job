@@ -101,7 +101,7 @@ class Job
   ]
 
   @jobStatusCancellable: [ 'running', 'ready', 'waiting', 'paused' ]
-  @jobStatusPausable: [ 'ready', 'waiting', 'paused' ]
+  @jobStatusPausable: [ 'ready', 'waiting' ]
   @jobStatusRemovable:   [ 'cancelled', 'completed', 'failed' ]
   @jobStatusRestartable: [ 'cancelled', 'failed' ]
 
@@ -174,6 +174,17 @@ class Job
     myCb = callbackGenerator(cb, chunksOfIds.length)
     for chunkOfIds in chunksOfIds
       retVal ||= methodCall root, "jobPause", [chunkOfIds, options], myCb
+    return retVal
+
+  # Pause this job, only Ready and Waiting jobs can be paused
+  # Calling this toggles the paused state. Unpaused jobs go to waiting
+  @resumeJobs: (root, ids, options..., cb) ->
+    [options, cb] = optionsHelp options, cb
+    retVal = false
+    chunksOfIds = splitLongArray ids, 256
+    myCb = callbackGenerator(cb, chunksOfIds.length)
+    for chunkOfIds in chunksOfIds
+      retVal ||= methodCall root, "jobResume", [chunkOfIds, options], myCb
     return retVal
 
   # Cancel this job if it is running or able to run (waiting, ready)
@@ -421,13 +432,22 @@ class Job
     return null
 
   # Pause this job, only Ready and Waiting jobs can be paused
-  # Calling this toggles the paused state. Unpaused jobs go to waiting
   pause: (options..., cb) ->
     [options, cb] = optionsHelp options, cb
     if @_doc._id?
       return methodCall @root, "jobPause", [@_doc._id, options], cb
     else
       console.warn "Can't pause an unsaved job"
+    return null
+
+  # Resume this job, only Paused jobs can be resumed
+  # Resumed jobs go to waiting
+  resume: (options..., cb) ->
+    [options, cb] = optionsHelp options, cb
+    if @_doc._id?
+      return methodCall @root, "jobResume", [@_doc._id, options], cb
+    else
+      console.warn "Can't resume an unsaved job"
     return null
 
   # Cancel this job if it is running or able to run (waiting, ready)
