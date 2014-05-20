@@ -35,6 +35,9 @@ optionsHelp = (options, cb) ->
     options = {}
   return [options, cb]
 
+splitLongArray = (arr, max) ->
+  arr[(i*max)...((i+1)*max)] for i in [0...arr.length] by max
+
 class Job
 
   # This is the JS max int value = 2^53
@@ -135,7 +138,24 @@ class Job
   @cancelJobs: (root, ids, options..., cb) ->
     [options, cb] = optionsHelp options, cb
     options.antecedents ?= true
-    return methodCall root, "jobCancel", [ids, options], cb
+    retVal = false
+    cbRetVal
+    cbCount = 0
+    cbErr = null
+    max = 32
+    chunksOfIds = splitLongArray ids, max
+    for chunkOfIds in chunksOfIds
+      retVal ||= methodCall root, "jobCancel", [chunkOfIds, options], (err, res) ->
+        unless cbErr
+          if err
+            cbErr = err
+            cb err
+          else
+            cbCount++
+            cbRetVal ||= res
+            if cbCount is Math.ceil chunkOfIds.length/max
+              cb cbRetVal
+    return retVal
 
   # Restart a failed or cancelled job
   @restartJobs: (root, ids, options..., cb) ->
