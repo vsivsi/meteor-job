@@ -36,7 +36,7 @@ optionsHelp = (options, cb) ->
   return [options, cb]
 
 splitLongArray = (arr, max) ->
-  arr[(i*max)...((i+1)*max)] for i in [0...arr.length] by max
+  arr[(i*max)...((i+1)*max)] for i in [0...Math.ceil(arr.length/max)]
 
 callbackGenerator = (cb, num) ->
   return undefined unless cb?
