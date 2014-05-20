@@ -54,6 +54,22 @@ callbackGenerator = (cb, num) ->
         if cbCount is num
           cb null, cbRetVal
 
+concatCallbackGenerator = (cb, num) ->
+  return undefined unless cb?
+  cbRetVal = []
+  cbCount = 0
+  cbErr = null
+  return (err, res) ->
+    unless cbErr
+      if err
+        cbErr = err
+        cb err
+      else
+        cbCount++
+        cbRetVal.concat res
+        if cbCount is num
+          cb null, cbRetVal
+
 class Job
 
   # This is the JS max int value = 2^53
@@ -138,25 +154,33 @@ class Job
   @getJobs: (root, ids, options..., cb) ->
     [options, cb] = optionsHelp options, cb
     options.getLog ?= false
-    methodCall root, "getJob", [ids, options], cb, (doc) =>
-      if doc
-        (new Job(root, d.type, d.data, d) for d in doc)
-      else
-        null
+
+    retVal = []
+    chunksOfIds = splitLongArray ids, 32
+    for chunkOfIds in chunksOfIds
+      retVal.concat(methodCall root, "getJob", [chunkOfIds, options], concatCallbackGenerator(cb, chunksOfIds.length), (doc) =>
+        if doc
+          (new Job(root, d.type, d.data, d) for d in doc)
+        else
+          null)
+    return retVal
 
   # Pause this job, only Ready and Waiting jobs can be paused
   # Calling this toggles the paused state. Unpaused jobs go to waiting
   @pauseJobs: (root, ids, options..., cb) ->
     [options, cb] = optionsHelp options, cb
-    return methodCall root, "jobPause", [ids, options], cb
+    retVal = false
+    chunksOfIds = splitLongArray ids, 256
+    for chunkOfIds in chunksOfIds
+      retVal ||= methodCall root, "jobPause", [chunkOfIds, options], callbackGenerator(cb, chunksOfIds.length)
+    return retVal
 
   # Cancel this job if it is running or able to run (waiting, ready)
   @cancelJobs: (root, ids, options..., cb) ->
     [options, cb] = optionsHelp options, cb
     options.antecedents ?= true
     retVal = false
-    max = 32
-    chunksOfIds = splitLongArray ids, max
+    chunksOfIds = splitLongArray ids, 256
     for chunkOfIds in chunksOfIds
       retVal ||= methodCall root, "jobCancel", [chunkOfIds, options], callbackGenerator(cb, chunksOfIds.length)
     return retVal
@@ -166,12 +190,20 @@ class Job
     [options, cb] = optionsHelp options, cb
     options.retries ?= 1
     options.dependents ?= true
-    return methodCall root, "jobRestart", [ids, options], cb
+    retVal = false
+    chunksOfIds = splitLongArray ids, 256
+    for chunkOfIds in chunksOfIds
+      retVal ||= methodCall root, "jobRestart", [chunkOfIds, options], callbackGenerator(cb, chunksOfIds.length)
+    return retVal
 
   # Remove a job that is not able to run (completed, cancelled, failed) from the queue
   @removeJobs: (root, ids, options..., cb) ->
     [options, cb] = optionsHelp options, cb
-    return methodCall root, "jobRemove", [ids, options], cb
+    retVal = false
+    chunksOfIds = splitLongArray ids, 256
+    for chunkOfIds in chunksOfIds
+      retVal ||= methodCall root, "jobRemove", [chunkOfIds, options], callbackGenerator(cb, chunksOfIds.length)
+    return retVal
 
   # Creates a job object by reserving the next available job of
   # the specified 'type' from the server queue root
