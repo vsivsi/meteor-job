@@ -134,7 +134,8 @@ class Job
         console.error "rebuild Job: bad parameter(s), #{@root} #{type}, #{data}, #{doc}"
         return null
       @_doc = doc
-      @.data = data
+      @type = type
+      @data = data
     else  # This is the normal "create a new object" case
       @_doc =
         runId: null
@@ -143,7 +144,8 @@ class Job
         status: 'waiting'
         updated: new Date()
       @priority().retry({retries: 0}).repeat({repeats: 0}).after().progress().depends().log("Created")
-      @.data = @_doc.data  # Make data a little easier to get to
+      @type = @_doc.type
+      @data = @_doc.data  # Make data a little easier to get to
       return @
 
   # Adds a run dependancy on one or more existing jobs to this job
