@@ -51,7 +51,7 @@ callbackGenerator = (cb, num) ->
       else
         cbCount++
         cbRetVal ||= res
-        if cbCount is max
+        if cbCount is num
           cb null, cbRetVal
 
 class Job
