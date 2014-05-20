@@ -38,6 +38,22 @@ optionsHelp = (options, cb) ->
 splitLongArray = (arr, max) ->
   arr[(i*max)...((i+1)*max)] for i in [0...arr.length] by max
 
+callbackGenerator = (cb, num) ->
+  return undefined unless cb?
+  cbRetVal = false
+  cbCount = 0
+  cbErr = null
+  return (err, res) ->
+    unless cbErr
+      if err
+        cbErr = err
+        cb err
+      else
+        cbCount++
+        cbRetVal ||= res
+        if cbCount is max
+          cb null, cbRetVal
+
 class Job
 
   # This is the JS max int value = 2^53
@@ -139,22 +155,9 @@ class Job
     [options, cb] = optionsHelp options, cb
     options.antecedents ?= true
     retVal = false
-    cbRetVal = false
-    cbCount = 0
-    cbErr = null
-    max = 32
     chunksOfIds = splitLongArray ids, max
     for chunkOfIds in chunksOfIds
-      retVal ||= methodCall root, "jobCancel", [chunkOfIds, options], (err, res) ->
-        unless cbErr
-          if err
-            cbErr = err
-            cb err
-          else
-            cbCount++
-            cbRetVal ||= res
-            if cbCount is Math.ceil chunkOfIds.length/max
-              cb cbRetVal
+      retVal ||= methodCall root, "jobCancel", [chunkOfIds, options], callbackGenerator(cb, max)
     return retVal
 
   # Restart a failed or cancelled job
