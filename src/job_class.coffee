@@ -17,7 +17,7 @@
 #     throw err
 
 methodCall = (root, method, params, cb, after = ((ret) -> ret)) ->
-  console.warn "Calling: #{root}_#{method} with: ", params
+  # console.warn "Calling: #{root}_#{method} with: ", params
   name = "#{root}_#{method}"
   if cb and typeof cb is 'function'
     Job.ddp_apply name, params, (err, res) =>
@@ -233,7 +233,6 @@ class Job
     [options, cb] = optionsHelp options, cb
     options.level ?= 'default'
     if options.echo?
-      console.log "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$"
       delete options.echo
       out = "LOG: #{options.level}, #{@_doc._id} #{@_doc.runId} #{message}"
       switch options.level
@@ -309,6 +308,7 @@ class Job
   # Indicate to the server than this run has failed and provide an error message.
   fail: (err, options..., cb) ->
     [options, cb] = optionsHelp options, cb
+    options.fatal ?= false
     if @_doc._id? and @_doc.runId?
       return methodCall root, "jobFail", [@_doc._id, @_doc.runId, err, options], cb
     else
