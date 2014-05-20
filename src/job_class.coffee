@@ -155,6 +155,7 @@ class Job
     [options, cb] = optionsHelp options, cb
     options.antecedents ?= true
     retVal = false
+    max = 32
     chunksOfIds = splitLongArray ids, max
     for chunkOfIds in chunksOfIds
       retVal ||= methodCall root, "jobCancel", [chunkOfIds, options], callbackGenerator(cb, max)
