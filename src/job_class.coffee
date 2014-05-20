@@ -95,6 +95,17 @@ class Job
 
   # Creates a job object by id from the server queue root
   # returns null if no such job exists
+  @makeJob: (root, doc) ->
+    if root? and typeof root is 'string' and
+       doc? and typeof doc is 'object' and doc.type? and
+       typeof doc.type is 'string' and doc.data? and
+       typeof doc.data is 'object' and doc._id?
+      new Job root, doc.type, doc.data, doc
+    else
+      null
+
+  # Creates a job object by id from the server queue root
+  # returns null if no such job exists
   @getJob: (root, id, options..., cb) ->
     [options, cb] = optionsHelp options, cb
     options.getLog ?= false
