@@ -158,7 +158,7 @@ class Job
     max = 32
     chunksOfIds = splitLongArray ids, max
     for chunkOfIds in chunksOfIds
-      retVal ||= methodCall root, "jobCancel", [chunkOfIds, options], callbackGenerator(cb, max)
+      retVal ||= methodCall root, "jobCancel", [chunkOfIds, options], callbackGenerator(cb, chunksOfIds.length)
     return retVal
 
   # Restart a failed or cancelled job
