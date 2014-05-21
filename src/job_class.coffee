@@ -70,6 +70,16 @@ concatCallbackGenerator = (cb, num) ->
         if cbCount is num
           cb null, cbRetVal
 
+# This smooths over the various different implementations...
+_setImmediate = (func, args...)
+  if Meteor?.setTimeout?
+    return Meteor.setTimeout func, 0, args...
+  else if setImmediate?
+    return setImmediate func, args...
+  else
+    # Browser fallback
+    return setTimeout func, 0, args...
+
 ###################################################################
 
 class jobQueue
@@ -102,7 +112,7 @@ class jobQueue
         else if jobs?
           for j in jobs
             @_tasks.push j
-            setImmediate @_process.bind(@) unless @_stoppingGetWork?
+            _setImmediate @_process.bind(@) unless @_stoppingGetWork?
           @_getWorkOutstanding = false
           @_stoppingGetWork() if @_stoppingGetWork?
         else
@@ -130,7 +140,7 @@ class jobQueue
         if @_stoppingTasks?
           @_stoppingTasks() if @running() is 0
         else
-          setImmediate @_process.bind(@)
+          _setImmediate @_process.bind(@)
       cb = @_only_once next
       @worker job, cb
 
@@ -174,7 +184,7 @@ class jobQueue
     return unless @paused
     @paused = false
     for w in [1..@concurrency]
-      setImmediate @_process().bind(@)
+      _setImmediate @_process().bind(@)
 
   kill: (callback) ->
     @_shutdown () =>
