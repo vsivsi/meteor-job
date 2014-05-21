@@ -380,7 +380,7 @@ class Job
         return jobs[0]
 
   # This is defined above
-  @jobQueue: jobQueue
+  @processJobs: jobQueue
 
   # Job class instance constructor. When "new Job(...)" is run
   constructor: (@root, type, data, doc = null) ->
