@@ -71,7 +71,7 @@ concatCallbackGenerator = (cb, num) ->
           cb null, cbRetVal
 
 # This smooths over the various different implementations...
-_setImmediate = (func, args...)
+_setImmediate = (func, args...) ->
   if Meteor?.setTimeout?
     return Meteor.setTimeout func, 0, args...
   else if setImmediate?
