@@ -70,6 +70,129 @@ concatCallbackGenerator = (cb, num) ->
         if cbCount is num
           cb null, cbRetVal
 
+###################################################################
+
+class jobQueue
+
+  constructor: (@root, @type, @worker, options = {}) ->
+    unless @ instanceof jobQueue
+      return new job @root, @type, @worker, options
+    @pollInterval = options.pollInterval ? 5000  # ms
+    @concurrency = options.concurrency ? 1
+    @payload = options.payload ? 1
+    @prefetch = options.prefetch ? 0
+    @_workers = {}
+    @_tasks = []
+    @_taskNumber = 0
+    @_stoppingGetWork = undefined
+    @_stoppingTasks = undefined
+    @_interval = setInterval @_getWork.bind(@), @pollInterval
+    @_getWork()
+    @_getWorkOutstanding = false
+    @paused = false
+
+  _getWork: () ->
+    numJobsToGet = @prefetch + @payload*(@concurrency - @running()) - @length()
+    console.log "Trying to get #{numJobsToGet} jobs via DDP"
+    if numJobsToGet > 0
+      @_getWorkOutstanding = true
+      Job.getWork @root, @type, { maxJobs: numJobsToGet }, (err, jobs) =>
+        if err
+          console.error "Received error from getWork: ", err
+        else if jobs?
+          for j in jobs
+            @_tasks.push j
+            setImmediate @_process.bind(@) unless @_stoppingGetWork?
+          @_getWorkOutstanding = false
+          @_stoppingGetWork() if @_stoppingGetWork?
+        else
+          console.log "No work from server"
+
+  _only_once: (fn) ->
+    called = false
+    return () =>
+      if called
+        throw new Error("Callback was already called.")
+      called = true
+      fn.apply root, arguments
+
+  _process: () ->
+    console.log "PROCESS: #{@paused} #{@running()} #{@concurrency} #{@length()}"
+    if not @paused and @running() < @concurrency and @length()
+      if @payload > 1
+        job = @_tasks.splice 0, @payload
+      else
+        job = @_tasks.shift()
+      job._taskId = "Task_#{@_taskNumber++}"
+      @_workers[job._taskId] = job
+      next = () =>
+        delete @_workers[job._taskId]
+        if @_stoppingTasks?
+          @_stoppingTasks() if @running() is 0
+        else
+          setImmediate @_process.bind(@)
+      cb = @_only_once next
+      @worker job, cb
+
+  _shutdown: (callback) ->
+    clearInterval @_interval
+    @pause()
+    if @_getWorkOutstanding
+      @_stoppingGetWork = () =>
+        callback()
+    else
+      callback()
+
+  _waitForTasks: (callback) ->
+    unless @running() is 0
+      @_stoppingTasks = () =>
+        callback()
+    else
+      callback()
+
+  _failJobs: (tasks, callback) ->
+    count = 0
+    for job in tasks
+      job.fail "Worker shutdown", (err, res) =>
+        count++
+        if count is tasks.length
+          callback()
+
+  length: () -> @_tasks.length
+
+  running: () -> Object.keys(@_workers).length
+
+  idle: () -> @length() + @running() is 0
+
+  full: () -> @running is @concurrency
+
+  pause: () ->
+    return if @paused
+    @paused = true
+
+  resume: () ->
+    return unless @paused
+    @paused = false
+    for w in [1..@concurrency]
+      setImmediate @_process().bind(@)
+
+  kill: (callback) ->
+    @_shutdown () =>
+      tasks = @_tasks
+      @_tasks = []
+      for i, r of @_workers
+        tasks = tasks.concat r
+      @_failJobs tasks, callback
+
+  stop: (callback) ->
+    @_shutdown () =>
+      @_waitForTasks () =>
+        tasks = @_tasks
+        @_tasks = []
+        @_failJobs tasks, callback
+
+###################################################################
+
 class Job
 
   # This is the JS max int value = 2^53
@@ -231,6 +354,9 @@ class Job
         return jobs
       else
         return jobs[0]
+
+  # This is defined above
+  @jobQueue: jobQueue
 
   # Job class instance constructor. When "new Job(...)" is run
   constructor: (@root, type, data, doc = null) ->
