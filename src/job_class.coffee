@@ -80,6 +80,20 @@ _setImmediate = (func, args...) ->
     # Browser fallback
     return setTimeout func, 0, args...
 
+_setInterval = (func, timeOut, args...) ->
+  if Meteor?.setInterval?
+    return Meteor.setInterval func, timeOut, args...
+  else
+    # Browser / node.js fallback
+    return setInterval func, timeOut, args...
+
+_clearInterval = (id) ->
+  if Meteor?.clearInterval?
+    return Meteor.clearInterval id
+  else
+    # Browser / node.js fallback
+    return clearInterval id
+
 ###################################################################
 
 class jobQueue
@@ -96,7 +110,7 @@ class jobQueue
     @_taskNumber = 0
     @_stoppingGetWork = undefined
     @_stoppingTasks = undefined
-    @_interval = setInterval @_getWork.bind(@), @pollInterval
+    @_interval = _setInterval @_getWork.bind(@), @pollInterval
     @_getWork()
     @_getWorkOutstanding = false
     @paused = false
@@ -145,7 +159,7 @@ class jobQueue
       @worker job, cb
 
   _shutdown: (callback) ->
-    clearInterval @_interval
+    _clearInterval @_interval
     @pause()
     if @_getWorkOutstanding
       @_stoppingGetWork = () =>
