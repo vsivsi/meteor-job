@@ -31,7 +31,6 @@ optionsHelp = (options, cb) ->
   else
     options = options?[0] ? {}
   if typeof options isnt 'object'
-    console.error "Bad options object", options
     options = {}
   return [options, cb]
 
@@ -444,7 +443,6 @@ class Job
   # Default, do not retry
   retry: (options) ->
     if typeof options isnt 'object'
-      console.error "Bad options object", options
       options = {}
     if typeof options.retries is 'number' and options.retries > 0
       options.retries++
@@ -464,7 +462,6 @@ class Job
   # Default, run forever...
   repeat: (options) ->
     if typeof options isnt 'object'
-      console.error "Bad options object", options
       options = {}
     unless typeof options.repeats is 'number' and options.repeats >= 0
       options.repeats = Job.forever
