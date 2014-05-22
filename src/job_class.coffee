@@ -157,9 +157,8 @@ class jobQueue
       cb = @_only_once next
       @worker job, cb
 
-  _shutdown: (callback) ->
+  _stopGetWork: (callback) ->
     _clearInterval @_interval
-    @pause()
     if @_getWorkOutstanding
       @_stoppingGetWork = () =>
         callback()
@@ -181,6 +180,27 @@ class jobQueue
         if count is tasks.length
           callback()
 
+  _hard: (callback) ->
+    @pause()
+    @_stopGetWork () =>
+      tasks = @_tasks
+      @_tasks = []
+      for i, r of @_workers
+        tasks = tasks.concat r
+      @_failJobs tasks, callback
+
+  _stop: (callback) ->
+    @pause()
+    @_stopGetWork () =>
+      @_waitForTasks () =>
+        tasks = @_tasks
+        @_tasks = []
+        @_failJobs tasks, callback
+
+  _soft: (callback) ->
+    @_stopGetWork () =>
+      @_waitForTasks callback
+
   length: () -> @_tasks.length
 
   running: () -> Object.keys(@_workers).length
@@ -199,20 +219,16 @@ class jobQueue
     for w in [1..@concurrency]
       _setImmediate @_process().bind(@)
 
-  kill: (callback) ->
-    @_shutdown () =>
-      tasks = @_tasks
-      @_tasks = []
-      for i, r of @_workers
-        tasks = tasks.concat r
-      @_failJobs tasks, callback
-
-  stop: (callback) ->
-    @_shutdown () =>
-      @_waitForTasks () =>
-        tasks = @_tasks
-        @_tasks = []
-        @_failJobs tasks, callback
+  shutdown: (options..., cb) ->
+    [options, cb] = optionsHelp options, cb
+    options.level ?= 'normal'
+    unless cb?
+      cb = () =>
+        console.warn "shutdown complete"
+    switch options.level
+      when 'hard' then _hard cb
+      when 'soft' then _soft cb
+      else _stop cb
 
 ###################################################################
 
