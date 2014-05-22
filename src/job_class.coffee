@@ -150,8 +150,8 @@ class jobQueue
       @_workers[job._taskId] = job
       next = () =>
         delete @_workers[job._taskId]
-        if @_stoppingTasks?
-          @_stoppingTasks() if @running() is 0
+        if @_stoppingTasks? and @running() is 0 and @length() is 0
+          @_stoppingTasks()
         else
           _setImmediate @_process.bind(@)
       cb = @_only_once next
@@ -160,15 +160,13 @@ class jobQueue
   _stopGetWork: (callback) ->
     _clearInterval @_interval
     if @_getWorkOutstanding
-      @_stoppingGetWork = () =>
-        callback()
+      @_stoppingGetWork = callback
     else
       callback()
 
   _waitForTasks: (callback) ->
     unless @running() is 0
-      @_stoppingTasks = () =>
-        callback()
+      @_stoppingTasks = callback
     else
       callback()
 
@@ -192,9 +190,9 @@ class jobQueue
   _stop: (callback) ->
     @pause()
     @_stopGetWork () =>
+      tasks = @_tasks
+      @_tasks = []
       @_waitForTasks () =>
-        tasks = @_tasks
-        @_tasks = []
         @_failJobs tasks, callback
 
   _soft: (callback) ->
@@ -224,11 +222,17 @@ class jobQueue
     options.level ?= 'normal'
     unless cb?
       cb = () =>
-        console.warn "shutdown complete"
+        console.warn "default shutdown complete callback!"
     switch options.level
-      when 'hard' then @_hard cb
-      when 'soft' then @_soft cb
-      else @_stop cb
+      when 'hard'
+        console.warn "Shutting down hard"
+        @_hard cb
+      when 'soft'
+        console.warn "Shutting down soft"
+        @_soft cb
+      else
+        console.warn "Shutting down normally"
+        @_stop cb
 
 ###################################################################
 
