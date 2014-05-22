@@ -249,6 +249,7 @@ class Job
 
   @jobStatusCancellable: [ 'running', 'ready', 'waiting', 'paused' ]
   @jobStatusPausable: [ 'ready', 'waiting' ]
+  @jobStatusSavable: [ 'ready', 'waiting', 'paused' ]
   @jobStatusRemovable:   [ 'cancelled', 'completed', 'failed' ]
   @jobStatusRestartable: [ 'cancelled', 'failed' ]
 
