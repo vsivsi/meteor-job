@@ -226,9 +226,9 @@ class jobQueue
       cb = () =>
         console.warn "shutdown complete"
     switch options.level
-      when 'hard' then _hard cb
-      when 'soft' then _soft cb
-      else _stop cb
+      when 'hard' then @_hard cb
+      when 'soft' then @_soft cb
+      else @_stop cb
 
 ###################################################################
 
