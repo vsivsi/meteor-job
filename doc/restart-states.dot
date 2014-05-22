@@ -1,0 +1,24 @@
+digraph jobStatus {
+
+  graph [splines="spline" mclimit=1.0 ratio=auto rankdir=LR]
+
+  created [shape=box];
+  waiting;
+  ready;
+  running;
+  failed;
+  cancelled;
+  completed;
+  removed [shape=box];
+  created -> waiting [weight=100.0];
+  waiting -> ready [weight=100.0];
+  ready -> running [weight=100.0];
+  running -> completed [weight=100.0];
+  running -> failed [];
+  completed -> removed [weight=100.0];
+  running -> cancelled [];
+  cancelled -> removed [];
+  failed -> removed [];
+  cancelled -> waiting [label=".restart()"];
+  failed -> waiting [label=".restart()"];
+}

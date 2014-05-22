@@ -1,0 +1,38 @@
+digraph jobStatus {
+
+  graph [splines="spline" mclimit=1.0 ratio=auto rankdir=LR]
+
+  created [shape=box];
+  waiting;
+  paused;
+  ready;
+  running;
+  failed;
+  cancelled;
+  completed;
+  removed [shape=box];
+  created -> waiting [label=".save()" weight=100.0];
+  waiting -> ready [label=<<I>automatic when<br/>time/deps ready</I>> weight=100.0];
+  ready -> waiting [label=".save()"]
+  ready -> running [label=".getWork()" weight=100.0];
+  running -> completed [label=".done()" weight=100.0];
+  running -> failed [label=<.fail()<BR/><I>no retry</I>>];
+  running -> waiting [label=<.fail()<BR/><I>with retry</I>>];
+  completed -> removed [label=".remove()" weight=100.0];
+  running -> cancelled [label=".cancel()"];
+  ready -> cancelled [label=".cancel()"];
+  waiting -> cancelled [label=".cancel()"];
+  paused -> cancelled [label=".cancel()"];
+  ready -> paused [label=".pause()"];
+  waiting -> paused [label=".pause()"];
+  paused -> waiting [label=".resume() /\n.save()"];
+  cancelled -> removed [label=".remove()"];
+  failed -> removed [label=".remove()"];
+  cancelled -> waiting [label=".restart()"];
+  failed -> waiting [label=".restart()"];
+  created -> created [label=".depends() /\n.priority() /\n.retry() /\n.repeat() /\n.delay() /\n.after()"];
+  paused -> paused [label=".depends() /\n.priority() /\n.retry() /\n.repeat() /\n.delay() /\n.after()"];
+  waiting -> waiting [label=".depends() /\n.priority() /\n.retry() /\n.repeat() /\n.delay() /\n.after() /\n.save()"];
+  ready -> ready [label=".depends() /\n.priority() /\n.retry() /\n.repeat() /\n.delay() /\n.after()"];
+  running -> running [label=".log()\n.progress()"];
+}
