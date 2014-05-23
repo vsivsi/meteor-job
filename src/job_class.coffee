@@ -140,7 +140,6 @@ class jobQueue
       fn.apply root, arguments
 
   _process: () ->
-    console.log "PROCESS: #{@paused} #{@running()} #{@concurrency} #{@length()}"
     if not @paused and @running() < @concurrency and @length()
       if @payload > 1
         job = @_tasks.splice 0, @payload
