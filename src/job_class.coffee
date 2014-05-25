@@ -582,6 +582,8 @@ class Job
       return methodCall @root, "getJob", [@_doc._id, options], cb, (doc) =>
         if doc?
           @_doc = doc
+          @type = @_doc.type
+          @data = @_doc.data
           true
         else
           false
@@ -615,8 +617,7 @@ class Job
       return methodCall @root, "jobPause", [@_doc._id, options], cb
     else
       if @_doc.status is 'waiting'
-        @_doc.status is 'paused'
-        console.log "Just paused an unsaved job"
+        @_doc.status = 'paused'
         return @
     return null
 
@@ -628,7 +629,7 @@ class Job
       return methodCall @root, "jobResume", [@_doc._id, options], cb
     else
       if @_doc.status is 'paused'
-        @_doc.status is 'waiting'
+        @_doc.status = 'waiting'
         return @
     return null
 
