@@ -616,7 +616,7 @@ class Job
     else
       if @_doc.status is 'waiting'
         @_doc.status is 'paused'
-        return true
+        return @
     return null
 
   # Resume this job, only Paused jobs can be resumed
@@ -628,7 +628,7 @@ class Job
     else
       if @_doc.status is 'paused'
         @_doc.status is 'waiting'
-        return true
+        return @
     return null
 
   # Cancel this job if it is running or able to run (waiting, ready)
