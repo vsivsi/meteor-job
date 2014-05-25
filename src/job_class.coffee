@@ -374,17 +374,6 @@ class Job
     for chunkOfIds in chunksOfIds
       retVal ||= methodCall root, "jobRestart", [chunkOfIds, options], myCb
 
-  # Rerun a completed job as a new job
-  @rerunJobs: (root, ids, options..., cb) ->
-    [options, cb] = optionsHelp options, cb
-    options.repeat ?= 0
-    options.wait ?= 0
-    retVal = false
-    chunksOfIds = splitLongArray ids, 256
-    myCb = callbackGenerator(cb, chunksOfIds.length)
-    for chunkOfIds in chunksOfIds
-      retVal ||= methodCall root, "jobRerun", [chunkOfIds, options], myCb
-
   # Remove a job that is not able to run (completed, cancelled, failed) from the queue
   @removeJobs: (root, ids, options..., cb) ->
     [options, cb] = optionsHelp options, cb
