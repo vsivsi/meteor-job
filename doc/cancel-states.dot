@@ -12,7 +12,6 @@ digraph jobStatus {
   removed [shape=box];
   created -> waiting [weight=100.0];
   waiting -> ready [weight=100.0];
-  ready -> waiting []
   ready -> running [weight=100.0];
   running -> completed [weight=100.0];
   completed -> removed [weight=100.0];
@@ -20,7 +19,6 @@ digraph jobStatus {
   ready -> cancelled [label=".cancel()"];
   waiting -> cancelled [label=".cancel()"];
   paused -> cancelled [label=".cancel()"];
-  ready -> paused [];
-  paused -> waiting [];
+  cancelled -> waiting [label=".restart()"];
   cancelled -> removed [label=".remove()"];
 }

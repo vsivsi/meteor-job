@@ -267,7 +267,6 @@ class Job
 
   @jobStatusCancellable: [ 'running', 'ready', 'waiting', 'paused' ]
   @jobStatusPausable: [ 'ready', 'waiting' ]
-  @jobStatusSavable: [ 'ready', 'waiting', 'paused' ]
   @jobStatusRemovable:   [ 'cancelled', 'completed', 'failed' ]
   @jobStatusRestartable: [ 'cancelled', 'failed' ]
 
@@ -374,6 +373,16 @@ class Job
     myCb = callbackGenerator(cb, chunksOfIds.length)
     for chunkOfIds in chunksOfIds
       retVal ||= methodCall root, "jobRestart", [chunkOfIds, options], myCb
+
+  # Rerun a completed job as a new job
+  @rerunJobs: (root, ids, options..., cb) ->
+    [options, cb] = optionsHelp options, cb
+    options.repeat ?= 0
+    retVal = false
+    chunksOfIds = splitLongArray ids, 256
+    myCb = callbackGenerator(cb, chunksOfIds.length)
+    for chunkOfIds in chunksOfIds
+      retVal ||= methodCall root, "jobRerun", [chunkOfIds, options], myCb
 
   # Remove a job that is not able to run (completed, cancelled, failed) from the queue
   @removeJobs: (root, ids, options..., cb) ->
@@ -604,7 +613,9 @@ class Job
     if @_doc._id?
       return methodCall @root, "jobPause", [@_doc._id, options], cb
     else
-      console.warn "Can't pause an unsaved job"
+      if @_doc.status is 'waiting'
+        @_doc.status is 'paused'
+        return true
     return null
 
   # Resume this job, only Paused jobs can be resumed
@@ -614,7 +625,9 @@ class Job
     if @_doc._id?
       return methodCall @root, "jobResume", [@_doc._id, options], cb
     else
-      console.warn "Can't resume an unsaved job"
+      if @_doc.status is 'paused'
+        @_doc.status is 'waiting'
+        return true
     return null
 
   # Cancel this job if it is running or able to run (waiting, ready)
@@ -636,6 +649,16 @@ class Job
       return methodCall @root, "jobRestart", [@_doc._id, options], cb
     else
       console.warn "Can't restart an unsaved job"
+    return null
+
+  # Run a completed job again as a new job, essentially a manual repeat
+  rerun: (options..., cb) ->
+    [options, cb] = optionsHelp options, cb
+    options.repeat ?= 0
+    if @_doc._id?
+      return methodCall @root, "jobRerun", [@_doc._id, options], cb
+    else
+      console.warn "Can't rerun an unsaved job"
     return null
 
   # Remove a job that is not able to run (completed, cancelled, failed) from the queue

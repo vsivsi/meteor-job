@@ -13,11 +13,10 @@ digraph jobStatus {
   waiting -> ready [weight=100.0];
   ready -> running [weight=100.0];
   running -> completed [weight=100.0];
-  running -> waiting [];
   completed -> removed [weight=100.0];
   ready -> paused [label=".pause()"];
   waiting -> paused [label=".pause()"];
   paused -> waiting [label=".resume() /\n.save()"];
-  created -> created [];
   paused -> paused [label=".depends() /\n.priority() /\n.retry() /\n.repeat() /\n.delay() /\n.after()"];
+  paused -> cancelled [label=".cancel()"];
 }

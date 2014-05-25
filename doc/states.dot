@@ -13,7 +13,6 @@ digraph jobStatus {
   removed [shape=box];
   created -> waiting [label=".save()" weight=100.0];
   waiting -> ready [label=<<I>automatic when<br/>time/deps ready</I>> weight=100.0];
-  ready -> waiting [label=".save()"]
   ready -> running [label=".getWork()" weight=100.0];
   running -> completed [label=".done()" weight=100.0];
   running -> failed [label=<.fail()<BR/><I>no retry</I>>];
@@ -29,10 +28,9 @@ digraph jobStatus {
   cancelled -> removed [label=".remove()"];
   failed -> removed [label=".remove()"];
   cancelled -> waiting [label=".restart()"];
+  completed -> waiting [label=<.restart() / <I>auto repeat</I><BR/><I>new job</I>>];
   failed -> waiting [label=".restart()"];
   created -> created [label=".depends() /\n.priority() /\n.retry() /\n.repeat() /\n.delay() /\n.after()"];
   paused -> paused [label=".depends() /\n.priority() /\n.retry() /\n.repeat() /\n.delay() /\n.after()"];
-  waiting -> waiting [label=".depends() /\n.priority() /\n.retry() /\n.repeat() /\n.delay() /\n.after() /\n.save()"];
-  ready -> ready [label=".depends() /\n.priority() /\n.retry() /\n.repeat() /\n.delay() /\n.after()"];
   running -> running [label=".log()\n.progress()"];
 }
