@@ -581,7 +581,7 @@ class Job
       return false
 
   # Indicate to the server than this run has successfully finished.
-  done: (result = null, options..., cb) ->
+  done: (result = {}, options..., cb) ->
     [options, cb] = optionsHelp options, cb
     if @_doc._id? and @_doc.runId?
       return methodCall @root, "jobDone", [@_doc._id, @_doc.runId, result, options], cb
