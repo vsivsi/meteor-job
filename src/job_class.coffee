@@ -442,6 +442,7 @@ class Job
     else
       depends = []
     @_doc.depends = depends
+    @_doc.resolved = []  # This is where prior depends go as they are satisfied
     return @
 
   # Set the run priority of this job
@@ -452,7 +453,6 @@ class Job
       priority = level
     else
       priority = 0
-
     @_doc.priority = priority
     return @
 
@@ -581,10 +581,10 @@ class Job
       return false
 
   # Indicate to the server than this run has successfully finished.
-  done: (options..., cb) ->
+  done: (result = null, options..., cb) ->
     [options, cb] = optionsHelp options, cb
     if @_doc._id? and @_doc.runId?
-      return methodCall @root, "jobDone", [@_doc._id, @_doc.runId, options], cb
+      return methodCall @root, "jobDone", [@_doc._id, @_doc.runId, result, options], cb
     else
       console.warn "Can't finish an unsaved job"
     return null
