@@ -378,6 +378,7 @@ class Job
   @rerunJobs: (root, ids, options..., cb) ->
     [options, cb] = optionsHelp options, cb
     options.repeat ?= 0
+    options.wait ?= 0
     retVal = false
     chunksOfIds = splitLongArray ids, 256
     myCb = callbackGenerator(cb, chunksOfIds.length)
@@ -477,11 +478,11 @@ class Job
     else
       options.retries = Job.forever
 
-    unless typeof options.retryWait is 'number' and options.retryWait >= 0
-      options.retryWait = 5*60*1000
+    unless typeof options.wait is 'number' and options.wait >= 0
+      options.wait = 5*60*1000
 
     @_doc.retries = options.retries
-    @_doc.retryWait = options.retryWait
+    @_doc.retryWait = options.wait
     @_doc.retried ?= 0
     return @
 
@@ -494,11 +495,11 @@ class Job
     unless typeof options.repeats is 'number' and options.repeats >= 0
       options.repeats = Job.forever
 
-    unless typeof options.repeatWait is 'number' and options.repeatWait >= 0
-      options.repeatWait = 5*60*1000
+    unless typeof options.wait is 'number' and options.wait >= 0
+      options.wait = 5*60*1000
 
     @_doc.repeats = options.repeats
-    @_doc.repeatWait = options.repeatWait
+    @_doc.repeatWait = options.wait
     @_doc.repeated ?= 0
     return @
 
@@ -655,6 +656,7 @@ class Job
   rerun: (options..., cb) ->
     [options, cb] = optionsHelp options, cb
     options.repeat ?= 0
+    options.wait ?= 0
     if @_doc._id?
       return methodCall @root, "jobRerun", [@_doc._id, options], cb
     else
