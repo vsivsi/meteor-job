@@ -616,6 +616,7 @@ class Job
     else
       if @_doc.status is 'waiting'
         @_doc.status is 'paused'
+        console.log "Just paused an unsaved job"
         return @
     return null
 
