@@ -28,9 +28,9 @@ digraph jobStatus {
   cancelled -> removed [label=".remove()"];
   failed -> removed [label=".remove()"];
   cancelled -> waiting [label=".restart()"];
-  completed -> waiting [label=<.restart() / <I>auto repeat</I><BR/><I>new job</I>>];
+  completed -> waiting [label=<.rerun() / <I>auto repeat</I><BR/><I>new job</I>>];
   failed -> waiting [label=".restart()"];
-  created -> created [label=".depends() /\n.priority() /\n.retry() /\n.repeat() /\n.delay() /\n.after()"];
+  created -> created [label=".depends() /\n.priority() /\n.retry() /\n.repeat() /\n.delay() /\n.after() /\n.pause() /\n.resume()"];
   paused -> paused [label=".depends() /\n.priority() /\n.retry() /\n.repeat() /\n.delay() /\n.after()"];
   running -> running [label=".log()\n.progress()"];
 }

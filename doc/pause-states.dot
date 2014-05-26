@@ -10,6 +10,7 @@ digraph jobStatus {
   completed;
   removed [shape=box];
   created -> waiting [weight=100.0];
+  created -> created [label=".pause() /\n.resume()"]
   waiting -> ready [weight=100.0];
   ready -> running [weight=100.0];
   running -> completed [weight=100.0];
