@@ -99,7 +99,7 @@ class jobQueue
 
   constructor: (@root, @type, @worker, options = {}) ->
     unless @ instanceof jobQueue
-      return new job @root, @type, @worker, options
+      return new jobQueue @root, @type, @worker, options
     @pollInterval = options.pollInterval ? 5000  # ms
     @concurrency = options.concurrency ? 1
     @payload = options.payload ? 1
@@ -109,10 +109,9 @@ class jobQueue
     @_taskNumber = 0
     @_stoppingGetWork = undefined
     @_stoppingTasks = undefined
-    @_interval = _setInterval @_getWork.bind(@), @pollInterval
-    @_getWork()
+    @_interval = null
     @_getWorkOutstanding = false
-    @paused = false
+    @paused = true
 
   _getWork: () ->
     numJobsToGet = @prefetch + @payload*(@concurrency - @running()) - @length()
@@ -178,7 +177,7 @@ class jobQueue
           callback()
 
   _hard: (callback) ->
-    @pause()
+    @paused = true
     @_stopGetWork () =>
       tasks = @_tasks
       @_tasks = []
@@ -187,7 +186,7 @@ class jobQueue
       @_failJobs tasks, callback
 
   _stop: (callback) ->
-    @pause()
+    @paused = true
     @_stopGetWork () =>
       tasks = @_tasks
       @_tasks = []
@@ -208,13 +207,16 @@ class jobQueue
 
   pause: () ->
     return if @paused
+    _clearInterval @_interval
     @paused = true
 
   resume: () ->
     return unless @paused
     @paused = false
+    # @_getWork()
+    @_interval = _setInterval @_getWork.bind(@), @pollInterval
     for w in [1..@concurrency]
-      _setImmediate @_process().bind(@)
+      _setImmediate @_process.bind(@)()
 
   shutdown: (options..., cb) ->
     [options, cb] = optionsHelp options, cb
