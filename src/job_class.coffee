@@ -104,6 +104,7 @@ class JobQueue
     @_interval = null
     @_getWorkOutstanding = false
     @paused = true
+    @resume()
 
   _getWork: () ->
     numJobsToGet = @prefetch + @payload*(@concurrency - @running()) - @length()

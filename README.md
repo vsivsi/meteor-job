@@ -44,8 +44,7 @@ ddp.connect(function (err) {
   };
 
   // Get jobs of type 'somejob' available in the 'jobPile' jobCollection for somejobWorker
-  // .resume() is invoked because new JobQueue instances start out paused.
-  workers = Job.processJobs('jobPile', 'somejob', somejobWorker).resume();
+  workers = Job.processJobs('jobPile', 'somejob', somejobWorker);
 });
 ```
 
@@ -126,12 +125,13 @@ workers = Job.processJobs('jobQueue', 'jobType', { concurrency: 4 }, function (j
 
   cb(); // Be sure to invoke the callback when this job has been completed or failed.
 
-}).resume();  // Starts out paused!
+});
 ```
 
 Once you have a job, you can work on it, log messages, indicate progress and either succeed or fail.
 
 ```js
+// This code assumed to be running in a Job.processJobs() callback
 var count = 0;
 var total = job.data.emailsToSend.length;
 var retryLater = [];
@@ -168,7 +168,7 @@ if (networkDown()) {
 ```
 
 However, the retry mechanism in the above code seems pretty clunky... How do those failed messages get retried?
-This approach probably will probably be easier to manage.
+This approach probably will probably be easier to manage:
 
 ```js
 workers = Job.processJobs('jobQueue', 'jobType', { payload: 20 }, function (jobs, cb) {
@@ -190,7 +190,7 @@ workers = Job.processJobs('jobQueue', 'jobType', { payload: 20 }, function (jobs
       }
     });
   });
-}).resume();  // Starts out paused!
+});
 ```
 
 With the above logic, each email can succeed or fail individually, and retrying later can be directly handled by the jobCollection itself.
