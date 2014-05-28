@@ -41,7 +41,7 @@ ddp.connect(function (err) {
     // Work some more...
 
     if (jobError) {
-      job.fail(jobError);
+      job.fail("Some error happened...");
     } else {
       job.done();
     }
@@ -61,6 +61,57 @@ ddp.connect(function (err) {
 `npm install meteor-job`
 
 Someday soon there will be tests...
+
+## Usage
+
+Using meteor-job is straightforward for node.js programs that wish to implement job workers.
+
+First, you need to establish a [DDP connection](https://github.com/oortcloud/node-ddp-client) with the Meteor server hosting the jobCollection you wish to work on.
+
+```js
+var DDP = require('ddp');
+var Job = require('meteor-job')
+
+// See DDP package docs for options here...
+var ddp = new DDP({
+  host: "127.0.0.1",
+  port: 3000,
+  use_ejson: true
+});
+
+Job.setDDP(ddp);
+
+ddp.connect(function (err) {
+  if (err) throw err;
+
+  // You will probably need to authenticate here unless the Meteor
+  // server is wide open for unauthenticated DDP Method calls, which
+  // it really shouldn't be.
+  // See DDP package for information about how to use:
+
+    // ddp.loginWithToken(...)
+    // ddp.loginWithEmail(...)
+    // ddp.loginWithUsername(...)
+
+  // The result of successfully authenticating will be a valid Meteor authToken.
+  ddp.loginWithEmail('user@server.com', `notverysecretpassword`, function (err, response) {
+    if (err) throw err;
+    authToken = response.token
+
+    // From here we can get to work, as long as the DDP connection is good.
+    // See the DDP package for details on DDP auto_reconnect, and handling socket events.
+
+    // Do stuff!!!
+
+  });
+}
+```
+
+Whew! Okay, so you've got an authenticated DDP connection, and you'd like to get to work, now what?
+
+
+
+
 
 ## API
 
