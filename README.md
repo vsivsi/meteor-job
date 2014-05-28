@@ -66,7 +66,7 @@ Someday soon there will be tests...
 
 Using meteor-job is straightforward for node.js programs that wish to implement job workers.
 
-First, you need to establish a [DDP connection](https://github.com/oortcloud/node-ddp-client) with the Meteor server hosting the jobCollection you wish to work on.
+However, first you need to establish a [DDP connection](https://github.com/oortcloud/node-ddp-client) with the Meteor server hosting the jobCollection you wish to work on.
 
 ```js
 var DDP = require('ddp');
@@ -94,7 +94,7 @@ ddp.connect(function (err) {
     // ddp.loginWithUsername(...)
 
   // The result of successfully authenticating will be a valid Meteor authToken.
-  ddp.loginWithEmail('user@server.com', `notverysecretpassword`, function (err, response) {
+  ddp.loginWithEmail('user@server.com', 'notverysecretpassword', function (err, response) {
     if (err) throw err;
     authToken = response.token
 
@@ -109,8 +109,57 @@ ddp.connect(function (err) {
 
 Whew! Okay, so you've got an authenticated DDP connection, and you'd like to get to work, now what?
 
+```js
+// 'jobQueue' is the name of the jobCollection on the server
+// 'jobType' is the name of the kind of job you'd like to work on
+// ''
+Job.getWork('jobQueue', 'jobType', {}, function (err, job) {
+  if (job) {
+     // You got a job!!!  Better work on it!
+  }
+});
+```
 
+Once you have a job, you can work on it, log messages, indicate progress and either succeed or fail.
 
+```js
+// job.type === 'jobType'        // In case you forgot!
+// typeof job.data === 'object'  // The creator of this job should've put the work to be done here
+
+var count = 0;
+var retryLater = [];
+
+// Most job methods have optional callbacks if you really want to be sure...
+
+job.log("I got this job!", function(err, result) {
+  // err would be a DDP or server error
+  // If no error, the result will indicate what happened in jobCollection
+});
+
+job.progress(count, job.data.emailsToSend.length);
+
+if (networkDown()) {
+
+  return job.fail("Network is down!!!");
+
+} else {
+
+  job.data.emailsToSend.forEach(function (email) {
+    sendEmail(email.address, email.subject, email.message, function(err) {
+      count++;
+      job.progress(count, job.data.emailsToSend.length);
+      if (err) {
+        job.log("Send email failed to: " + email.address, {level: 'warning'});
+        retryLater.push(email);
+      }
+    });  // Whatever needs doing...
+  });
+
+  // You can attach a result to a successful job
+  job.done({ retry: retryLater });
+
+}
+```
 
 
 ## API
@@ -202,6 +251,10 @@ Objects that are instances of Job
 #### `j.rerun()`
 
 #### `j.remove()`
+
+#### `j.type`
+
+#### `j.data`
 
 ### class JobQueue
 
