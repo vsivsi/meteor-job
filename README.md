@@ -139,15 +139,16 @@ Once you have a job, you can work on it, log messages, indicate progress and eit
 
 ```js
 var count = 0;
+var total = job.data.emailsToSend.length;
 var retryLater = [];
 
 // Most job methods have optional callbacks if you really want to be sure...
-job.log("I got this job!", function(err, result) {
+job.log("Attempting to send " + total + " emails", function(err, result) {
   // err would be a DDP or server error
   // If no error, the result will indicate what happened in jobCollection
 });
 
-job.progress(count, job.data.emailsToSend.length);
+job.progress(count, total);
 
 if (networkDown()) {
 
@@ -158,12 +159,12 @@ if (networkDown()) {
   job.data.emailsToSend.forEach(function (email) {
     sendEmail(email.address, email.subject, email.message, function(err) {
       count++;
-      job.progress(count, job.data.emailsToSend.length);
+      job.progress(count, total);
       if (err) {
         job.log("Send email failed to: " + email.address, {level: 'warning'});
         retryLater.push(email);
       }
-    });  // Whatever needs doing...
+    });
   });
 
   // You can attach a result to a successful job
