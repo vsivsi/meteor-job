@@ -154,7 +154,7 @@ if (networkDown()) {
       count++;
       job.progress(count, total);
       if (err) {
-        job.log("Send email failed to: " + email.address, {level: 'warning'});
+        job.log("Sending email to " + email.address + "failed"., {level: 'warning'});
         retryLater.push(email);
       }
       if (count === total) {
@@ -166,6 +166,34 @@ if (networkDown()) {
   });
 }
 ```
+
+However, the retry mechanism in the above code seems pretty clunky... How do those failed messages get retried?
+This approach probably will probably be easier to manage.
+
+```js
+workers = Job.processJobs('jobQueue', 'jobType', { payload: 20 }, function (jobs, cb) {
+  // jobs is an array of jobs, between 1 and 20 long, triggered by the option payload > 1
+  var count = 0;
+
+  jobs.forEach(function (job) {
+    email = job.data.email // Only one email per job
+    sendEmail(email.address, email.subject, email.message, function(err) {
+      count++;
+      if (err) {
+        job.log("Sending failed with error" + err, {level: 'warning'});
+        job.fail("" + err);
+      } else {
+        job.done();
+      }
+      if (count === jobs.length) {
+        cb();  // Tells the processJobs we're done
+      }
+    });
+  });
+}).resume();  // Starts out paused!
+```
+
+With the above logic, each email can succeed or fail individually, and retrying later can be directly handled by the jobCollection itself.
 
 ### Job creators
 
