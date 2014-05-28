@@ -1,10 +1,11 @@
-### meteor-job
+meteor-job
+======================================
 
 **WARNING** This Package remains under development and the methods described here may change. As of now, there are no unit tests. You have been warned!
 
-#### Intro
+## Intro
 
-Meteor Job is a pure Javascript implementation of the `Job` and `JobQueue` classes that form the foundation of the `jobCollection` Atmosphere package for Meteor. This package is used by `jobCollection` but you should also use it for any job workers you need to create and run outside of the Meteor environment (as pure node.js programs.)
+Meteor Job is a pure Javascript implementation of the `Job` and `JobQueue` classes that form the foundation of the `jobCollection` Atmosphere package for Meteor. This package is used internally by `jobCollection` but you should also use it for any job workers you need to create and run outside of the Meteor environment as pure node.js programs.
 
 Here's a very basic example that ignores authentication and connection error handling:
 
@@ -54,3 +55,120 @@ ddp.connect(function (err) {
 
 });
 ```
+
+## Installation
+
+`npm install meteor-job`
+
+Someday soon there will be tests...
+
+## API
+
+### class Job
+
+`Job` has a bunch of Class methods and properties to help with creating Jobs and getting work for them.
+
+#### `Job.setDDP()`
+
+#### `Job.processJobs()`
+
+#### `Job.getWork()`
+
+#### `Job.makeJob()`
+
+#### `Job.getJob()`
+
+#### `Job.startJobs()`
+
+#### `Job.stopJobs()`
+
+#### `Job.getJobs()`
+
+#### `Job.pauseJobs()`
+
+#### `Job.resumeJobs()`
+
+#### `Job.cancelJobs()`
+
+#### `Job.restartJobs()`
+
+#### `Job.removeJobs()`
+
+The following Job class attributes define various states and levels used by `jobCollection`
+
+#### `Job.forever`
+
+#### `Job.jobPriorities`
+
+#### `Job.jobStatuses`
+
+#### `Job.jobLogLevels`
+
+#### `Job.jobStatusCancellable`
+
+#### `Job.jobStatusPausable`
+
+#### `Job.jobStatusRemovable`
+
+#### `Job.jobStatusRestartablee`
+
+Objects that are instances of Job
+
+#### `j = new Job()`
+
+#### `j.depends()`
+
+#### `j.priority()`
+
+#### `j.retry()`
+
+#### `j.repeat()`
+
+#### `j.delay()`
+
+#### `j.after()`
+
+#### `j.log()`
+
+#### `j.progress()`
+
+#### `j.save()`
+
+#### `j.refresh()`
+
+#### `j.done()`
+
+#### `j.fail()`
+
+#### `j.pause()`
+
+#### `j.resume()`
+
+#### `j.cancel()`
+
+#### `j.restart()`
+
+#### `j.rerun()`
+
+#### `j.remove()`
+
+### class JobQueue
+
+JobQueue is similar in spirit to the [async.js](https://github.com/caolan/async) [priorityQueue](https://github.com/caolan/async#priorityQueue) except that it gets its work from the Meteor jobCollection via calls to `Job.getWork()`
+
+#### `q = Job.processJobs()`
+
+#### `q.resume()`
+
+#### `q.pause()`
+
+#### `q.shutdown()`
+
+#### `q.length()`
+
+#### `q.full()`
+
+#### `q.running()`
+
+#### `q.idle()`
+
