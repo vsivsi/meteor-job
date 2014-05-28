@@ -6,14 +6,6 @@
 
 # Exports Job object
 
-# retHelp = (err, ret, cb) ->
-#   if cb and typeof cb is 'function'
-#     return cb err, ret
-#   else unless err
-#     return ret
-#   else
-#     throw err
-
 methodCall = (root, method, params, cb, after = ((ret) -> ret)) ->
   # console.warn "Calling: #{root}_#{method} with: ", params
   name = "#{root}_#{method}"
