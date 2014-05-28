@@ -95,11 +95,11 @@ _clearInterval = (id) ->
 
 ###################################################################
 
-class jobQueue
+class JobQueue
 
   constructor: (@root, @type, @worker, options = {}) ->
-    unless @ instanceof jobQueue
-      return new jobQueue @root, @type, @worker, options
+    unless @ instanceof JobQueue
+      return new JobQueue @root, @type, @worker, options
     @pollInterval = options.pollInterval ? 5000  # ms
     @concurrency = options.concurrency ? 1
     @payload = options.payload ? 1
@@ -400,7 +400,7 @@ class Job
         return jobs[0]
 
   # This is defined above
-  @processJobs: jobQueue
+  @processJobs: JobQueue
 
   # Job class instance constructor. When "new Job(...)" is run
   constructor: (@root, type, data, doc = null) ->
@@ -518,7 +518,7 @@ class Job
     options.level ?= 'default'
     if options.echo?
       delete options.echo
-      out = "LOG: #{options.level}, #{@_doc._id} #{@_doc.runId} #{message}"
+      out = "LOG: #{options.level}, #{@_doc._id} #{@_doc.runId}: #{message}"
       switch options.level
         when 'danger' then console.error out
         when 'warning' then console.warn out
@@ -543,6 +543,9 @@ class Job
         completed: completed
         total: total
         percent: 100*completed/total
+      if options.echo?
+        delete options.echo
+        console.log "PROGRESS: #{@_doc._id} #{@_doc.runId}: #{progress.completed} out of #{progress.total} (#{progress.percent}%)"
       if @_doc._id? and @_doc.runId?
         return methodCall @root, "jobProgress", [@_doc._id, @_doc.runId, completed, total, options], cb, (res) =>
           if res
