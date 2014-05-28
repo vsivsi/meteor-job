@@ -118,6 +118,8 @@ Okay, so you've got an authenticated DDP connection, and you'd like to get to wo
 Job.getWork('jobQueue', 'jobType', {}, function (err, job) {
   if (job) {
      // You got a job!!!  Better work on it!
+     // At this point the jobCollection has changed the job status to 'running'
+     // so you are now responsible to eventually call either job.done() or job.fail()
   }
 });
 ```
@@ -171,13 +173,12 @@ if (networkDown()) {
   job.done({ retry: retryLater });
 
 }
+```
 
 ### Job creators
 
 
-
 ### Job managers
-```
 
 
 ## API
