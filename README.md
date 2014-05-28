@@ -31,28 +31,21 @@ ddp.connect(function (err) {
 
   // Worker function for jobs of type 'somejob'
   somejobWorker = function (job, cb) {
-
     job.log("Some message");
-
     // Work on job...
-
     job.progress(50, 100);  // Half done!
-
     // Work some more...
-
     if (jobError) {
       job.fail("Some error happened...");
     } else {
       job.done();
     }
-
     cb(null); // Don't forget!
   };
 
   // Get jobs of type 'somejob' available in the 'jobPile' jobCollection for somejobWorker
   // .resume() is invoked because new JobQueue instances start out paused.
   workers = Job.processJobs('jobPile', 'somejob', somejobWorker).resume();
-
 });
 ```
 
@@ -152,11 +145,10 @@ job.log("Attempting to send " + total + " emails", function(err, result) {
 job.progress(count, total);
 
 if (networkDown()) {
-
-  return job.fail("Network is down!!!");
-
+  // You can add a string message to a failing job
+  job.fail("Network is down!!!");
+  cb();
 } else {
-
   job.data.emailsToSend.forEach(function (email) {
     sendEmail(email.address, email.subject, email.message, function(err) {
       count++;
@@ -165,12 +157,13 @@ if (networkDown()) {
         job.log("Send email failed to: " + email.address, {level: 'warning'});
         retryLater.push(email);
       }
+      if (count === total) {
+        // You can attach a result object to a successful job
+        job.done({ retry: retryLater });
+        cb();
+      }
     });
   });
-
-  // You can attach a result to a successful job
-  job.done({ retry: retryLater });
-
 }
 ```
 
