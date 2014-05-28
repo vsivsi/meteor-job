@@ -202,21 +202,25 @@ If you'd like to create an entirely new job and submit it to a jobCollection, he
 ```js
 job = new Job('jobQueue', 'jobType', { work: "to", be: "done" });
 
-// Set some options on the new job before submitting it. These option setting methods do not
-// take callbacks because they only affect the local job object.
+// Set some options on the new job before submitting it. These option setting
+// methods do not take callbacks because they only affect the local job object.
 // See also: .repeat(), .after(), .depends()
 job.priority('normal')
    .retry({retries: 5, wait: 15*60*1000}) // Retry up to five times, waiting 15 minutes per attempt
-   .delay(15000)                          // Don't run until 15 seconds have passed
+   .delay(15000);                         // Don't run until 15 seconds have passed
 
-job.save(function (err, result) { // This method causes the job to be added to the Meteor jobCollection
+job.save(function (err, result) { //Save the job to be added to the Meteor jobCollection via DDP
   if (!err && result) {
     console.log("New job saved with Id: " + result);
   }
 });
 ```
 
+Note: It's likely that you'll want to think carefully about whether node.js programs should be allowed to create and manage jobs. Meteor jobCollection provides an extremely flexible mechanism to allow or deny specific actions that are attempted outside of trusted server code. As such, the code above (specifically the `job.save()`) may be rejected by the Meteor server depending on how it is configured. The same caveat applies to all of the job management methods described below.
+
 ### Job managers
+
+
 
 
 ## API
