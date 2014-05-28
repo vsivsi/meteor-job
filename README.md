@@ -114,8 +114,7 @@ Okay, so you've got an authenticated DDP connection, and you'd like to get to wo
 ```js
 // 'jobQueue' is the name of the jobCollection on the server
 // 'jobType' is the name of the kind of job you'd like to work on
-// ''
-Job.getWork('jobQueue', 'jobType', {}, function (err, job) {
+Job.getWork('jobQueue', 'jobType', function (err, job) {
   if (job) {
      // You got a job!!!  Better work on it!
      // At this point the jobCollection has changed the job status to 'running'
@@ -124,7 +123,7 @@ Job.getWork('jobQueue', 'jobType', {}, function (err, job) {
 });
 ```
 
-However, jobQueue is kind of low-level. It only makes one request for a job. What you probably really want is to get some work whenever it becomes available and you aren't too busy:
+However, `Job.getWork()` is kind of low-level. It only makes one request for a job. What you probably really want is to get some work whenever it becomes available and you aren't too busy:
 
 ```js
 workers = Job.processJobs('jobQueue', 'jobType', { concurrency: 4 }, function (job, cb) {
@@ -134,7 +133,7 @@ workers = Job.processJobs('jobQueue', 'jobType', { concurrency: 4 }, function (j
 
   cb(); // Be sure to invoke the callback when this job has been completed or failed.
 
-}).resume();
+}).resume();  // Starts out paused!
 ```
 
 Once you have a job, you can work on it, log messages, indicate progress and either succeed or fail.
