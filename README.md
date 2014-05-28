@@ -197,6 +197,24 @@ With the above logic, each email can succeed or fail individually, and retrying 
 
 ### Job creators
 
+If you'd like to create an entirely new job and submit it to a jobCollection, here's how:
+
+```js
+job = new Job('jobQueue', 'jobType', { work: "to", be: "done" });
+
+// Set some options on the new job before submitting it. These option setting methods do not
+// take callbacks because they only affect the local job object.
+// See also: .repeat(), .after(), .depends()
+job.priority('normal')
+   .retry({retries: 5, wait: 15*60*1000}) // Retry up to five times, waiting 15 minutes per attempt
+   .delay(15000)                          // Don't run until 15 seconds have passed
+
+job.save(function (err, result) { // This method causes the job to be added to the Meteor jobCollection
+  if (!err && result) {
+    console.log("New job saved with Id: " + result);
+  }
+});
+```
 
 ### Job managers
 
