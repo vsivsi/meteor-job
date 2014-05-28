@@ -64,9 +64,9 @@ Someday soon there will be tests...
 
 ## Usage
 
-Using meteor-job is straightforward for node.js programs that wish to implement job workers.
+### Getting connected
 
-However, first you need to establish a [DDP connection](https://github.com/oortcloud/node-ddp-client) with the Meteor server hosting the jobCollection you wish to work on.
+First you need to establish a [DDP connection](https://github.com/oortcloud/node-ddp-client) with the Meteor server hosting the jobCollection you wish to work on.
 
 ```js
 var DDP = require('ddp');
@@ -107,7 +107,9 @@ ddp.connect(function (err) {
 }
 ```
 
-Whew! Okay, so you've got an authenticated DDP connection, and you'd like to get to work, now what?
+### Job workers
+
+Okay, so you've got an authenticated DDP connection, and you'd like to get to work, now what?
 
 ```js
 // 'jobQueue' is the name of the jobCollection on the server
@@ -120,17 +122,26 @@ Job.getWork('jobQueue', 'jobType', {}, function (err, job) {
 });
 ```
 
+However, jobQueue is kind of low-level. It only makes one request for a job. What you probably really want is to get some work whenever it becomes available and you aren't too busy:
+
+```js
+workers = Job.processJobs('jobQueue', 'jobType', { concurrency: 4 }, function (job, cb) {
+  // This will only be called if a job is obtained from Job.getWork()
+  // Up to four of these worker functions can be oustanding at
+  // a time based on the concurrency option...
+
+  cb(); // Be sure to invoke the callback when this job has been completed or failed.
+
+}).resume();
+```
+
 Once you have a job, you can work on it, log messages, indicate progress and either succeed or fail.
 
 ```js
-// job.type === 'jobType'        // In case you forgot!
-// typeof job.data === 'object'  // The creator of this job should've put the work to be done here
-
 var count = 0;
 var retryLater = [];
 
 // Most job methods have optional callbacks if you really want to be sure...
-
 job.log("I got this job!", function(err, result) {
   // err would be a DDP or server error
   // If no error, the result will indicate what happened in jobCollection
@@ -159,6 +170,12 @@ if (networkDown()) {
   job.done({ retry: retryLater });
 
 }
+
+### Job creators
+
+
+
+### Job managers
 ```
 
 
