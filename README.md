@@ -30,12 +30,22 @@ ddp.connect(function (err) {
 
   // Worker function for jobs of type 'somejob'
   somejobWorker = function (job, cb) {
+
     job.log("Some message");
+
     // Work on job...
-    job.progress(50, 100);  # Half done!
+
+    job.progress(50, 100);  // Half done!
+
     // Work some more...
-    job.done();
-    cb(null);
+
+    if (jobError) {
+      job.fail(jobError);
+    } else {
+      job.done();
+    }
+
+    cb(null); // Don't forget!
   };
 
   // Get jobs of type 'somejob' available in the 'jobPile' jobCollection for somejobWorker
