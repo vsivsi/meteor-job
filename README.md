@@ -195,6 +195,8 @@ workers = Job.processJobs('jobQueue', 'jobType', { payload: 20 }, function (jobs
 
 With the above logic, each email can succeed or fail individually, and retrying later can be directly handled by the jobCollection itself.
 
+The jobQueue object returned by `Job.processJobs()` has methods that can be used to determine its status and control it's behavior. See the jobQueue API reference for more detail.
+
 ### Job creators
 
 If you'd like to create an entirely new job and submit it to a jobCollection, here's how:
@@ -204,8 +206,9 @@ job = new Job('jobQueue', 'jobType', { work: "to", be: "done" });
 
 // Set some options on the new job before submitting it. These option setting
 // methods do not take callbacks because they only affect the local job object.
-// See also: .repeat(), .after(), .depends()
-job.priority('normal')
+// See also: job.repeat(), job.after(), job.depends()
+
+job.priority('normal')                    // These methods return job and so are chainable.
    .retry({retries: 5, wait: 15*60*1000}) // Retry up to five times, waiting 15 minutes per attempt
    .delay(15000);                         // Don't run until 15 seconds have passed
 
@@ -216,12 +219,58 @@ job.save(function (err, result) { //Save the job to be added to the Meteor jobCo
 });
 ```
 
-Note: It's likely that you'll want to think carefully about whether node.js programs should be allowed to create and manage jobs. Meteor jobCollection provides an extremely flexible mechanism to allow or deny specific actions that are attempted outside of trusted server code. As such, the code above (specifically the `job.save()`) may be rejected by the Meteor server depending on how it is configured. The same caveat applies to all of the job management methods described below.
+**Note:** It's likely that you'll want to think carefully about whether node.js programs should be allowed to create and manage jobs. Meteor jobCollection provides an extremely flexible mechanism to allow or deny specific actions that are attempted outside of trusted server code. As such, the code above (specifically the `job.save()`) may be rejected by the Meteor server depending on how it is configured. The same caveat applies to all of the job management methods described below.
 
 ### Job managers
 
+Management of the jobCollection itself is also accomplished using a mixture of Job class methods and methods on individual job objects:
 
+```js
+// Get a job object by Id
+Job.getJob('jobQueue', id, function (err, job) {
+  // Note, this is NOT the same a Job.getWork()
+  // This call returns a job object, but does not change the status to 'running'.
+  // So you can't work on this job.
+});
 
+// If your job object's infomation gets stale, you can refresh it
+job.refresh(function (err, result) {
+  // job is refreshed
+})
+
+// Make a job object from a job document (which you can obtain by subscribing to a jobCollection)
+job = Job.makeJob('jobQueue', jobDoc);  // No callback!
+// Note that jobCollections are reactive, just like any other Meteor collection. So if you are
+// subscribed, the job documents in the collection will autoupdate. Then you can use Job.makeJob
+// to turn a job doc into a job object whenever necessary without another DDP roundtrip
+
+// Once you have a job object you can change many of its settings (but only while it's paused)
+job.pause(function (err, result) {   // Prohibit the job from running on the queue
+  job.priority('low');   // Change its priority
+  job.save();            // Update its priority in the jobCollection
+                         // This also automatically triggers a job.resume()
+                         // which is how you'd otherwise get it running again.
+});
+
+// You can also cancel jobs that are running or are waiting to run.
+job.cancel()
+
+// You can restart a cancelled or failed job
+job.restart()
+
+// Or re-run a job that has already completed successfully
+job.rerun()
+
+// And you can remove a job, so long as it's cancelled, completed or failed
+// If its running or in any other state, you'll need to cancel it before you can remove it
+job.remove()
+
+// For bulk operations on acting on more than one job at a time, there are also Class methods
+// that take arrays of job Ids.  For example, cancelling a whole batch of jobs at once:
+Job.cancelJobs('jobQueue', Ids, function(err, result) {
+  // Operation complete. result is true if any jobs were cancelled (assuming no error)
+});
+```
 
 ## API
 
