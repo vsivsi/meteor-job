@@ -276,7 +276,7 @@ Job.cancelJobs('jobQueue', Ids, function(err, result) {
 
 ### class Job
 
-`Job` has a bunch of Class methods and properties to help with creating Jobs and getting work for them.
+`Job` has a bunch of Class methods and properties to help with creating and managing Jobs and getting work for them.
 
 #### `Job.setDDP(ddp)`
 
@@ -296,13 +296,15 @@ Job.setDDP(ddp);
 
 Get one or more jobs from the job Collection, setting status to `'running'`.
 
-options:
-* `maxJobs` -- Maximum number of jobs to get. Default
+`options`:
+* `maxJobs` -- Maximum number of jobs to get. Default `1`  If `maxJobs > 1` the result will be an array of job objects, otherwise it is a single job object, or `undefined` if no jobs were available
+
+`callback(error, result)` -- Optional only on Meteor Server with Fibers. Result will be an array or single value depending on `options.maxJobs`.
 
 ```js
 if (Meteor.isServer) {
   job = Job.getWork(  // Job will be undefined or contain a Job object
-    'jobQueue',  // root name of job Collection
+    'jobQueue',  // name of job Collection
     'jobType',   // type of job to request
     {
       maxJobs: 1 // Default, only get one job, returned as a single object
@@ -317,14 +319,57 @@ if (Meteor.isServer) {
     },
     function (err, jobs) {
       // jobs contains between 0 and maxJobs jobs, depending on availability
+      // job type is available as
+      if (job[0].type === 'jobType1') {
+        // Work on jobType1...
+      } else if (job[0].type === 'jobType2') {
+        // Work on jobType2...
+      } else {
+        // Sadness
+      }
     }
   );
-
 }
 ```
 
-#### `Job.processJobs()`
+#### `Job.processJobs(root, type, [options], worker)`
 
+Create a `JobQueue` to automatically get work from the job Collection, and asyncronously call the worker function.
+
+See the `JobQueue` section for documentation about the methods and attributes on a `JobQueue` instance.
+
+`options:`
+* `concurrency` -- Maximum number of async calls to `worker` that can be outstanding at a time. Default: `1`
+* `cargo` -- Maximum number of job objects to provide to each worker, Default: `1` If `cargo > 1` the first paramter to `worker` will be an array of job objects rather than a single job object.
+* `pollInterval` -- How often to ask the remote job Collection for more work, in ms. Default: `5000` (5 seconds)
+* `prefetch` -- How many extra jobs to request beyond the capacity of all workers (`concurrency * cargo`) to compensate for latency getting more work.
+
+`worker(result, callback)`
+* `result` -- either a single job object or an array of job objects depending on `options.cargo`.
+* `callback` -- must be eventually called exactly once when `job.done()` or `job.fail()` has been called on all jobs in result.
+
+```js
+queue = Job.processJobs(
+  'jobQueue',   // name of job Collection
+  'jobType',    // type of job to request, can also be an array of job types
+  {
+    concurrency: 4,
+    cargo: 1,
+    pollInterval: 5000,
+    prefetch: 1
+  },
+  function (job, callback) {
+    // Only called when there is a valid job
+    job.done();
+    callback();
+  }
+);
+
+// The job queue has methods... See JobQueue documentation for details.
+queue.pause();
+queue.resume();
+queue.shutdown();
+```
 
 #### `Job.makeJob()`
 

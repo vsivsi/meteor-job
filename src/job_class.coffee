@@ -89,9 +89,12 @@ _clearInterval = (id) ->
 
 class JobQueue
 
-  constructor: (@root, @type, @worker, options = {}) ->
+  constructor: (@root, @type, options..., @worker) ->
     unless @ instanceof JobQueue
-      return new JobQueue @root, @type, @worker, options
+      return new JobQueue @root, @type, options... @worker
+    options = options?[0] ? {}
+    unless typeof options is 'object'
+      throw new Error "Invalid options object"
     @pollInterval = options.pollInterval ? 5000  # ms
     @concurrency = options.concurrency ? 1
     @payload = options.payload ? 1
