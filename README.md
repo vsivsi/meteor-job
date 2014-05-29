@@ -371,9 +371,48 @@ queue.resume();
 queue.shutdown();
 ```
 
-#### `Job.makeJob()`
+#### `Job.makeJob(root, jobDoc)`
 
-#### `Job.getJob()`
+Make a Job object from a job Collection document.
+
+```js
+job = Job.makeJob('jobQueue', doc);  // doc is obtained from a job Collection subscription
+```
+
+#### `Job.getJob(root, id, [options], [callback])`
+
+Creates a job object by id from the server job Collection, returns null if no such job exists.
+
+`options`:
+* `getLog` -- If `true`, get the current log of the job. Default is `false` to save bandwidth since logs can be large.
+
+`callback(error, result)` -- Optional only on Meteor Server with Fibers.  `result` is a job object or null
+
+```js
+if (Meteor.isServer) {
+  job = Job.getJob(  // Job will be undefined or contain a Job object
+    'jobQueue',  // name of job Collection
+    id,          // job id of type EJSON.ObjectID()
+    {
+      getLog: false  // Default, don't include the log information
+    }
+  );
+  // Job may be null
+} else {
+  Job.getJob(
+    'jobQueue',    // root name of job Collection
+    id,            // job id of type EJSON.ObjectID()
+    {
+      getLog: true  // include the log information
+    },
+    function (err, job) {
+      if (job) {
+        // Here's your job
+      }
+    }
+  );
+}
+```
 
 #### `Job.startJobs()`
 
