@@ -563,7 +563,7 @@ Create a new `Job` object.  Data should be reasonably small, if worker requires 
 job = new Job(  // new is optional
   'jobQueue',   // job collection name
   'jobType',    // type of the job
-  { /* ... */ } // Data for the worker, any valid JSON object
+  { /* ... */ } // Data for the worker, any valid EJSON object
 );
 ```
 
@@ -636,7 +636,7 @@ job.after(new Date());   // Run the job anytime after right now. This is the def
 
 #### `j.log(message, [options], [callback])`
 
-Add an entry to this job's log. May be called before a new job is saved.
+Add an entry to this job's log. May be called before a new job is saved. `message` must be a string.
 
 `options:`
 * `level`: One of `Jobs.jobLogLevels`: `'info'`, `'success'`, `'warning'`, or `'danger'`.  Default is `'info'`.
@@ -661,7 +661,7 @@ job.log(
 
 #### `j.progress(completed, total, [options], [cb])`
 
-Update the progress of a running job. May be called before a new job is saved.
+Update the progress of a running job. May be called before a new job is saved. `completed` must be a numnber `>= 0` and `total` must be a number `> 0` with `total >= completed`.
 
 `options:`
 * `echo`: Echo this progress update to the console using `console.log()`.
@@ -683,33 +683,101 @@ job.progress(
 );
 ```
 
-#### `j.save()`
+#### `j.save([options], [callback])`
 
-#### `j.refresh()`
+Submits this job to the job Collection. Only valid if this is a new job, or if the job is currently paused in the job Collection. If the job is already saved and paused, then omost properties of the job may change (but not all, e.g. the jobType may not be changed.)
 
-#### `j.done()`
+`options:`
+* `cancelRepeats`: If true and this job is an infinitely repeating job, will cancel any existing jobs of the same job type. Default is `true`. This is useful for background maintainance jobs that may get added on each server restart (potentially with new parameters).
 
-#### `j.fail()`
+`callback(error, result)` -- Result is true if save was successful. When running as `Meteor.isServer` with fibers, the callback may be omitted and the return value is the result.
 
-#### `j.pause()`
+```js
+job.save(
+  {
+    cancelRepeats: false  // Do not cancel any jobs of the same type, even if this job repeats forever.  Default: true.
+  }
+);
+```
+#### `j.refresh([options], [callback])`
 
-#### `j.resume()`
+Refreshes the current job object state with the state on the remote job Collection. Note that if you subscribe to the job Collection, the job documents will stay in sync with the server automatically via Meteor reactivity.
 
-#### `j.cancel()`
+`options:`
+* `getLog` -- If true, also refresh the jobs log data (which may be large).  Default: `false`
 
-#### `j.restart()`
+`callback(error, result)` -- Result is true if refresh was successful. When running as `Meteor.isServer` with fibers, the callback may be omitted and the return value is the result.
 
-#### `j.rerun()`
+```js
+job.refresh(function (err, result) {
+  if (result) {
+    // Refreshed
+  }
+});
+```
 
-#### `j.remove()`
+#### `j.done(result, [options], [callback])`
+
+Change the state of a running job to `'completed'`. `result` is any EJSON object.  If this job is configured to repeat, a new job will automatically be cloned to rerun in the future.
+
+`options:` -- None currently.
+
+`callback(error, result)` -- Result is true if completion was successful. When running as `Meteor.isServer` with fibers, the callback may be omitted and the return value is the result.
+
+```js
+job.done(function (err, result) {
+  if (result) {
+    // Status updated
+  }
+});
+```
+
+#### `j.fail(message, [options], [callback])`
+
+Cause this job to fail. It's next state depends on how the job's `job.retry()` settings are configured. It will either become `'failed'` or go to `'waiting'` for the next retry. `message` is a string.
+
+`options:`
+* `fatal` -- If true, no additional retries will be attempted and this job will go to a `'failed'` state. Default: `false`
+
+`callback(error, result)` -- Result is true if completion was successful. When running as `Meteor.isServer` with fibers, the callback may be omitted and the return value is the result.
+
+```js
+job.fail(
+  'This job has failed again!',
+  {
+    fatal: false  // Default case
+  },
+  function (err, result) {
+    if (result) {
+      // Status updated
+    }
+  }
+});
+```
+
+#### `j.pause([options], [callback])`
+
+#### `j.resume([options], [callback])`
+
+#### `j.cancel([options], [callback])`
+
+#### `j.restart([options], [callback])`
+
+#### `j.rerun([options], [callback])`
+
+#### `j.remove([options], [callback])`
 
 #### `j.type`
 
+Contains the type of a job. Useful for when `getWork` or `processJobs` are configured to accept multiple job types. This may not be changed after a job is created.
+
 #### `j.data`
+
+Always an object, contains the job data needed by the worker to complete a job of a given type. This may not be changed after a job is created.
 
 ### class JobQueue
 
-JobQueue is similar in spirit to the [async.js](https://github.com/caolan/async) [priorityQueue](https://github.com/caolan/async#priorityQueue) except that it gets its work from the Meteor jobCollection via calls to `Job.getWork()`
+JobQueue is similar in spirit to the [async.js](https://github.com/caolan/async) [queue](https://github.com/caolan/async#queue) and [cargo]([queue](https://github.com/caolan/async#cargo)) except that it gets its work from the Meteor jobCollection via calls to `Job.getWork()`
 
 #### `q = Job.processJobs()`
 
