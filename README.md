@@ -236,7 +236,7 @@ Job.getJob('jobQueue', id, function (err, job) {
 // If your job object's infomation gets stale, you can refresh it
 job.refresh(function (err, result) {
   // job is refreshed
-})
+});
 
 // Make a job object from a job document (which you can obtain by subscribing to a jobCollection)
 job = Job.makeJob('jobQueue', jobDoc);  // No callback!
@@ -253,17 +253,17 @@ job.pause(function (err, result) {   // Prohibit the job from running on the que
 });
 
 // You can also cancel jobs that are running or are waiting to run.
-job.cancel()
+job.cancel();
 
 // You can restart a cancelled or failed job
-job.restart()
+job.restart();
 
 // Or re-run a job that has already completed successfully
-job.rerun()
+job.rerun();
 
 // And you can remove a job, so long as it's cancelled, completed or failed
 // If its running or in any other state, you'll need to cancel it before you can remove it
-job.remove()
+job.remove();
 
 // For bulk operations on acting on more than one job at a time, there are also Class methods
 // that take arrays of job Ids.  For example, cancelling a whole batch of jobs at once:
