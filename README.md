@@ -223,7 +223,7 @@ job.save(function (err, result) { //Save the job to be added to the Meteor jobCo
 
 ### Job managers
 
-Management of the jobCollection itself is also accomplished using a mixture of Job class methods and methods on individual job objects:
+Management of the jobCollection itself is accomplished using a mixture of Job class methods and methods on individual job objects:
 
 ```js
 // Get a job object by Id
@@ -278,11 +278,53 @@ Job.cancelJobs('jobQueue', Ids, function(err, result) {
 
 `Job` has a bunch of Class methods and properties to help with creating Jobs and getting work for them.
 
-#### `Job.setDDP()`
+#### `Job.setDDP(ddp)`
+
+This class method binds `Job` to a specific instance of `DDPClient`. See [node-ddp-client](https://github.com/oortcloud/node-ddp-client) for more details. Currently it's only possible to use a single DDP connection at a time.
+
+```js
+var ddp = new DDP({
+  host: "127.0.0.1",
+  port: 3000,
+  use_ejson: true
+});
+
+Job.setDDP(ddp);
+```
+
+#### `Job.getWork(root, type, [options], [callback])`
+
+Get one or more jobs from the job Collection, setting status to `'running'`.
+
+options:
+* `maxJobs` -- Maximum number of jobs to get. Default
+
+```js
+if (Meteor.isServer) {
+  job = Job.getWork(  // Job will be undefined or contain a Job object
+    'jobQueue',  // root name of job Collection
+    'jobType',   // type of job to request
+    {
+      maxJobs: 1 // Default, only get one job, returned as a single object
+    }
+  );
+} else {
+  Job.getWork(
+    'jobQueue',                 // root name of job Collection
+    [ 'jobType1', 'jobType2' ]  // can request multiple types in array
+    {
+      maxJobs: 5 // If maxJobs > 1, result is an array of jobs
+    },
+    function (err, jobs) {
+      // jobs contains between 0 and maxJobs jobs, depending on availability
+    }
+  );
+
+}
+```
 
 #### `Job.processJobs()`
 
-#### `Job.getWork()`
 
 #### `Job.makeJob()`
 
