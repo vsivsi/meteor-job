@@ -468,23 +468,90 @@ Job.stopJobs(
 );  // Callback is optional
 ```
 
-The following Job class attributes define various states and levels used by `jobCollection`
-
 #### `Job.forever`
+
+Constant value used to indicate that something should repeat forever.
+
+```js
+job = new Job('jobQueue', 'jobType', { work: "to", be: "done" })
+   .retry({ retries: Job.forever })    // Default for .retry()
+   .repeat({ repeats: Job.forever });  // Default for .repeat()
+```
 
 #### `Job.jobPriorities`
 
+Valid non-numeric job priorities.
+
+```js
+Job.jobPriorities = {
+  low: 10
+  normal: 0
+  medium: -5
+  high: -10
+  critical: -15
+};
+```
+
 #### `Job.jobStatuses`
+
+Possible states for the status of a job in the job collection.
+
+```js
+Job.jobStatuses = [
+    'waiting'
+    'paused'
+    'ready'
+    'running'
+    'failed'
+    'cancelled'
+    'completed'
+];
+```
 
 #### `Job.jobLogLevels`
 
+Valid log levels. If these look familiar, it's because they correspond to some the Bootstrap [context](http://getbootstrap.com/css/#helper-classes) and [alert](http://getbootstrap.com/components/#alerts) classes.
+
+```js
+Job.jobLogLevels: [
+    'info'
+    'success'
+    'warning'
+    'danger'
+];
+```
+
 #### `Job.jobStatusCancellable`
+
+Job status states that can be cancelled.
+
+```js
+Job.jobStatusCancellable = [ 'running', 'ready', 'waiting', 'paused' ];
+```
 
 #### `Job.jobStatusPausable`
 
+Job status states that can be paused.
+
+```js
+Job.jobStatusPausable = [ 'ready', 'waiting' ];
+```
+
 #### `Job.jobStatusRemovable`
 
-#### `Job.jobStatusRestartablee`
+Job status states that can be removed.
+
+```js
+Job.jobStatusRemovable = [ 'cancelled', 'completed', 'failed' ];
+```
+
+#### `Job.jobStatusRestartable`
+
+Job status states that can be restarted.
+
+```js
+jobStatusRestartable = [ 'cancelled', 'failed' ];
+```
 
 Objects that are instances of Job
 

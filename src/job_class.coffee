@@ -256,9 +256,8 @@ class Job
   ]
 
   @jobLogLevels: [
-    'default'
-    'success'
     'info'
+    'success'
     'warning'
     'danger'
   ]
@@ -512,7 +511,7 @@ class Job
   # Write a message to this job's log.
   log: (message, options..., cb) ->
     [options, cb] = optionsHelp options, cb
-    options.level ?= 'default'
+    options.level ?= 'info'
     if options.echo?
       delete options.echo
       out = "LOG: #{options.level}, #{@_doc._id} #{@_doc.runId}: #{message}"
