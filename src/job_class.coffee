@@ -663,8 +663,8 @@ class Job
   # Run a completed job again as a new job, essentially a manual repeat
   rerun: (options..., cb) ->
     [options, cb] = optionsHelp options, cb
-    options.repeat ?= 0
-    options.wait ?= 0
+    options.repeats ?= 0
+    options.wait ?= @_doc.repeatWait
     if @_doc._id?
       return methodCall @root, "jobRerun", [@_doc._id, options], cb
     else

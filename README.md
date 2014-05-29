@@ -739,7 +739,7 @@ Cause this job to fail. It's next state depends on how the job's `job.retry()` s
 `options:`
 * `fatal` -- If true, no additional retries will be attempted and this job will go to a `'failed'` state. Default: `false`
 
-`callback(error, result)` -- Result is true if completion was successful. When running as `Meteor.isServer` with fibers, the callback may be omitted and the return value is the result.
+`callback(error, result)` -- Result is true if failure was successful (heh). When running as `Meteor.isServer` with fibers, the callback may be omitted and the return value is the result.
 
 ```js
 job.fail(
@@ -757,15 +757,125 @@ job.fail(
 
 #### `j.pause([options], [callback])`
 
+Change the state of a job to `'paused'`. Only `'ready'` and `'waiting'` jobs may be paused. This specifically does nothing to affect running jobs. To stop a running job, you must use `job.cancel()`.
+
+`options:` -- None currently.
+
+`callback(error, result)` -- Result is true if pausing was successful. When running as `Meteor.isServer` with fibers, the callback may be omitted and the return value is the result.
+
+```js
+job.pause(function (err, result) {
+  if (result) {
+    // Status updated
+  }
+});
+```
+
 #### `j.resume([options], [callback])`
+
+Change the state of a job from `'paused'` to `'waiting'`.
+
+`options:` -- None currently.
+
+`callback(error, result)` -- Result is true if resuming was successful. When running as `Meteor.isServer` with fibers, the callback may be omitted and the return value is the result.
+
+```js
+job.resume(function (err, result) {
+  if (result) {
+    // Status updated
+  }
+});
+```
 
 #### `j.cancel([options], [callback])`
 
+Change the state of a job to `'cancelled'`. Any job that isn't `'completed'`, `'failed'` or already `'cancelled'` may be cancelled. Cancelled jobs retain any remaining retries and/or repeats if they are later restarted.
+
+`options:`
+* `antecedents` -- Also cancel all cancellable jobs that this job depends on.  Default: `false`
+* `dependents` -- Also cancel all cancellable jobs that depend on this job.  Default: `true`
+
+`callback(error, result)` -- Result is true if cancellation was successful. When running as `Meteor.isServer` with fibers, the callback may be omitted and the return value is the result.
+
+```js
+job.cancel(
+  {
+    antecedents: false,
+    dependents: true    // Also cancel all jobs that will never run without this one.
+  },
+  function (err, result) {
+    if (result) {
+      // Status updated
+    }
+  }
+);
+```
+
 #### `j.restart([options], [callback])`
+
+Change the state of a `'failed'` or `'cancelled'` job to `'waiting'` to be retried. A restareted job will retain any repeat count state it had when it failed or was cancelled.
+
+`options:`
+* `retries` -- Number of additional retries to attempt before failing with `job.retry()`. Default: `0`. These retries add to any remaining retries already on the job (such as if it was cancelled).
+* `antecedents` -- Also restart all `'cancelled'` or `'failed'` jobs that this job depends on.  Default: `true`
+* `dependents` -- Also restart all `'cancelled'` or `'failed'` jobs that depend on this job.  Default: `false`
+
+`callback(error, result)` -- Result is true if restart was successful. When running as `Meteor.isServer` with fibers, the callback may be omitted and the return value is the result.
+
+```js
+job.restart(
+  {
+    antecedents: true,  // Also restart all jobs that must complete before this job can run.
+    dependents: false,
+    retries: 0          // Only try one more time. This is the default.
+  },
+  function (err, result) {
+    if (result) {
+      // Status updated
+    }
+  }
+);
+```
 
 #### `j.rerun([options], [callback])`
 
+Clone a completed job and run it again.
+
+`options:`
+* `repeats` -- Number of times to repeat the job, as with `job.repeat()`.
+* `wait` -- Time to wait between reruns. Default is the existing `job.repeat({ wait: ms }) setting for the job.
+
+`callback(error, result)` -- Result is true if rerun was successful. When running as `Meteor.isServer` with fibers, the callback may be omitted and the return value is the result.
+
+```js
+job.rerun(
+  {
+    repeats: 0,         // Only repeat this once. This is the default.
+    wait: 60000         // Wait a minute between repeats. Default is previous setting.
+  },
+  function (err, result) {
+    if (result) {
+      // Status updated
+    }
+  }
+);
+```
+
 #### `j.remove([options], [callback])`
+
+Permanently remove this job from the job collection. The job must be `'completed'`, `'failed'`, or `'cancelled'` to be removed.
+
+`options:` -- None currently.
+
+`callback(error, result)` -- Result is true if removal was successful. When running as `Meteor.isServer` with fibers, the callback may be omitted and the return value is the result.
+
+```js
+job.remove(function (err, result) {
+  if (result) {
+    // Job removed from server.
+  }
+});
+```
 
 #### `j.type`
 
