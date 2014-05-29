@@ -553,21 +553,86 @@ Job status states that can be restarted.
 jobStatusRestartable = [ 'cancelled', 'failed' ];
 ```
 
-Objects that are instances of Job
+### Instances of Job
 
-#### `j = new Job()`
+#### `j = Job(root, type, data)`
 
-#### `j.depends()`
+Create a new `Job` object.  Data should be reasonably small, if worker requires a lot of data (e.g. video, image or sound files), they should be included by reference (e.g. with a URL pointing to the data, and another to where the result should be saved).
 
-#### `j.priority()`
+```js
+job = new Job(  // new is optional
+  'jobQueue',   // job collection name
+  'jobType',    // type of the job
+  { /* ... */ } // Data for the worker, any valid JSON object
+);
+```
 
-#### `j.retry()`
+#### `j.depends([dependencies])`
 
-#### `j.repeat()`
+Adds jobs that this job depends upon (antecedents). This job will not run until these jobs have successfully completed. Defaults to an empty array (no dependencies). Returns `job`, so it is chainable.
 
-#### `j.delay()`
+```js
+job.depends([job1, job2]);  // job1 and job2 are Job objects, and must successfully complete before job will run
+```
 
-#### `j.after()`
+#### `j.priority([priority])`
+
+Sets the priority of this job. Can be integer numeric or one of `Job.jobPriorities`. Defaults to `'normal'` priority, which is priority `0`. Returns `job`, so it is chainable.
+
+```js
+job.priority('high');  // Maps to -10
+job.priority(-10);     // Same as above
+```
+
+#### `j.retry([options])`
+
+Set how failing jobs are rescheduled and retried by the job Collection. Returns `job`, so it is chainable.
+
+`options:`
+* `retries` -- Number of times to retry a failing job. Default: `Job.forever`
+* `wait`  -- How long to wait between attempts, in ms. Default: `300000` (5 minutes)
+
+Note that the above stated defaults are those when `.retry()` is explicitly called. When a new job is created, the default number of `retries` is `0`.
+
+```js
+job.retry({
+  retries: 5,   // Retry 5 times,
+  wait: 20000   // waiting 20 seconds between attempts
+});
+```
+
+#### `j.repeat([options])`
+
+Set how many times this job will be automatically re-run by the job Collection. Each time it is re-run, a new job is created in the job collection. This is equivalent to running `job.rerun()`. Only `'completed'` jobs are repeated. Failing jobs that exhaust their retries will not repeat. By default, if an infinitely repeating job is added to the job Collection, any existing repeating jobs of the same type that are cancellable, will be cancelled.  See `option.cancelRepeats` for `job.save()` for more info. Returns `job`, so it is chainable.
+
+`options:`
+* `repeats` -- Number of times to rerun the job. Default: `Job.forever`
+* `wait`  -- How long to wait between re-runs, in ms. Default: `300000` (5 minutes)
+
+Note that the above stated defaults are those when `.repeat()` is explicitly called. When a new job is created, the default number of `repeats` is `0`.
+
+```js
+job.repeat({
+  repeats: 5,   // Rerun this job 5 times,
+  wait: 20000   // wait 20 seconds between each re-run.
+});
+```
+
+#### `j.delay([milliseconds])`
+
+How long to wait until this job can be run, counting from when it is initially saved to the job Collection. Returns `job`, so it is chainable.
+
+```js
+job.delay(0);   // Do not wait. This is the default.
+```
+
+#### `j.after([time])`
+
+`time` is a date object. This sets the time after which a job may be run. It is not guaranteed to run "at" this time because there may be no workers available when it is reached. Returns `job`, so it is chainable.
+
+```js
+job.after(new Date());   // Run the job anytime after right now. This is the default.
+```
 
 #### `j.log()`
 
