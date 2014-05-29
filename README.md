@@ -334,42 +334,7 @@ if (Meteor.isServer) {
 
 #### `Job.processJobs(root, type, [options], worker)`
 
-Create a `JobQueue` to automatically get work from the job Collection, and asyncronously call the worker function.
-
-See the `JobQueue` section for documentation about the methods and attributes on a `JobQueue` instance.
-
-`options:`
-* `concurrency` -- Maximum number of async calls to `worker` that can be outstanding at a time. Default: `1`
-* `cargo` -- Maximum number of job objects to provide to each worker, Default: `1` If `cargo > 1` the first paramter to `worker` will be an array of job objects rather than a single job object.
-* `pollInterval` -- How often to ask the remote job Collection for more work, in ms. Default: `5000` (5 seconds)
-* `prefetch` -- How many extra jobs to request beyond the capacity of all workers (`concurrency * cargo`) to compensate for latency getting more work.
-
-`worker(result, callback)`
-* `result` -- either a single job object or an array of job objects depending on `options.cargo`.
-* `callback` -- must be eventually called exactly once when `job.done()` or `job.fail()` has been called on all jobs in result.
-
-```js
-queue = Job.processJobs(
-  'jobQueue',   // name of job Collection
-  'jobType',    // type of job to request, can also be an array of job types
-  {
-    concurrency: 4,
-    cargo: 1,
-    pollInterval: 5000,
-    prefetch: 1
-  },
-  function (job, callback) {
-    // Only called when there is a valid job
-    job.done();
-    callback();
-  }
-);
-
-// The job queue has methods... See JobQueue documentation for details.
-queue.pause();
-queue.resume();
-queue.shutdown();
-```
+See documentation below for `JobQueue`
 
 #### `Job.makeJob(root, jobDoc)`
 
@@ -891,17 +856,83 @@ JobQueue is similar in spirit to the [async.js](https://github.com/caolan/async)
 
 #### `q = Job.processJobs()`
 
-#### `q.resume()`
+Create a `JobQueue` to automatically get work from the job Collection, and asyncronously call the worker function.
 
+`options:`
+* `concurrency` -- Maximum number of async calls to `worker` that can be outstanding at a time. Default: `1`
+* `cargo` -- Maximum number of job objects to provide to each worker, Default: `1` If `cargo > 1` the first paramter to `worker` will be an array of job objects rather than a single job object.
+* `pollInterval` -- How often to ask the remote job Collection for more work, in ms. Default: `5000` (5 seconds)
+* `prefetch` -- How many extra jobs to request beyond the capacity of all workers (`concurrency * cargo`) to compensate for latency getting more work.
+
+`worker(result, callback)`
+* `result` -- either a single job object or an array of job objects depending on `options.cargo`.
+* `callback` -- must be eventually called exactly once when `job.done()` or `job.fail()` has been called on all jobs in result.
+
+```js
+queue = Job.processJobs(
+  'jobQueue',   // name of job Collection
+  'jobType',    // type of job to request, can also be an array of job types
+  {
+    concurrency: 4,
+    cargo: 1,
+    pollInterval: 5000,
+    prefetch: 1
+  },
+  function (job, callback) {
+    // Only called when there is a valid job
+    job.done();
+    callback();
+  }
+);
+
+// The job queue has methods... See JobQueue documentation for details.
+queue.pause();
+queue.resume();
+queue.shutdown();
+```
 #### `q.pause()`
 
-#### `q.shutdown()`
+Pause the JobQueue. This means that no more work will be requested from the job collection, and no new workers will be called with jobs that already exist in this local queue. Jobs that are already running locally will run to completion. Note that a JobQueue may be created in the paused state by running `q.pause()` immediately on the returned new jobQueue.
 
+```js
+q.pause()
+```
+#### `q.resume()`
+
+Undoes a `q.pause()`, returning the queue to the normal running state.
+
+```js
+q.resume()
+```
+#### `q.shutdown([options], [callback])`
+
+`options:`
+* `level` -- May be 'hard' or 'soft'. Any other value will lead to a "normal" shutdown.
+
+`callback()` -- Invoked once the requested shutdown conditions have been achieved.
+
+Shutdown levels:
+* `'soft'` -- Allow all local jobs in the queue to start and run to a finish, but do not request any more work. Normal program exit should be possible.
+* `'normal'` -- Allow all running jobs to finish, but do not request any more work and fail any jobs that are in the local queue but haven't started to run. Normal program exit should be possible.
+* `'hard'` -- Fail all local jobs, running or not. Return as soon as the server has been updated. Note: after a hard shutdown, there may still be outstanding work in the event loop. To exit immediately may require `process.exit()` depending on how often asyncronous workers invoke `'job.progress()'` and whether they die when it fails.
+
+```js
+q.shutdown({ level: 'soft' }, function () {
+  // shutdown complete
+});
+```
 #### `q.length()`
+
+Number of tasks ready to run.
 
 #### `q.full()`
 
+`true` if all of the concurrent workers are currently running.
+
 #### `q.running()`
+
+Number of concurrent workers currently running.
 
 #### `q.idle()`
 
+`true` if no work is currently running.
