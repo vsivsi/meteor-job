@@ -381,12 +381,12 @@ job = Job.makeJob('jobQueue', doc);  // doc is obtained from a job Collection su
 
 #### `Job.getJob(root, id, [options], [callback])`
 
-Creates a job object by id from the server job Collection, returns null if no such job exists.
+Creates a job object by id from the server job Collection, returns `null` if no such job exists.
 
 `options`:
 * `getLog` -- If `true`, get the current log of the job. Default is `false` to save bandwidth since logs can be large.
 
-`callback(error, result)` -- Optional only on Meteor Server with Fibers.  `result` is a job object or null
+`callback(error, result)` -- Optional only on Meteor Server with Fibers. `result` is a job object or `null`
 
 ```js
 if (Meteor.isServer) {
@@ -414,11 +414,41 @@ if (Meteor.isServer) {
 }
 ```
 
-#### `Job.startJobs()`
 
-#### `Job.stopJobs()`
+#### `Job.getJobs(root, ids, [options], [callback])`
 
-#### `Job.getJobs()`
+Like `Job.getJob` except it takes an array of ids and is much more efficicent than calling `Job.getJob()` in a loop because it gets Jobs from the server in batches.
+
+
+#### `Job.startJobs(root, [options], [callback])`
+
+This feature is still immature. Starts the server job Collection.
+
+`options`: No options currently
+
+`callback(error, result)` -- Result is true if successful.
+
+```js
+Job.startJobs('jobQueue');  // Callback is optional
+```
+
+#### `Job.stopJobs(root, [options], [callback])`
+
+This feature is still immature. Stops the server job Collection.
+
+`options`:
+* `timeout`: In ms, how long until the server forcibly fails all still running jobs. Default: `60*1000` (1 minute)
+
+`callback(error, result)` -- Result is true if successful.
+
+```js
+Job.stopJobs(
+  'jobQueue',
+  {
+    timeout: 60000
+  }
+);  // Callback is optional
+```
 
 #### `Job.pauseJobs()`
 
