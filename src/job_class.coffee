@@ -92,9 +92,7 @@ class JobQueue
   constructor: (@root, @type, options..., @worker) ->
     unless @ instanceof JobQueue
       return new JobQueue @root, @type, options... @worker
-    options = options?[0] ? {}
-    unless typeof options is 'object'
-      throw new Error "Invalid options object"
+    [options, @worker] = optionsHelp options, @worker
     @pollInterval = options.pollInterval ? 5000  # ms
     @concurrency = options.concurrency ? 1
     @payload = options.payload ? 1
@@ -524,6 +522,8 @@ class Job
     else  # Log can be called on an unsaved job
       @_doc.log ?= []
       @_doc.log.push { time: new Date(), runId: null, level: 'success', message: message }
+      if cb? and typeof cb is 'function'
+        _setImmediate cb, null, true   # DO NOT release Zalgo
       return @  # Allow call chaining in this case
 
   # Indicate progress made for a running job. This is important for
@@ -547,8 +547,10 @@ class Job
           if res
             @_doc.progress = progress
           res
-      else
+      else unless @_doc._id?
         @_doc.progress = progress
+        if cb? and typeof cb is 'function'
+          _setImmediate cb, null, true   # DO NOT release Zalgo
         return @
     else
       console.warn "job.progress: something's wrong with progress: #{@id}, #{completed} out of #{total}"
@@ -579,6 +581,8 @@ class Job
           false
     else
       console.warn "Can't refresh an unsaved job"
+      if cb? and typeof cb is 'function'
+        _setImmediate cb, null, null   # DO NOT release Zalgo
       return false
 
   # Indicate to the server than this run has successfully finished.
@@ -588,6 +592,8 @@ class Job
       return methodCall @root, "jobDone", [@_doc._id, @_doc.runId, result, options], cb
     else
       console.warn "Can't finish an unsaved job"
+      if cb? and typeof cb is 'function'
+        _setImmediate cb, null, null   # DO NOT release Zalgo
     return null
 
   # Indicate to the server than this run has failed and provide an error message.
@@ -598,6 +604,8 @@ class Job
       return methodCall @root, "jobFail", [@_doc._id, @_doc.runId, err, options], cb
     else
       console.warn "Can't fail an unsaved job"
+      if cb? and typeof cb is 'function'
+        _setImmediate cb, null, null   # DO NOT release Zalgo
     return null
 
   # Pause this job, only Ready and Waiting jobs can be paused
@@ -608,6 +616,8 @@ class Job
     else
       if @_doc.status is 'waiting'
         @_doc.status = 'paused'
+        if cb? and typeof cb is 'function'
+          _setImmediate cb, null, true  # DO NOT release Zalgo
         return @
     return null
 
@@ -620,6 +630,8 @@ class Job
     else
       if @_doc.status is 'paused'
         @_doc.status = 'waiting'
+        if cb? and typeof cb is 'function'
+          _setImmediate cb, null, true  # DO NOT release Zalgo
         return @
     return null
 
@@ -630,6 +642,8 @@ class Job
     if @_doc._id?
       return methodCall @root, "jobCancel", [@_doc._id, options], cb
     else
+      if cb? and typeof cb is 'function'
+        _setImmediate cb, null, false  # DO NOT release Zalgo
       console.warn "Can't cancel an unsaved job"
     return null
 
@@ -642,6 +656,8 @@ class Job
       return methodCall @root, "jobRestart", [@_doc._id, options], cb
     else
       console.warn "Can't restart an unsaved job"
+      if cb? and typeof cb is 'function'
+        _setImmediate cb, null, null   # DO NOT release Zalgo
     return null
 
   # Run a completed job again as a new job, essentially a manual repeat
@@ -653,6 +669,8 @@ class Job
       return methodCall @root, "jobRerun", [@_doc._id, options], cb
     else
       console.warn "Can't rerun an unsaved job"
+      if cb? and typeof cb is 'function'
+        _setImmediate cb, null, null   # DO NOT release Zalgo
     return null
 
   # Remove a job that is not able to run (completed, cancelled, failed) from the queue
@@ -662,6 +680,8 @@ class Job
       return methodCall @root, "jobRemove", [@_doc._id, options], cb
     else
       console.warn "Can't remove an unsaved job"
+      if cb? and typeof cb is 'function'
+        _setImmediate cb, null, null   # DO NOT release Zalgo
     return null
 
 # Export Job in a npm package
