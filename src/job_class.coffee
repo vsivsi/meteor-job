@@ -280,16 +280,22 @@ class Job
     else
       console.error "Bad ddp object in Job.setDDP()"
 
-  # Start the job queue
-  @startJobs: (root, options..., cb) ->
-    [options, cb] = optionsHelp options, cb
-    methodCall root, "startJobs", [options], cb
 
-  # Stop the job queue, stop all running jobs
-  @stopJobs: (root, options..., cb) ->
+  # Creates a job object by reserving the next available job of
+  # the specified 'type' from the server queue root
+  # returns null if no such job exists
+  @getWork: (root, type, options..., cb) ->
     [options, cb] = optionsHelp options, cb
-    options.timeout ?= 60*1000
-    methodCall root, "stopJobs", [options], cb
+    type = [type] if typeof type is 'string'
+    methodCall root, "getWork", [type, options], cb, (res) =>
+      jobs = (new Job(root, doc.type, doc.data, doc) for doc in res) or []
+      if options.maxJobs?
+        return jobs
+      else
+        return jobs[0]
+
+  # This is defined above
+  @processJobs: JobQueue
 
   # Creates a job object by id from the server queue root
   # returns null if no such job exists
@@ -382,21 +388,16 @@ class Job
       retVal ||= methodCall root, "jobRemove", [chunkOfIds, options], myCb
     return retVal
 
-  # Creates a job object by reserving the next available job of
-  # the specified 'type' from the server queue root
-  # returns null if no such job exists
-  @getWork: (root, type, options..., cb) ->
+  # Start the job queue
+  @startJobs: (root, options..., cb) ->
     [options, cb] = optionsHelp options, cb
-    type = [type] if typeof type is 'string'
-    methodCall root, "getWork", [type, options], cb, (res) =>
-      jobs = (new Job(root, doc.type, doc.data, doc) for doc in res) or []
-      if options.maxJobs?
-        return jobs
-      else
-        return jobs[0]
+    methodCall root, "startJobs", [options], cb
 
-  # This is defined above
-  @processJobs: JobQueue
+  # Stop the job queue, stop all running jobs
+  @stopJobs: (root, options..., cb) ->
+    [options, cb] = optionsHelp options, cb
+    options.timeout ?= 60*1000
+    methodCall root, "stopJobs", [options], cb
 
   # Job class instance constructor. When "new Job(...)" is run
   constructor: (@root, type, data, doc = null) ->

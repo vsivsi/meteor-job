@@ -414,11 +414,29 @@ if (Meteor.isServer) {
 }
 ```
 
-
 #### `Job.getJobs(root, ids, [options], [callback])`
 
 Like `Job.getJob` except it takes an array of ids and is much more efficicent than calling `Job.getJob()` in a loop because it gets Jobs from the server in batches.
 
+#### `Job.pauseJobs(root, ids, [options], [callback])`
+
+Like `job.pause()` except it pauses a list of jobs by id.
+
+#### `Job.resumeJobs(root, ids, [options], [callback])`
+
+Like `job.resume()` except it resumes a list of jobs by id.
+
+#### `Job.cancelJobs(root, ids, [options], [callback])`
+
+Like `job.cancel()` except it cancels a list of jobs by id.
+
+#### `Job.restartJobs(root, ids, [options], [callback])`
+
+Like `job.restart()` except it restarts a list of jobs by id.
+
+#### `Job.removeJobs(root, ids, [options], [callback])`
+
+Like `job.remove()` except it removes a list of jobs by id.
 
 #### `Job.startJobs(root, [options], [callback])`
 
@@ -449,16 +467,6 @@ Job.stopJobs(
   }
 );  // Callback is optional
 ```
-
-#### `Job.pauseJobs()`
-
-#### `Job.resumeJobs()`
-
-#### `Job.cancelJobs()`
-
-#### `Job.restartJobs()`
-
-#### `Job.removeJobs()`
 
 The following Job class attributes define various states and levels used by `jobCollection`
 
