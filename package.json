@@ -1,13 +1,13 @@
 {
   "name": "meteor-job",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "WIP! Class for Meteor jobCollection jobs for use both within meteor.js and with pure node.js workers",
   "main": "lib/job_class.js",
   "dependencies": {
   },
   "devDependencies": {
         "coffee-script": ">=1.7.1",
-        "mocha": "1.18.2"
+        "mocha": "1.20.0"
   },
   "scripts": {
     "prepublish": "coffee --compile --output lib/ src/",
