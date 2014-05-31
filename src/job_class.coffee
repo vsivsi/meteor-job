@@ -91,7 +91,7 @@ class JobQueue
 
   constructor: (@root, @type, options..., @worker) ->
     unless @ instanceof JobQueue
-      return new JobQueue @root, @type, options... @worker
+      return new JobQueue @root, @type, options..., @worker
     [options, @worker] = optionsHelp options, @worker
     @pollInterval = options.pollInterval ? 5000  # ms
     @concurrency = options.concurrency ? 1
