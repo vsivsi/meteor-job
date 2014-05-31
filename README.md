@@ -120,7 +120,7 @@ However, `Job.getWork()` is kind of low-level. It only makes one request for a j
 ```js
 workers = Job.processJobs('jobQueue', 'jobType', { concurrency: 4 }, function (job, cb) {
   // This will only be called if a job is obtained from Job.getWork()
-  // Up to four of these worker functions can be oustanding at
+  // Up to four of these worker functions can be outstanding at
   // a time based on the concurrency option...
 
   cb(); // Be sure to invoke the callback when this job has been completed or failed.
@@ -195,7 +195,7 @@ workers = Job.processJobs('jobQueue', 'jobType', { payload: 20 }, function (jobs
 
 With the above logic, each email can succeed or fail individually, and retrying later can be directly handled by the jobCollection itself.
 
-The jobQueue object returned by `Job.processJobs()` has methods that can be used to determine its status and control it's behavior. See the jobQueue API reference for more detail.
+The jobQueue object returned by `Job.processJobs()` has methods that can be used to determine its status and control its behavior. See the jobQueue API reference for more detail.
 
 ### Job creators
 
@@ -233,7 +233,7 @@ Job.getJob('jobQueue', id, function (err, job) {
   // So you can't work on this job.
 });
 
-// If your job object's infomation gets stale, you can refresh it
+// If your job object's information gets stale, you can refresh it
 job.refresh(function (err, result) {
   // job is refreshed
 });
@@ -241,8 +241,8 @@ job.refresh(function (err, result) {
 // Make a job object from a job document (which you can obtain by subscribing to a jobCollection)
 job = Job.makeJob('jobQueue', jobDoc);  // No callback!
 // Note that jobCollections are reactive, just like any other Meteor collection. So if you are
-// subscribed, the job documents in the collection will autoupdate. Then you can use Job.makeJob
-// to turn a job doc into a job object whenever necessary without another DDP roundtrip
+// subscribed, the job documents in the collection will auto-update. Then you can use Job.makeJob
+// to turn a job doc into a job object whenever necessary without another DDP round trip
 
 // Once you have a job object you can change many of its settings (but only while it's paused)
 job.pause(function (err, result) {   // Prohibit the job from running on the queue
@@ -381,7 +381,7 @@ if (Meteor.isServer) {
 
 #### `Job.getJobs(root, ids, [options], [callback])`
 
-Like `Job.getJob` except it takes an array of ids and is much more efficicent than calling `Job.getJob()` in a loop because it gets Jobs from the server in batches.
+Like `Job.getJob` except it takes an array of ids and is much more efficient than calling `Job.getJob()` in a loop because it gets Jobs from the server in batches.
 
 #### `Job.pauseJobs(root, ids, [options], [callback])`
 
@@ -626,7 +626,7 @@ job.log(
 
 #### `j.progress(completed, total, [options], [cb])`
 
-Update the progress of a running job. May be called before a new job is saved. `completed` must be a numnber `>= 0` and `total` must be a number `> 0` with `total >= completed`.
+Update the progress of a running job. May be called before a new job is saved. `completed` must be a number `>= 0` and `total` must be a number `> 0` with `total >= completed`.
 
 `options:`
 * `echo`: Echo this progress update to the console using `console.log()`.
@@ -650,10 +650,10 @@ job.progress(
 
 #### `j.save([options], [callback])`
 
-Submits this job to the job Collection. Only valid if this is a new job, or if the job is currently paused in the job Collection. If the job is already saved and paused, then omost properties of the job may change (but not all, e.g. the jobType may not be changed.)
+Submits this job to the job Collection. Only valid if this is a new job, or if the job is currently paused in the job Collection. If the job is already saved and paused, then most properties of the job may change (but not all, e.g. the jobType may not be changed.)
 
 `options:`
-* `cancelRepeats`: If true and this job is an infinitely repeating job, will cancel any existing jobs of the same job type. Default is `true`. This is useful for background maintainance jobs that may get added on each server restart (potentially with new parameters).
+* `cancelRepeats`: If true and this job is an infinitely repeating job, will cancel any existing jobs of the same job type. Default is `true`. This is useful for background maintenance jobs that may get added on each server restart (potentially with new parameters).
 
 `callback(error, result)` -- Result is true if save was successful. When running as `Meteor.isServer` with fibers, the callback may be omitted and the return value is the result.
 
@@ -778,7 +778,7 @@ job.cancel(
 
 #### `j.restart([options], [callback])`
 
-Change the state of a `'failed'` or `'cancelled'` job to `'waiting'` to be retried. A restareted job will retain any repeat count state it had when it failed or was cancelled.
+Change the state of a `'failed'` or `'cancelled'` job to `'waiting'` to be retried. A restarted job will retain any repeat count state it had when it failed or was cancelled.
 
 `options:`
 * `retries` -- Number of additional retries to attempt before failing with `job.retry()`. Default: `0`. These retries add to any remaining retries already on the job (such as if it was cancelled).
@@ -856,7 +856,7 @@ JobQueue is similar in spirit to the [async.js](https://github.com/caolan/async)
 
 #### `q = Job.processJobs()`
 
-Create a `JobQueue` to automatically get work from the job Collection, and asyncronously call the worker function.
+Create a `JobQueue` to automatically get work from the job Collection, and asynchronously call the worker function.
 
 `options:`
 * `concurrency` -- Maximum number of async calls to `worker` that can be outstanding at a time. Default: `1`
@@ -914,7 +914,7 @@ q.resume()
 Shutdown levels:
 * `'soft'` -- Allow all local jobs in the queue to start and run to a finish, but do not request any more work. Normal program exit should be possible.
 * `'normal'` -- Allow all running jobs to finish, but do not request any more work and fail any jobs that are in the local queue but haven't started to run. Normal program exit should be possible.
-* `'hard'` -- Fail all local jobs, running or not. Return as soon as the server has been updated. Note: after a hard shutdown, there may still be outstanding work in the event loop. To exit immediately may require `process.exit()` depending on how often asyncronous workers invoke `'job.progress()'` and whether they die when it fails.
+* `'hard'` -- Fail all local jobs, running or not. Return as soon as the server has been updated. Note: after a hard shutdown, there may still be outstanding work in the event loop. To exit immediately may require `process.exit()` depending on how often asynchronous workers invoke `'job.progress()'` and whether they die when it fails.
 
 ```js
 q.shutdown({ level: 'soft' }, function () {
