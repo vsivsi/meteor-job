@@ -272,11 +272,10 @@ class Job
 
   # This needs to be called when not running in Meteor to use the local DDP connection.
   @setDDP: (ddp) ->
-    if ddp? and ddp.call?
+    if ddp? and ddp.call? and ddp.loginWithToken? # Since all functions have a call method...
       @ddp_apply = ddp.call.bind ddp
     else
-      console.error "Bad ddp object in Job.setDDP()"
-
+      throw new Error "Bad ddp object in Job.setDDP()"
 
   # Creates a job object by reserving the next available job of
   # the specified 'type' from the server queue root
