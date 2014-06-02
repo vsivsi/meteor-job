@@ -17,13 +17,18 @@ methodCall = (root, method, params, cb, after = ((ret) -> ret)) ->
     return after(Job.ddp_apply name, params)
 
 optionsHelp = (options, cb) ->
+  # If cb isn't a function, it's assumed to be options...
   if cb? and typeof cb isnt 'function'
     options = cb
     cb = undefined
   else
+    unless (typeof options is 'object' and
+            options instanceof Array and
+            options.length < 2)
+      throw new Error 'options... in optionsHelp must be an Array with zero or one elements'
     options = options?[0] ? {}
-  if typeof options isnt 'object'
-    options = {}
+  unless typeof options is 'object'
+    throw new Error 'in optionsHelp options not an object or bad callback'
   return [options, cb]
 
 splitLongArray = (arr, max) ->

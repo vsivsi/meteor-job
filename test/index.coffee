@@ -164,6 +164,38 @@ describe 'Job', () ->
          afterEach () ->
             ddp.call.reset()
 
+      describe 'optionsHelp', () ->
+
+         optionsHelp = Job.__get__ 'optionsHelp'
+         foo = { bar: "bat" }
+         gizmo = () ->
+
+         it 'should return options and a callback when both are provided', () ->
+            res = optionsHelp [foo], gizmo
+            assert.deepEqual res, [foo, gizmo]
+
+         it 'should handle a missing callback and return only options', () ->
+            res = optionsHelp [foo]
+            assert.deepEqual res, [foo, undefined]
+
+         it 'should handle missing options and return empty options and the callback', () ->
+            res = optionsHelp [], gizmo
+            assert.deepEqual res, [{}, gizmo]
+
+         it 'should handle when both options and callback are missing', () ->
+            res = optionsHelp([], undefined)
+            assert.deepEqual res, [{}, undefined]
+
+         it 'should throw an error when an invalid callback is provided', () ->
+            assert.throws (()-> optionsHelp([foo], 5)), /options not an object or bad callback/
+
+         it 'should throw an error when a non-array is passed for options', () ->
+            assert.throws (()-> optionsHelp(foo, gizmo)), /must be an Array with zero or one elements/
+
+         it 'should throw an error when a bad options array is passed', () ->
+            assert.throws (()-> optionsHelp([foo, 5], gizmo)), /must be an Array with zero or one elements/
+
+
 
 # describe 'ddp-login', () ->
 
