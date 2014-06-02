@@ -351,33 +351,6 @@ describe 'Job', () ->
                      []
                return [null, res]
 
-         it 'should make a DDP method call and return a Job by default', (done) ->
-            Job.getWork 'root', 'work', {}, (err, res) ->
-               throw err if err
-               assert.instanceOf res, Job
-               done()
-
-         it 'should return undefined when no work is available', (done) ->
-            Job.getWork 'root', 'nowork', {}, (err, res) ->
-               throw err if err
-               assert.isUndefined res
-               done()
-
-         it 'should return an array of Jobs when options.maxJobs > 1', (done) ->
-            Job.getWork 'root', 'work', { maxJobs: 2 }, (err, res) ->
-               throw err if err
-               assert.isArray res
-               assert.equal res.length, 2
-               assert.instanceOf res[0], Job
-               done()
-
-         it 'should return an empty array when options.maxJobs > 1 and there is no work', (done) ->
-            Job.getWork 'root', 'nowork', { maxJobs: 2 }, (err, res) ->
-               throw err if err
-               assert.isArray res
-               assert.equal res.length, 0
-               done()
-
          it 'should make a DDP method call and return a Job by default without callback', () ->
             res = Job.getWork 'root', 'work', {}
             assert.instanceOf res, Job
@@ -389,13 +362,13 @@ describe 'Job', () ->
          it 'should return an array of Jobs when options.maxJobs > 1 without callback', () ->
             res = Job.getWork 'root', 'work', { maxJobs: 2 }
             assert.isArray res
-            assert.equal res.length, 2
+            assert.lengthOf res, 2
             assert.instanceOf res[0], Job
 
          it 'should return an empty array when options.maxJobs > 1 and there is no work without callback', () ->
             res = Job.getWork 'root', 'nowork', { maxJobs: 2 }
             assert.isArray res
-            assert.equal res.length, 0
+            assert.lengthOf res, 0
 
          afterEach () ->
             Job.ddp_apply.reset()
@@ -419,29 +392,106 @@ describe 'Job', () ->
             assert.throw (() -> Job.makeJob(5, jobDoc())), /Bad params/
             assert.throw (() -> Job.makeJob('work', {})), /Bad params/
 
+      describe 'get Job(s) by ID', () ->
 
-      describe 'getJob', () ->
+         getJobStub = (name, params) ->
+            throw new Error 'Bad method name' unless name is 'root_getJob'
+            ids = params[0]
 
-         before () ->
-            sinon.stub Job, "ddp_apply", makeDdpStub (name, params) ->
-               throw new Error 'Bad method name' unless name is 'root_getJob'
-               id = params[0]
-               res = switch id
+            one = (id) ->
+               j = switch id
                   when 'goodID'
                      Job('root', 'work', { i: 1 })._doc
-                  when 'badID'
+                  else
                      undefined
-               return [null, res]
+               return j
 
-         it 'should return a valid job instance when called with a good id', () ->
-            res = Job.getJob 'root', 'goodID'
-            assert.instanceOf res, Job
+            if ids instanceof Array
+               res = (one(j) for j in ids when j is 'goodID')
+            else
+               res = one(ids)
 
-         it 'should return undefined when called with a bad id', () ->
-            res = Job.getJob 'root', 'badID'
-            assert.isUndefined res
+            return [null, res]
 
-         # it 'should throw when passed invalid params', () ->
-         #    assert.throw (() -> Job.makeJob()), /Bad params/
-         #    assert.throw (() -> Job.makeJob(5, jobDoc())), /Bad params/
-         #    assert.throw (() -> Job.makeJob('work', {})), /Bad params/
+         describe 'getJob', () ->
+
+            before () ->
+               sinon.stub Job, "ddp_apply", makeDdpStub getJobStub
+
+            it 'should return a valid job instance when called with a good id', () ->
+               res = Job.getJob 'root', 'goodID'
+               assert.instanceOf res, Job
+
+            it 'should return undefined when called with a bad id', () ->
+               res = Job.getJob 'root', 'badID'
+               assert.isUndefined res
+
+            afterEach () ->
+               Job.ddp_apply.reset()
+
+            after () ->
+               Job.ddp_apply.restore()
+
+         describe 'getJobs', () ->
+
+            before () ->
+               sinon.stub Job, "ddp_apply", makeDdpStub getJobStub
+
+            it 'should return valid job instances for good IDs only', () ->
+               res = Job.getJobs 'root', ['goodID', 'badID', 'goodID']
+               assert Job.ddp_apply.calledOnce, 'getJob method called more than once'
+               assert.isArray res
+               assert.lengthOf res, 2
+               assert.instanceOf res[0], Job
+               assert.instanceOf res[1], Job
+
+            it 'should return an empty array for all bad IDs', () ->
+               res = Job.getJobs 'root', ['badID', 'badID', 'badID']
+               assert Job.ddp_apply.calledOnce, 'getJob method called more than once'
+               assert.isArray res
+               assert.lengthOf res, 0
+
+            afterEach () ->
+               Job.ddp_apply.reset()
+
+            after () ->
+               Job.ddp_apply.restore()
+
+      describe 'multijob operation', () ->
+
+         makeMulti = (op, method) ->
+
+            describe op, () ->
+
+               before () ->
+                  sinon.stub Job, "ddp_apply", makeDdpStub (name, params) ->
+                     throw new Error "Bad method name: #{name}" unless name is "root_#{method}"
+                     ids = params[0]
+                     return [null, ids.indexOf('goodID') isnt -1]
+
+               it 'should return true if there are any good IDs', () ->
+                  assert.isFunction Job[op]
+                  res = Job[op]('root', ['goodID', 'badID', 'goodID'])
+                  assert Job.ddp_apply.calledOnce, "#{op} method called more than once"
+                  assert.isBoolean res
+                  assert.isTrue res
+
+               it 'should return false if there are all bad IDs', () ->
+                  assert.isFunction Job[op]
+                  res = Job[op]('root', ['badID', 'badID'])
+                  assert Job.ddp_apply.calledOnce, "#{op} method called more than once"
+                  assert.isBoolean res
+                  assert.isFalse res
+
+               afterEach () ->
+                  Job.ddp_apply.reset()
+
+               after () ->
+                  Job.ddp_apply.restore()
+
+         makeMulti('pauseJobs', 'jobPause')
+         makeMulti('resumeJobs', 'jobResume')
+         makeMulti('cancelJobs', 'jobCancel')
+         makeMulti('restartJobs', 'jobRestart')
+         makeMulti('removeJobs', 'jobRemove')
+

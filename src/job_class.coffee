@@ -372,6 +372,7 @@ class Job
     myCb = reduceCallbacks(cb, chunksOfIds.length)
     for chunkOfIds in chunksOfIds
       retVal ||= methodCall root, "jobRestart", [chunkOfIds, options], myCb
+    return retVal
 
   # Remove a job that is not able to run (completed, cancelled, failed) from the queue
   @removeJobs: (root, ids, options..., cb) ->
