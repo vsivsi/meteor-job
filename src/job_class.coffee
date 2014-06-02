@@ -398,13 +398,13 @@ class Job
   # Job class instance constructor. When "new Job(...)" is run
   constructor: (@root, type, data, doc = null) ->
     unless @ instanceof Job
-      return new job @root, type, data
+      return new Job @root, type, data
     @ddp_apply = Job.ddp_apply
     unless typeof doc is 'object' and
            typeof data is 'object' and
            typeof type is 'string' and
            typeof @root is 'string'
-      console.error "new Job: bad parameter(s), #{@root} #{type}, #{data}, #{doc}"
+      console.error "new Job: bad parameter(s), #{@root} (#{typeof @root}), #{type} (#{typeof type}), #{data} (#{typeof data}), #{doc} (#{typeof doc})"
       return null
     else if doc?  # This case is used to create local Job objects from DDP calls
       unless doc.type is type and doc.data is data

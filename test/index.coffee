@@ -319,4 +319,91 @@ describe 'Job', () ->
 
             cancel = _setInterval cb, 10, "foo", "bar"
 
+   describe 'class method', () ->
+
+      ddp = null
+
+      makeDdpStub = (action) ->
+         return (name, params, cb) ->
+            [err, res] = action name, params
+            # console.dir res
+            if cb?
+               return process.nextTick () -> cb err, res
+            else if err
+               throw err
+            return res
+
+      before () ->
+         ddp = new DDP()
+         Job.setDDP ddp
+
+      describe 'getWork', () ->
+
+         before () ->
+            sinon.stub Job, "ddp_apply", makeDdpStub (name, params) ->
+               throw new Error 'Bad method name' unless name is 'root_getWork'
+               type = params[0][0]
+               max = params[1]?.maxJobs ? 1
+               res = switch type
+                  when 'work'
+                     ( Job('root', type, { i: 1 })._doc for i in [1..max] )
+                  when 'nowork'
+                     []
+               return [null, res]
+
+         it 'should make a DDP method call and return a Job by default', (done) ->
+            Job.getWork 'root', 'work', {}, (err, res) ->
+               throw err if err
+               assert.instanceOf res, Job
+               done()
+
+         it 'should return undefined when no work is available', (done) ->
+            Job.getWork 'root', 'nowork', {}, (err, res) ->
+               throw err if err
+               assert.isUndefined res
+               done()
+
+         it 'should return an array of Jobs when options.maxJobs > 1', (done) ->
+            Job.getWork 'root', 'work', { maxJobs: 2 }, (err, res) ->
+               throw err if err
+               assert.isArray res
+               assert.equal res.length, 2
+               assert.instanceOf res[0], Job
+               done()
+
+         it 'should return an empty array when options.maxJobs > 1 and there is no work', (done) ->
+            Job.getWork 'root', 'nowork', { maxJobs: 2 }, (err, res) ->
+               throw err if err
+               assert.isArray res
+               assert.equal res.length, 0
+               done()
+
+         it 'should make a DDP method call and return a Job by default without callback', () ->
+            res = Job.getWork 'root', 'work', {}
+            assert.instanceOf res, Job
+
+         it 'should return undefined when no work is available without callback', () ->
+            res = Job.getWork 'root', 'nowork', {}
+            assert.isUndefined res
+
+         it 'should return an array of Jobs when options.maxJobs > 1 without callback', () ->
+            res = Job.getWork 'root', 'work', { maxJobs: 2 }
+            assert.isArray res
+            assert.equal res.length, 2
+            assert.instanceOf res[0], Job
+
+         it 'should return an empty array when options.maxJobs > 1 and there is no work without callback', () ->
+            res = Job.getWork 'root', 'nowork', { maxJobs: 2 }
+            assert.isArray res
+            assert.equal res.length, 0
+
+         afterEach () ->
+            Job.ddp_apply.reset()
+
+         after () ->
+            Job.ddp_apply.restore()
+
+
+
+
 
