@@ -195,7 +195,36 @@ describe 'Job', () ->
          it 'should throw an error when a bad options array is passed', () ->
             assert.throws (()-> optionsHelp([foo, 5], gizmo)), /must be an Array with zero or one elements/
 
+      describe 'splitLongArray', () ->
 
+         splitLongArray = Job.__get__ 'splitLongArray'
+
+         longArray = [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 ]
+
+         it 'should properly split an array', () ->
+            res = splitLongArray longArray, 4
+            assert.deepEqual res, [ [0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11] ]
+
+         it 'should handle remainders correctly', () ->
+            res = splitLongArray longArray, 5
+            assert.deepEqual res, [ [0, 1, 2, 3, 4], [5, 6, 7, 8, 9], [10, 11] ]
+
+         it 'should handle an empty array', () ->
+            res = splitLongArray [], 5
+            assert.deepEqual res, []
+
+         it 'should handle a single element array', () ->
+            res = splitLongArray [0], 5
+            assert.deepEqual res, [ [0] ]
+
+         it 'should throw if not given an array', () ->
+            assert.throws (()-> splitLongArray { foo: "bar"}, 5), /splitLongArray: bad params/
+
+         it 'should throw if given an out of range max value', () ->
+            assert.throws (()-> splitLongArray longArray, 0), /splitLongArray: bad params/
+
+         it 'should throw if given an invalid max value', () ->
+            assert.throws (()-> splitLongArray longArray, "cow"), /splitLongArray: bad params/
 
 # describe 'ddp-login', () ->
 

@@ -32,6 +32,7 @@ optionsHelp = (options, cb) ->
   return [options, cb]
 
 splitLongArray = (arr, max) ->
+  throw new Error 'splitLongArray: bad params' unless arr instanceof Array and max > 0
   arr[(i*max)...((i+1)*max)] for i in [0...Math.ceil(arr.length/max)]
 
 callbackGenerator = (cb, num) ->
