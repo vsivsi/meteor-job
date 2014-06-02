@@ -35,8 +35,12 @@ splitLongArray = (arr, max) ->
   throw new Error 'splitLongArray: bad params' unless arr instanceof Array and max > 0
   arr[(i*max)...((i+1)*max)] for i in [0...Math.ceil(arr.length/max)]
 
+# This function soaks up num callbacks, returning the disjunction of Boolean results
+# or returning on first error...
 callbackGenerator = (cb, num) ->
   return undefined unless cb?
+  unless typeof cb is 'function' and num > 0
+    throw new Error 'Bad params given to callbackGenerator'
   cbRetVal = false
   cbCount = 0
   cbErr = null
@@ -50,6 +54,8 @@ callbackGenerator = (cb, num) ->
         cbRetVal ||= res
         if cbCount is num
           cb null, cbRetVal
+        else if cbCount > num
+          throw new Error "callbackGenerator callback invoked more than requested #{num} times"
 
 concatCallbackGenerator = (cb, num) ->
   return undefined unless cb?

@@ -218,13 +218,54 @@ describe 'Job', () ->
             assert.deepEqual res, [ [0] ]
 
          it 'should throw if not given an array', () ->
-            assert.throws (()-> splitLongArray { foo: "bar"}, 5), /splitLongArray: bad params/
+            assert.throws (() -> splitLongArray { foo: "bar"}, 5), /splitLongArray: bad params/
 
          it 'should throw if given an out of range max value', () ->
-            assert.throws (()-> splitLongArray longArray, 0), /splitLongArray: bad params/
+            assert.throws (() -> splitLongArray longArray, 0), /splitLongArray: bad params/
 
          it 'should throw if given an invalid max value', () ->
-            assert.throws (()-> splitLongArray longArray, "cow"), /splitLongArray: bad params/
+            assert.throws (() -> splitLongArray longArray, "cow"), /splitLongArray: bad params/
+
+      describe 'callbackGenerator', () ->
+         callbackGenerator = Job.__get__ 'callbackGenerator'
+
+         it 'should return undefined if given a falsy callback', () ->
+            assert.isUndefined callbackGenerator(undefined, 5)
+
+         it 'should properly absorb the specified number of callbacks', () ->
+            spy = sinon.spy()
+            cb = callbackGenerator spy, 3
+            cb null, true
+            cb null, false
+            cb null, true
+            assert spy.calledOnce
+            assert spy.calledWith null, true
+
+         it 'should properly reduce the ballback results', () ->
+            spy = sinon.spy()
+            cb = callbackGenerator spy, 3
+            cb null, false
+            cb null, false
+            cb null, false
+            assert spy.calledOnce
+            assert spy.calledWith null, false
+
+         it 'should throw if called too many times', () ->
+            spy = sinon.spy()
+            cb = callbackGenerator spy, 2
+            cb null, true
+            cb null, true
+            assert.throws cb, /callbackGenerator callback invoked more than requested/
+
+         it 'should throw if given a non-function callback', () ->
+            assert.throws (() -> callbackGenerator 5), /Bad params given to callbackGenerator/
+
+         it 'should throw if given an invalid number of callbacks to absorb', () ->
+            assert.throws (() -> callbackGenerator (() -> ), 'cow'), /Bad params given to callbackGenerator/
+
+         it 'should throw if given an out of range number of callbacks to absorb', () ->
+            assert.throws (() -> callbackGenerator (() -> ), 0), /Bad params given to callbackGenerator/
+
 
 # describe 'ddp-login', () ->
 
