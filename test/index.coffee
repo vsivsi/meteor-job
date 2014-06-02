@@ -489,9 +489,35 @@ describe 'Job', () ->
                after () ->
                   Job.ddp_apply.restore()
 
-         makeMulti('pauseJobs', 'jobPause')
-         makeMulti('resumeJobs', 'jobResume')
-         makeMulti('cancelJobs', 'jobCancel')
-         makeMulti('restartJobs', 'jobRestart')
-         makeMulti('removeJobs', 'jobRemove')
+         makeMulti 'pauseJobs', 'jobPause'
+         makeMulti 'resumeJobs', 'jobResume'
+         makeMulti 'cancelJobs', 'jobCancel'
+         makeMulti 'restartJobs', 'jobRestart'
+         makeMulti 'removeJobs', 'jobRemove'
+
+      describe 'control methods', () ->
+
+         makeControl = (op) ->
+
+            describe op, () ->
+
+               before () ->
+                  sinon.stub Job, "ddp_apply", makeDdpStub (name, params) ->
+                     throw new Error "Bad method name: #{name}" unless name is "root_#{op}"
+                     return [null, true]
+
+               it 'should return a boolean', () ->
+                  assert.isFunction Job[op]
+                  res = Job[op]('root')
+                  assert Job.ddp_apply.calledOnce, "#{op} method called more than once"
+                  assert.isBoolean res
+
+               afterEach () ->
+                  Job.ddp_apply.reset()
+
+               after () ->
+                  Job.ddp_apply.restore()
+
+         makeControl 'startJobs'
+         makeControl 'stopJobs'
 
