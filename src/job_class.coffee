@@ -35,13 +35,13 @@ splitLongArray = (arr, max) ->
   throw new Error 'splitLongArray: bad params' unless arr instanceof Array and max > 0
   arr[(i*max)...((i+1)*max)] for i in [0...Math.ceil(arr.length/max)]
 
-# This function soaks up num callbacks, returning the disjunction of Boolean results
-# or returning on first error...
-callbackGenerator = (cb, num) ->
+# This function soaks up num callbacks, by default returning the disjunction of Boolean results
+# or returning on first error.... Reduce function causes different reduce behavior, such as concatenation
+reduceCallbacks = (cb, num, reduce = ((a , b) -> (a or b)), init = false) ->
   return undefined unless cb?
-  unless typeof cb is 'function' and num > 0
-    throw new Error 'Bad params given to callbackGenerator'
-  cbRetVal = false
+  unless typeof cb is 'function' and num > 0 and typeof reduce is 'function'
+    throw new Error 'Bad params given to reduceCallbacks'
+  cbRetVal = init
   cbCount = 0
   cbErr = null
   return (err, res) ->
@@ -51,27 +51,15 @@ callbackGenerator = (cb, num) ->
         cb err
       else
         cbCount++
-        cbRetVal ||= res
+        cbRetVal = reduce cbRetVal, res
         if cbCount is num
           cb null, cbRetVal
         else if cbCount > num
-          throw new Error "callbackGenerator callback invoked more than requested #{num} times"
+          throw new Error "reduceCallbacks callback invoked more than requested #{num} times"
 
-concatCallbackGenerator = (cb, num) ->
-  return undefined unless cb?
-  cbRetVal = []
-  cbCount = 0
-  cbErr = null
-  return (err, res) ->
-    unless cbErr
-      if err
-        cbErr = err
-        cb err
-      else
-        cbCount++
-        cbRetVal = cbRetVal.concat res
-        if cbCount is num
-          cb null, cbRetVal
+concatReduce = (a, b) ->
+  a = [a] unless a instanceof Array
+  a.concat b
 
 # This smooths over the various different implementations...
 _setImmediate = (func, args...) ->
@@ -333,7 +321,7 @@ class Job
     options.getLog ?= false
     retVal = []
     chunksOfIds = splitLongArray ids, 32
-    myCb = concatCallbackGenerator(cb, chunksOfIds.length)
+    myCb = reduceCallbacks(cb, chunksOfIds.length, concatReduce, [])
     for chunkOfIds in chunksOfIds
       retVal = retVal.concat(methodCall root, "getJob", [chunkOfIds, options], myCb, (doc) =>
         if doc
@@ -348,7 +336,7 @@ class Job
     [options, cb] = optionsHelp options, cb
     retVal = false
     chunksOfIds = splitLongArray ids, 256
-    myCb = callbackGenerator(cb, chunksOfIds.length)
+    myCb = reduceCallbacks(cb, chunksOfIds.length)
     for chunkOfIds in chunksOfIds
       retVal ||= methodCall root, "jobPause", [chunkOfIds, options], myCb
     return retVal
@@ -359,7 +347,7 @@ class Job
     [options, cb] = optionsHelp options, cb
     retVal = false
     chunksOfIds = splitLongArray ids, 256
-    myCb = callbackGenerator(cb, chunksOfIds.length)
+    myCb = reduceCallbacks(cb, chunksOfIds.length)
     for chunkOfIds in chunksOfIds
       retVal ||= methodCall root, "jobResume", [chunkOfIds, options], myCb
     return retVal
@@ -370,7 +358,7 @@ class Job
     options.antecedents ?= true
     retVal = false
     chunksOfIds = splitLongArray ids, 256
-    myCb = callbackGenerator(cb, chunksOfIds.length)
+    myCb = reduceCallbacks(cb, chunksOfIds.length)
     for chunkOfIds in chunksOfIds
       retVal ||= methodCall root, "jobCancel", [chunkOfIds, options], myCb
     return retVal
@@ -382,7 +370,7 @@ class Job
     options.dependents ?= true
     retVal = false
     chunksOfIds = splitLongArray ids, 256
-    myCb = callbackGenerator(cb, chunksOfIds.length)
+    myCb = reduceCallbacks(cb, chunksOfIds.length)
     for chunkOfIds in chunksOfIds
       retVal ||= methodCall root, "jobRestart", [chunkOfIds, options], myCb
 
@@ -391,7 +379,7 @@ class Job
     [options, cb] = optionsHelp options, cb
     retVal = false
     chunksOfIds = splitLongArray ids, 256
-    myCb = callbackGenerator(cb, chunksOfIds.length)
+    myCb = reduceCallbacks(cb, chunksOfIds.length)
     for chunkOfIds in chunksOfIds
       retVal ||= methodCall root, "jobRemove", [chunkOfIds, options], myCb
     return retVal

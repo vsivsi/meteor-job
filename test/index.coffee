@@ -226,325 +226,69 @@ describe 'Job', () ->
          it 'should throw if given an invalid max value', () ->
             assert.throws (() -> splitLongArray longArray, "cow"), /splitLongArray: bad params/
 
-      describe 'callbackGenerator', () ->
-         callbackGenerator = Job.__get__ 'callbackGenerator'
+      describe 'concatReduce', () ->
+         concatReduce = Job.__get__ 'concatReduce'
+
+         it 'should concat a to b', () ->
+            assert.deepEqual concatReduce([1],2), [1,2]
+
+         it 'should work with non array for the first param', () ->
+            assert.deepEqual concatReduce(1,2), [1,2]
+
+      describe 'reduceCallbacks', () ->
+         reduceCallbacks = Job.__get__ 'reduceCallbacks'
 
          it 'should return undefined if given a falsy callback', () ->
-            assert.isUndefined callbackGenerator(undefined, 5)
+            assert.isUndefined reduceCallbacks(undefined, 5)
 
          it 'should properly absorb the specified number of callbacks', () ->
             spy = sinon.spy()
-            cb = callbackGenerator spy, 3
+            cb = reduceCallbacks spy, 3
             cb null, true
             cb null, false
             cb null, true
             assert spy.calledOnce
             assert spy.calledWith null, true
 
-         it 'should properly reduce the ballback results', () ->
+         it 'should properly reduce the callback results', () ->
             spy = sinon.spy()
-            cb = callbackGenerator spy, 3
+            cb = reduceCallbacks spy, 3
             cb null, false
             cb null, false
             cb null, false
             assert spy.calledOnce
             assert spy.calledWith null, false
 
+         it 'should properly reduce with a custom reduce function', () ->
+            concatReduce = Job.__get__ 'concatReduce'
+            spy = sinon.spy()
+            cb = reduceCallbacks spy, 3, concatReduce, []
+            cb null, false
+            cb null, true
+            cb null, false
+            assert spy.calledOnce, 'callback called too many times'
+            assert spy.calledWith(null, [false, true, false]), 'Returned wrong result'
+
          it 'should throw if called too many times', () ->
             spy = sinon.spy()
-            cb = callbackGenerator spy, 2
+            cb = reduceCallbacks spy, 2
             cb null, true
             cb null, true
-            assert.throws cb, /callbackGenerator callback invoked more than requested/
+            assert.throws cb, /reduceCallbacks callback invoked more than requested/
 
          it 'should throw if given a non-function callback', () ->
-            assert.throws (() -> callbackGenerator 5), /Bad params given to callbackGenerator/
+            assert.throws (() -> reduceCallbacks 5), /Bad params given to reduceCallbacks/
 
          it 'should throw if given an invalid number of callbacks to absorb', () ->
-            assert.throws (() -> callbackGenerator (() -> ), 'cow'), /Bad params given to callbackGenerator/
+            assert.throws (() -> reduceCallbacks (() -> ), 'cow'), /Bad params given to reduceCallbacks/
 
          it 'should throw if given an out of range number of callbacks to absorb', () ->
-            assert.throws (() -> callbackGenerator (() -> ), 0), /Bad params given to callbackGenerator/
+            assert.throws (() -> reduceCallbacks (() -> ), 0), /Bad params given to reduceCallbacks/
+
+         it 'should throw if given a non-function reduce', () ->
+            assert.throws (() -> reduceCallbacks (() -> ), 5, 5), /Bad params given to reduceCallbacks/
+
+      # describe '', () ->
 
 
-# describe 'ddp-login', () ->
 
-#    describe 'API', () ->
-
-#       it 'should throw when invoked without a valid callback', () ->
-#          assert.throws login, /Valid callback must be provided to ddp-login/
-
-#       it 'should require a valid ddp parameter', () ->
-#          login null, (e) ->
-#             assert.throws (() -> throw e), /Invalid DDP parameter/
-
-#       it 'should reject unsupported login methods', () ->
-#          login { loginWithToken: () -> }, { method: 'bogus' }, (e) ->
-#             assert.throws (() -> throw e), /Unsupported DDP login method/
-
-#       describe 'authToken handling', () ->
-
-#          it 'should return an existing valid authToken in the default environment variable', (done) ->
-#             process.env.METEOR_TOKEN = goodToken
-#             login ddp, (e, token) ->
-#                assert.ifError e
-#                assert.equal token, goodToken, 'Wrong token returned'
-#                process.env.METEOR_TOKEN = undefined
-#                done()
-
-#          it 'should return an existing valid authToken in a specified environment variable', (done) ->
-#             process.env.TEST_TOKEN = goodToken
-#             login ddp, { env: 'TEST_TOKEN' }, (e, token) ->
-#                assert.ifError e
-#                assert.equal token, goodToken, 'Wrong token returned'
-#                process.env.TEST_TOKEN = undefined
-#                done()
-
-#       describe 'login with email', () ->
-
-#          it 'should return a valid authToken when successful', (done) ->
-#             pass = goodpass
-#             login ddp, (e, token) ->
-#                assert.ifError e
-#                assert.equal token, goodToken, 'Wrong token returned'
-#                done()
-
-#          it 'should also work when method is set to email', (done) ->
-#             pass = goodpass
-#             login ddp, { method: 'email' }, (e, token) ->
-#                assert.ifError e
-#                assert.equal token, goodToken, 'Wrong token returned'
-#                done()
-
-#          it 'should retry 5 times by default and then fail with bad credentials', (done) ->
-#             pass = badpass
-#             sinon.spy ddp, 'loginWithEmail'
-#             login ddp, (e, token) ->
-#                assert.throws (() -> throw e), /Bad email credentials/
-#                assert.equal ddp.loginWithEmail.callCount, 5
-#                ddp.loginWithEmail.restore()
-#                done()
-
-#          it 'should retry the specified number of times and then fail with bad credentials', (done) ->
-#             pass = badpass
-#             sinon.spy ddp, 'loginWithEmail'
-#             login ddp, { retry: 3 }, (e, token) ->
-#                assert.throws (() -> throw e), /Bad email credentials/
-#                assert.equal ddp.loginWithEmail.callCount, 3
-#                ddp.loginWithEmail.restore()
-#                done()
-
-#          afterEach () ->
-#             pass = null
-
-#       describe 'login with username', () ->
-
-#          it 'should return a valid authToken when successful', (done) ->
-#             pass = goodpass
-#             login ddp, { method: 'username' }, (e, token) ->
-#                assert.ifError e
-#                assert.equal token, goodToken, 'Wrong token returned'
-#                done()
-
-#          it 'should retry 5 times by default and then fail with bad credentials', (done) ->
-#             pass = badpass
-#             sinon.spy ddp, 'loginWithUsername'
-#             login ddp, { method: 'username' }, (e, token) ->
-#                assert.throws (() -> throw e), /Bad username credentials/
-#                assert.equal ddp.loginWithUsername.callCount, 5
-#                ddp.loginWithUsername.restore()
-#                done()
-
-#          it 'should retry the specified number of times and then fail with bad credentials', (done) ->
-#             pass = badpass
-#             sinon.spy ddp, 'loginWithUsername'
-#             login ddp, { method: 'username', retry: 3 }, (e, token) ->
-#                assert.throws (() -> throw e), /Bad username credentials/
-#                assert.equal ddp.loginWithUsername.callCount, 3
-#                ddp.loginWithUsername.restore()
-#                done()
-
-#          afterEach () ->
-#             pass = null
-
-#    describe 'Command line', () ->
-
-#       newLogin = () ->
-#          login = rewire '../src/index.coffee'
-#          login.__set__ 'read', read
-#          login.__set__ "DDP", DDP
-
-#       beforeEach () -> newLogin()
-
-#       it 'should support logging in with all default parameters', (done) ->
-#          pass = goodpass
-#          token = null
-#          login.__set__
-#             console:
-#                log: (m) ->
-#                   token = m
-#                warn: console.warn
-#          login.__set__ 'process.exit', (n) ->
-#             assert.equal n, 0
-#             assert.equal token, goodToken
-#             done()
-#          login._command_line()
-
-#       it 'should fail logging in with bad credentials', (done) ->
-#          pass = badpass
-#          token = null
-#          login.__set__
-#             console:
-#                log: (m) ->
-#                   token = m
-#                error: (m) ->
-#                warn: console.warn
-#                dir: (o) ->
-#          login.__set__ 'process.exit', (n) ->
-#             assert.equal n, 1
-#             done()
-#          login._command_line()
-
-#       it 'should support logging in with username', (done) ->
-#          pass = goodpass
-#          token = null
-#          login.__set__
-#             console:
-#                log: (m) ->
-#                   token = m
-#                warn: console.warn
-#          login.__set__ 'process.exit', (n) ->
-#             assert.equal n, 0
-#             assert.equal token, goodToken
-#             done()
-#          login.__set__ 'process.argv', ['node', 'ddp-login', '--method', 'username']
-#          login._command_line()
-
-#       it 'should fail logging in with bad username credentials', (done) ->
-#          pass = badpass
-#          token = null
-#          login.__set__
-#             console:
-#                log: (m) ->
-#                   token = m
-#                error: (m) ->
-#                warn: console.warn
-#                dir: (o) ->
-#          login.__set__ 'process.exit', (n) ->
-#             assert.equal n, 1
-#             done()
-#          login.__set__ 'process.argv', ['node', 'ddp-login', '--method', 'username']
-#          login._command_line()
-
-#       it 'should properly pass host and port to DDP', (done) ->
-#          pass = goodpass
-#          token = null
-#          spyDDP = sinon.spy(DDP)
-#          login.__set__ "DDP", spyDDP
-#          login.__set__
-#             console:
-#                log: (m) ->
-#                   token = m
-#                warn: console.warn
-#          login.__set__ 'process.exit', (n) ->
-#             assert.equal n, 0
-#             assert.equal token, goodToken
-#             assert spyDDP.calledWithExactly
-#                host: 'localhost'
-#                port: 3333
-#                use_ejson: true
-#             done()
-#          login.__set__ 'process.argv', ['node', 'ddp-login', '--host', 'localhost', '--port', '3333']
-#          login._command_line()
-
-#       it 'should succeed when a good token is in the default env var', (done) ->
-#          pass = badpass
-#          token = null
-#          login.__set__ "DDP", DDP
-#          login.__set__
-#             console:
-#                log: (m) ->
-#                   token = m
-#                warn: console.warn
-#          login.__set__ 'process.exit', (n) ->
-#             assert.equal n, 0, 'wrong return code'
-#             assert.equal token, goodToken, 'Bad token'
-#             done()
-#          login.__set__ 'process.env.METEOR_TOKEN', goodToken
-#          login._command_line()
-
-#       it 'should succeed when a good token is in a specified env var', (done) ->
-#          pass = badpass
-#          token = null
-#          login.__set__ "DDP", DDP
-#          login.__set__
-#             console:
-#                log: (m) ->
-#                   token = m
-#                warn: console.warn
-#          login.__set__ 'process.exit', (n) ->
-#             assert.equal n, 0, 'wrong return code'
-#             assert.equal token, goodToken, 'Bad token'
-#             done()
-#          login.__set__ 'process.env.TEST_TOKEN', goodToken
-#          login.__set__ 'process.argv', ['node', 'ddp-login', '--env', 'TEST_TOKEN']
-#          login._command_line()
-
-#       it 'should succeed when a bad token is in a specified env var', (done) ->
-#          pass = goodpass
-#          token = null
-#          login.__set__
-#             console:
-#                log: (m) ->
-#                   token = m
-#                warn: console.warn
-#          login.__set__ 'process.exit', (n) ->
-#             assert.equal n, 0, 'wrong return code'
-#             assert.equal token, goodToken, 'Bad token'
-#             done()
-#          login.__set__ 'process.env.TEST_TOKEN', badToken
-#          login.__set__ 'process.argv', ['node', 'ddp-login', '--env', 'TEST_TOKEN']
-#          login._command_line()
-
-#       it 'should retry 5 times by default', (done) ->
-#          pass = badpass
-#          token = null
-#          sinon.spy DDP.prototype, 'loginWithEmail'
-#          login.__set__
-#             console:
-#                log: (m) ->
-#                   token = m
-#                error: (m) ->
-#                warn: console.warn
-#                dir: (o) ->
-#          login.__set__ 'process.exit', (n) ->
-#             assert.equal n, 1
-#             assert.equal DDP.prototype.loginWithEmail.callCount, 5
-#             DDP.prototype.loginWithEmail.restore()
-#             done()
-#          login.__set__ 'process.env.TEST_TOKEN', badToken
-#          login.__set__ 'process.argv', ['node', 'ddp-login', '--env', 'TEST_TOKEN']
-#          login._command_line()
-
-#       it 'should retry the specified number of times', (done) ->
-#          pass = badpass
-#          token = null
-#          sinon.spy DDP.prototype, 'loginWithEmail'
-#          login.__set__
-#             console:
-#                log: (m) ->
-#                   token = m
-#                error: (m) ->
-#                warn: console.warn
-#                dir: (o) ->
-#          login.__set__ 'process.exit', (n) ->
-#             assert.equal n, 1
-#             assert.equal DDP.prototype.loginWithEmail.callCount, 3
-#             DDP.prototype.loginWithEmail.restore()
-#             done()
-#          login.__set__ 'process.env.TEST_TOKEN', badToken
-#          login.__set__ 'process.argv', ['node', 'ddp-login', '--env', 'TEST_TOKEN', '--retry', '3']
-#          login._command_line()
-
-#       afterEach () ->
-#          pass = null
