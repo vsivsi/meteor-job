@@ -319,6 +319,38 @@ describe 'Job', () ->
 
             cancel = _setInterval cb, 10, "foo", "bar"
 
+   describe 'Job constructor', () ->
+
+      it 'should return a new valid Job object', () ->
+         job = new Job('root', 'work', { foo: "bar" })
+         assert.instanceOf job, Job
+         assert.equal job.root, 'root'
+         assert.equal job.type, 'work'
+         assert.deepEqual job.data, { foo: "bar" }
+         assert.isObject job._doc
+         doc = job._doc
+         assert.notProperty doc, '_id'
+         assert.isNull doc.runId
+         assert.equal job.type, doc.type
+         assert.deepEqual job.data, doc.data
+         assert.isString doc.status
+         assert.instanceOf doc.updated, Date
+         assert.isArray doc.depends
+         assert.isNumber doc.priority
+         assert.isNumber doc.retries
+         assert.isNumber doc.retryWait
+         assert.isNumber doc.retried
+         assert.isNumber doc.repeats
+         assert.isNumber doc.repeatWait
+         assert.isNumber doc.repeated
+         assert.instanceOf doc.after, Date
+         assert.isArray doc.log
+         assert.isObject doc.progress
+         
+
+
+
+
    describe 'class method', () ->
 
       ddp = null
@@ -495,7 +527,7 @@ describe 'Job', () ->
          makeMulti 'restartJobs', 'jobRestart'
          makeMulti 'removeJobs', 'jobRemove'
 
-      describe 'control methods', () ->
+      describe 'control method', () ->
 
          makeControl = (op) ->
 
