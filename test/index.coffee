@@ -403,7 +403,45 @@ describe 'Job', () ->
          after () ->
             Job.ddp_apply.restore()
 
+      describe 'makeJob', () ->
+
+         jobDoc = () ->
+            j = Job('root', 'work', {})._doc
+            j._id = { _str: 'skljfdf9s0ujfsdfl3' }
+            return j
+
+         it 'should return a valid job instance when called with a valid job document', () ->
+            res = Job.makeJob 'root', jobDoc()
+            assert.instanceOf res, Job
+
+         it 'should throw when passed invalid params', () ->
+            assert.throw (() -> Job.makeJob()), /Bad params/
+            assert.throw (() -> Job.makeJob(5, jobDoc())), /Bad params/
+            assert.throw (() -> Job.makeJob('work', {})), /Bad params/
 
 
+      describe 'getJob', () ->
 
+         before () ->
+            sinon.stub Job, "ddp_apply", makeDdpStub (name, params) ->
+               throw new Error 'Bad method name' unless name is 'root_getJob'
+               id = params[0]
+               res = switch id
+                  when 'goodID'
+                     Job('root', 'work', { i: 1 })._doc
+                  when 'badID'
+                     undefined
+               return [null, res]
 
+         it 'should return a valid job instance when called with a good id', () ->
+            res = Job.getJob 'root', 'goodID'
+            assert.instanceOf res, Job
+
+         it 'should return undefined when called with a bad id', () ->
+            res = Job.getJob 'root', 'badID'
+            assert.isUndefined res
+
+         # it 'should throw when passed invalid params', () ->
+         #    assert.throw (() -> Job.makeJob()), /Bad params/
+         #    assert.throw (() -> Job.makeJob(5, jobDoc())), /Bad params/
+         #    assert.throw (() -> Job.makeJob('work', {})), /Bad params/

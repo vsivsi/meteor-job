@@ -293,8 +293,7 @@ class Job
   # This is defined above
   @processJobs: JobQueue
 
-  # Creates a job object by id from the server queue root
-  # returns null if no such job exists
+  # Makes a job object from a job document
   @makeJob: (root, doc) ->
     if root? and typeof root is 'string' and
         doc? and typeof doc is 'object' and doc.type? and
@@ -302,7 +301,7 @@ class Job
         typeof doc.data is 'object' and doc._id?
       new Job root, doc.type, doc.data, doc
     else
-      null
+      throw new Error 'makeJob: Bad params'
 
   # Creates a job object by id from the server queue root
   # returns null if no such job exists
@@ -313,7 +312,7 @@ class Job
       if doc
         new Job root, doc.type, doc.data, doc
       else
-        null
+        undefined
 
   # Like the above, but takes an array of ids, returns array of jobs
   @getJobs: (root, ids, options..., cb) ->

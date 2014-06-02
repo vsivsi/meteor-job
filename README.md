@@ -346,12 +346,12 @@ job = Job.makeJob('jobQueue', doc);  // doc is obtained from a job Collection su
 
 #### `Job.getJob(root, id, [options], [callback])`
 
-Creates a job object by id from the server job Collection, returns `null` if no such job exists.
+Creates a job object by id from the server job Collection, returns `undefined` if no such job exists.
 
 `options`:
 * `getLog` -- If `true`, get the current log of the job. Default is `false` to save bandwidth since logs can be large.
 
-`callback(error, result)` -- Optional only on Meteor Server with Fibers. `result` is a job object or `null`
+`callback(error, result)` -- Optional only on Meteor Server with Fibers. `result` is a job object or `undefined`
 
 ```js
 if (Meteor.isServer) {
