@@ -288,7 +288,35 @@ describe 'Job', () ->
          it 'should throw if given a non-function reduce', () ->
             assert.throws (() -> reduceCallbacks (() -> ), 5, 5), /Bad params given to reduceCallbacks/
 
-      # describe '', () ->
+      describe '_setImmediate', () ->
 
+         _setImmediate = Job.__get__ '_setImmediate'
+
+         it 'should invoke the provided callback with args', (done) ->
+            cb = (a, b) ->
+               assert.equal a, "foo"
+               assert.equal b, "bar"
+               done()
+            _setImmediate cb, "foo", "bar"
+
+      describe '_setInterval', () ->
+
+         _setInterval = Job.__get__ '_setInterval'
+         _clearInterval = Job.__get__ '_clearInterval'
+
+         it 'should invoke the provided callback repeatedly with args', (done) ->
+            cancel = null
+            count = 0
+            cb = (a, b) ->
+               assert.equal a, "foo"
+               assert.equal b, "bar"
+               count++
+               if count is 2
+                  _clearInterval cancel
+                  done()
+               else if count > 2
+                  throw "Interval called too many times"
+
+            cancel = _setInterval cb, 10, "foo", "bar"
 
 
