@@ -420,7 +420,7 @@ class Job
         data: data
         status: 'waiting'
         updated: new Date()
-      @priority().retry(0).repeat(0).after().progress().depends().log("Created")
+      @priority().retry().repeat().after().progress().depends().log("Created")
       @type = @_doc.type
       @data = @_doc.data  # Make data a little easier to get to
       return @
@@ -462,7 +462,7 @@ class Job
   # Sets the number of attempted runs of this job and
   # the time to wait between successive attempts
   # Default, do not retry
-  retry: (options) ->
+  retry: (options = 0) ->
     if isInteger(options) and options >= 0
       options = { retries: options }
     if typeof options isnt 'object'
@@ -486,7 +486,7 @@ class Job
   # Sets the number of times to repeatedly run this job
   # and the time to wait between successive runs
   # Default, repeat forever...
-  repeat: (options) ->
+  repeat: (options = 0) ->
     if isInteger(options) and options >= 0
       options = { repeats: options }
     if typeof options isnt 'object'
@@ -509,19 +509,16 @@ class Job
 
   # Sets the delay before this job can run after it is saved
   delay: (wait = 0) ->
-    unless typeof wait is 'number' and wait >= 0
-      wait = 0
-    if typeof wait is 'number' and wait >= 0
-      return @after new Date(new Date().valueOf() + wait)
-    else
-      return @after new Date()
+    unless isInteger(wait) and wait >= 0
+      throw new Error 'Bad parameter, delay requires a non-negative integer.'
+    return @after new Date(new Date().valueOf() + wait)
 
   # Sets a time after which this job can run once it is saved
-  after: (time) ->
+  after: (time = new Date()) ->
     if typeof time is 'object' and time instanceof Date
       after = time
     else
-      after = new Date()
+      throw new Error 'Bad parameter, after requires a valid Date object'
     @_doc.after = after
     return @
 

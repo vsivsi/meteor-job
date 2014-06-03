@@ -499,6 +499,44 @@ describe 'Job', () ->
             assert.throw (() -> job.repeat { wait: -1 }), /bad option: wait must be an integer/
             assert.throw (() -> job.repeat { wait: 3.14 }), /bad option: wait must be an integer/
 
+      describe '.after()', () ->
+
+         it 'should accept a valid Date', () ->
+            d = new Date()
+            j = job.after d
+            assert.equal j, job
+            assert.equal doc.after, d
+
+         it 'should accept an undefined value', () ->
+            j = job.after()
+            assert.equal j, job
+            assert.instanceOf doc.after, Date
+            assert doc.after <= new Date()
+
+         it 'should throw if given a bad parameter', () ->
+            assert.throw (() -> job.after { foo: "bar" }), /Bad parameter, after requires a valid Date object/
+            assert.throw (() -> job.after 123), /Bad parameter, after requires a valid Date object/
+            assert.throw (() -> job.after false), /Bad parameter, after requires a valid Date object/
+
+      describe '.delay()', () ->
+
+         it 'should accept a valid delay', () ->
+            j = job.delay 5000
+            assert.equal j, job
+            assert.instanceOf doc.after, Date
+            assert.closeTo doc.after.valueOf(), new Date().valueOf() + 5000, 1000
+
+         it 'should accept an undefined parameter', () ->
+            j = job.delay()
+            assert.equal j, job
+            assert.instanceOf doc.after, Date
+            assert.closeTo doc.after.valueOf(), new Date().valueOf(), 1000
+
+         it 'should throw when given an invalid parameter', () ->
+            assert.throw (() -> job.delay -1.234), /Bad parameter, delay requires a non-negative integer/
+            assert.throw (() -> job.delay new Date()), /Bad parameter, delay requires a non-negative integer/
+            assert.throw (() -> job.delay false), /Bad parameter, delay requires a non-negative integer/
+
    describe 'class method', () ->
 
       ddp = null

@@ -539,7 +539,7 @@ Added jobs must have already had `.save()` run on them, so they will have the `_
 
 ```js
 job.depends([job1, job2]);  // job1 and job2 are Job objects, and must successfully complete before job will run
-job.depends(null);  // Clear the dependencies previously added on this job
+job.depends();  // Clear any dependencies previously added on this job
 ```
 
 #### `j.priority([priority])`
