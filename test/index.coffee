@@ -321,8 +321,7 @@ describe 'Job', () ->
 
    describe 'Job constructor', () ->
 
-      it 'should return a new valid Job object', () ->
-         job = new Job('root', 'work', { foo: "bar" })
+      checkJob = (job) ->
          assert.instanceOf job, Job
          assert.equal job.root, 'root'
          assert.equal job.type, 'work'
@@ -336,6 +335,7 @@ describe 'Job', () ->
          assert.isString doc.status
          assert.instanceOf doc.updated, Date
          assert.isArray doc.depends
+         assert.isArray doc.resolved
          assert.isNumber doc.priority
          assert.isNumber doc.retries
          assert.isNumber doc.retryWait
@@ -346,10 +346,77 @@ describe 'Job', () ->
          assert.instanceOf doc.after, Date
          assert.isArray doc.log
          assert.isObject doc.progress
-         
 
+      it 'should return a new valid Job object', () ->
+         job = new Job('root', 'work', { foo: "bar" })
+         checkJob job
 
+      it 'should work without "new"', () ->
+         job = Job('root', 'work', { foo: "bar" })
+         checkJob job
 
+      it 'should throw when given bad parameters', () ->
+         assert.throw Job, /new Job: bad parameter/
+
+      it 'should throw when given mismatched doc', () ->
+         job = Job('root', 'work', { foo: "bar" })
+         assert.throw (() -> Job('foo', 'bar', {}, job._doc)), /rebuild Job: bad parameter/
+
+   describe 'job mutator method', () ->
+
+      job = null
+      doc = null
+
+      beforeEach () ->
+         job = Job('root', 'work', {})
+         doc = job._doc
+
+      describe 'depends', () ->
+
+         it 'should properly update the depends property', () ->
+            jobA = Job('root', 'work', {})
+            jobA._doc._id = 'foo'
+            jobB = Job('root', 'work', {})
+            jobB._doc._id = 'bar'
+            j = job.depends [ jobA, jobB ]
+            assert.equal j, job
+            assert.deepEqual doc.depends, [ 'foo', 'bar' ]
+
+         it 'should accept a singlet Job', () ->
+            jobA = Job('root', 'work', {})
+            jobA._doc._id = 'foo'
+            j = job.depends jobA
+            assert.equal j, job
+            assert.deepEqual doc.depends, [ 'foo' ]
+
+         it 'should accept an empty deps array and return the job unchanged', () ->
+            jobA = Job('root', 'work', {})
+            jobA._doc._id = 'foo'
+            j = job.depends jobA
+            assert.equal j, job
+            assert.deepEqual doc.depends, [ 'foo' ]
+            j = job.depends []
+            assert.equal j, job
+            assert.deepEqual doc.depends, [ 'foo' ]
+
+         it 'should clear dependencies when passed a falsy value', () ->
+            jobA = Job('root', 'work', {})
+            jobA._doc._id = 'foo'
+            j = job.depends jobA
+            assert.equal j, job
+            assert.deepEqual doc.depends, [ 'foo' ]
+            job.depends null
+            assert.lengthOf doc.depends, 0
+
+         it 'should throw when given a bad parameter', () ->
+            assert.throw (() -> job.depends "badness"), /Bad input parameter/
+
+         it 'should throw when given an array containing non Jobs', () ->
+            assert.throw (() -> job.depends ["Badness"]), /Each provided object/
+
+         it 'should throw when given an array containing unsaved Jobs without an _id', () ->
+            jobA = Job('root', 'work', {})
+            assert.throw (() -> job.depends [ jobA ]), /Each provided object/
 
    describe 'class method', () ->
 

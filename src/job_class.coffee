@@ -398,18 +398,16 @@ class Job
   # Job class instance constructor. When "new Job(...)" is run
   constructor: (@root, type, data, doc = null) ->
     unless @ instanceof Job
-      return new Job @root, type, data
+      return new Job @root, type, data, doc
     @ddp_apply = Job.ddp_apply
     unless typeof doc is 'object' and
            typeof data is 'object' and
            typeof type is 'string' and
            typeof @root is 'string'
-      console.error "new Job: bad parameter(s), #{@root} (#{typeof @root}), #{type} (#{typeof type}), #{data} (#{typeof data}), #{doc} (#{typeof doc})"
-      return null
+      throw new Error "new Job: bad parameter(s), #{@root} (#{typeof @root}), #{type} (#{typeof type}), #{data} (#{typeof data}), #{doc} (#{typeof doc})"
     else if doc?  # This case is used to create local Job objects from DDP calls
       unless doc.type is type and doc.data is data
-        console.error "rebuild Job: bad parameter(s), #{@root} #{type}, #{data}, #{doc}"
-        return null
+        throw new Error "rebuild Job: bad parameter(s), #{@root} #{type}, #{data}, #{doc}"
       @_doc = doc
       @type = type
       @data = data
@@ -426,14 +424,19 @@ class Job
       return @
 
   # Adds a run dependancy on one or more existing jobs to this job
+  # Calling with a falsy value resets the dependencies to []
   depends: (jobs) ->
-    if jobs? and typeof jobs is 'object'
-      if jobs instanceof Job and jobs._doc._id?
-        depends = [ jobs._doc._id ]
-      else if jobs instanceof Array
-        depends = []
-        for j in jobs when j instanceof Job and j._doc._id?
+    if jobs
+      if jobs instanceof Job
+        jobs = [ jobs ]
+      if jobs instanceof Array
+        depends = @_doc.depends
+        for j in jobs
+          unless j instanceof Job and j._doc._id?
+            throw new Error 'Each provided object must be a saved Job instance (with an _id)'
           depends.push j._doc._id
+      else
+        throw new Error 'Bad input parameter: depends() accepts a falsy value, or Job or array of Jobs'
     else
       depends = []
     @_doc.depends = depends

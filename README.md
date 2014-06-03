@@ -535,9 +535,11 @@ job = new Job(  // new is optional
 #### `j.depends([dependencies])`
 
 Adds jobs that this job depends upon (antecedents). This job will not run until these jobs have successfully completed. Defaults to an empty array (no dependencies). Returns `job`, so it is chainable.
+Added jobs must have already had `.save()` run on them, so they will have the `_id` attribute that is used to form the dependency. Calling `j.depends()` with a falsy value will clear any existing dependencies for this job.
 
 ```js
 job.depends([job1, job2]);  // job1 and job2 are Job objects, and must successfully complete before job will run
+job.depends(null);  // Clear the dependencies previously added on this job
 ```
 
 #### `j.priority([priority])`
