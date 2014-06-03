@@ -446,10 +446,13 @@ class Job
   # Set the run priority of this job
   priority: (level = 0) ->
     if typeof level is 'string'
-      priority = Job.jobPriorities[level] ? 0
+      priority = Job.jobPriorities[level]
+      unless priority?
+        throw new Error 'Invalid string priority level provided'
     else if typeof level is 'number'
       priority = level
     else
+      throw new Error 'priority must be a number or valid prioirty level string'
       priority = 0
     @_doc.priority = priority
     return @

@@ -371,7 +371,7 @@ describe 'Job', () ->
          job = Job('root', 'work', {})
          doc = job._doc
 
-      describe 'depends', () ->
+      describe '.depends()', () ->
 
          it 'should properly update the depends property', () ->
             jobA = Job('root', 'work', {})
@@ -417,6 +417,25 @@ describe 'Job', () ->
          it 'should throw when given an array containing unsaved Jobs without an _id', () ->
             jobA = Job('root', 'work', {})
             assert.throw (() -> job.depends [ jobA ]), /Each provided object/
+
+      describe '.priority()', () ->
+
+         it 'should accept a numeric priority', () ->
+            j = job.priority 3
+            assert.equal j, job
+            assert.equal doc.priority, 3
+
+         it 'should accept a valid string priority', () ->
+            j = job.priority 'normal'
+            assert.equal j, job
+            assert.equal doc.priority, Job.jobPriorities['normal']
+
+         it 'should throw when given an invalid priority level', () ->
+            assert.throw (() -> job.priority 'super'), /Invalid string priority level provided/
+
+         it 'should throw when given an invalid parameter', () ->
+            assert.throw (() -> job.priority []), /priority must be a number or valid prioirty level string/
+
 
    describe 'class method', () ->
 
