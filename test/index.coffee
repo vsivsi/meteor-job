@@ -434,8 +434,70 @@ describe 'Job', () ->
             assert.throw (() -> job.priority 'super'), /Invalid string priority level provided/
 
          it 'should throw when given an invalid parameter', () ->
-            assert.throw (() -> job.priority []), /priority must be a number or valid prioirty level string/
+            assert.throw (() -> job.priority []), /priority must be an integer or valid priority level/
 
+         it 'should throw when given a non-integer', () ->
+            assert.throw (() -> job.priority 3.14), /priority must be an integer or valid priority level/
+
+      describe '.retry()', () ->
+
+         it 'should accept a non-negative integer parameter', () ->
+            j = job.retry 3
+            assert.equal j, job
+            assert.equal doc.retries, 3 + 1 # This is correct, it adds one.
+
+         it 'should accept an option object', () ->
+            j = job.retry { retries: 3, wait: 5000 }
+            assert.equal j, job
+            assert.equal doc.retries, 3 + 1
+            assert.equal doc.retryWait, 5000
+
+         it 'should throw when given a bad parameter', () ->
+            assert.throw (() -> job.retry 'badness'), /bad parameter: accepts either an integer/
+
+         it 'should throw when given a negative integer', () ->
+            assert.throw (() -> job.retry -1), /bad parameter: accepts either an integer/
+
+         it 'should throw when given a numeric non-integer', () ->
+            assert.throw (() -> job.retry 3.14), /bad parameter: accepts either an integer/
+
+         it 'should throw when given bad options', () ->
+            assert.throw (() -> job.retry { retries: 'badness' }), /bad option: retries must be an integer/
+            assert.throw (() -> job.retry { retries: -1 }), /bad option: retries must be an integer/
+            assert.throw (() -> job.retry { retries: 3.14 }), /bad option: retries must be an integer/
+            assert.throw (() -> job.retry { wait: 'badness' }), /bad option: wait must be an integer/
+            assert.throw (() -> job.retry { wait: -1 }), /bad option: wait must be an integer/
+            assert.throw (() -> job.retry { wait: 3.14 }), /bad option: wait must be an integer/
+
+      describe '.repeat()', () ->
+
+         it 'should accept a non-negative integer parameter', () ->
+            j = job.repeat 3
+            assert.equal j, job
+            assert.equal doc.repeats, 3
+
+         it 'should accept an option object', () ->
+            j = job.repeat { repeats: 3, wait: 5000 }
+            assert.equal j, job
+            assert.equal doc.repeats, 3
+            assert.equal doc.repeatWait, 5000
+
+         it 'should throw when given a bad parameter', () ->
+            assert.throw (() -> job.repeat 'badness'), /bad parameter: accepts either an integer/
+
+         it 'should throw when given a negative integer', () ->
+            assert.throw (() -> job.repeat -1), /bad parameter: accepts either an integer/
+
+         it 'should throw when given a numeric non-integer', () ->
+            assert.throw (() -> job.repeat 3.14), /bad parameter: accepts either an integer/
+
+         it 'should throw when given bad options', () ->
+            assert.throw (() -> job.repeat { repeats: 'badness' }), /bad option: repeats must be an integer/
+            assert.throw (() -> job.repeat { repeats: -1 }), /bad option: repeats must be an integer/
+            assert.throw (() -> job.repeat { repeats: 3.14 }), /bad option: repeats must be an integer/
+            assert.throw (() -> job.repeat { wait: 'badness' }), /bad option: wait must be an integer/
+            assert.throw (() -> job.repeat { wait: -1 }), /bad option: wait must be an integer/
+            assert.throw (() -> job.repeat { wait: 3.14 }), /bad option: wait must be an integer/
 
    describe 'class method', () ->
 

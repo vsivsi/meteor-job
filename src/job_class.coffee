@@ -61,6 +61,8 @@ concatReduce = (a, b) ->
   a = [a] unless a instanceof Array
   a.concat b
 
+isInteger = (i) -> typeof i is 'number' and Math.floor(i) is i
+
 # This smooths over the various different implementations...
 _setImmediate = (func, args...) ->
   if Meteor?.setTimeout?
@@ -418,7 +420,7 @@ class Job
         data: data
         status: 'waiting'
         updated: new Date()
-      @priority().retry({retries: 0}).repeat({repeats: 0}).after().progress().depends().log("Created")
+      @priority().retry(0).repeat(0).after().progress().depends().log("Created")
       @type = @_doc.type
       @data = @_doc.data  # Make data a little easier to get to
       return @
@@ -449,10 +451,10 @@ class Job
       priority = Job.jobPriorities[level]
       unless priority?
         throw new Error 'Invalid string priority level provided'
-    else if typeof level is 'number'
+    else if isInteger(level)
       priority = level
     else
-      throw new Error 'priority must be a number or valid prioirty level string'
+      throw new Error 'priority must be an integer or valid priority level'
       priority = 0
     @_doc.priority = priority
     return @
@@ -461,16 +463,21 @@ class Job
   # the time to wait between successive attempts
   # Default, do not retry
   retry: (options) ->
+    if isInteger(options) and options >= 0
+      options = { retries: options }
     if typeof options isnt 'object'
-      options = {}
-    if typeof options.retries is 'number' and options.retries > 0
+      throw new Error 'bad parameter: accepts either an integer >= 0 or an options object'
+    if options.retries?
+      unless isInteger(options.retries) and options.retries >= 0
+        throw new Error 'bad option: retries must be an integer >= 0'
       options.retries++
     else
       options.retries = Job.forever
-
-    unless typeof options.wait is 'number' and options.wait >= 0
+    if options.wait?
+      unless isInteger(options.wait) and options.wait >= 0
+        throw new Error 'bad option: wait must be an integer >= 0'
+    else
       options.wait = 5*60*1000
-
     @_doc.retries = options.retries
     @_doc.retryWait = options.wait
     @_doc.retried ?= 0
@@ -478,14 +485,21 @@ class Job
 
   # Sets the number of times to repeatedly run this job
   # and the time to wait between successive runs
-  # Default, run forever...
+  # Default, repeat forever...
   repeat: (options) ->
+    if isInteger(options) and options >= 0
+      options = { repeats: options }
     if typeof options isnt 'object'
-      options = {}
-    unless typeof options.repeats is 'number' and options.repeats >= 0
+      throw new Error 'bad parameter: accepts either an integer >= 0 or an options object'
+    if options.repeats?
+      unless isInteger(options.repeats) and options.repeats >= 0
+        throw new Error 'bad option: repeats must be an integer >= 0'
+    else
       options.repeats = Job.forever
-
-    unless typeof options.wait is 'number' and options.wait >= 0
+    if options.wait?
+      unless isInteger(options.wait) and options.wait >= 0
+        throw new Error 'bad option: wait must be an integer >= 0'
+    else
       options.wait = 5*60*1000
 
     @_doc.repeats = options.repeats

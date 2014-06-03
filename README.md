@@ -559,6 +559,8 @@ Set how failing jobs are rescheduled and retried by the job Collection. Returns 
 * `retries` -- Number of times to retry a failing job. Default: `Job.forever`
 * `wait`  -- How long to wait between attempts, in ms. Default: `300000` (5 minutes)
 
+`[options]` may also be a non-negative integer, which is interpreted as `{ retries: [options] }`
+
 Note that the above stated defaults are those when `.retry()` is explicitly called. When a new job is created, the default number of `retries` is `0`.
 
 ```js
@@ -575,6 +577,8 @@ Set how many times this job will be automatically re-run by the job Collection. 
 `options:`
 * `repeats` -- Number of times to rerun the job. Default: `Job.forever`
 * `wait`  -- How long to wait between re-runs, in ms. Default: `300000` (5 minutes)
+
+`[options]` may also be a non-negative integer, which is interpreted as `{ repeats: [options] }`
 
 Note that the above stated defaults are those when `.repeat()` is explicitly called. When a new job is created, the default number of `repeats` is `0`.
 
