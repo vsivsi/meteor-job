@@ -611,7 +611,7 @@ Add an entry to this job's log. May be called before a new job is saved. `messag
 
 `options:`
 * `level`: One of `Jobs.jobLogLevels`: `'info'`, `'success'`, `'warning'`, or `'danger'`.  Default is `'info'`.
-* `echo`: Echo this log entry to the console. `'danger'` and `'warning'` level messages are echoed using `console.error()` and `console.warn()` respectively. Others are echoed using `console.log()`.
+* `echo`: Echo this log entry to the console. `'danger'` and `'warning'` level messages are echoed using `console.error()` and `console.warn()` respectively. Others are echoed using `console.log()`. If echo is `true` all messages will be echoed. If `echo` is one of the `Job.jobLogLevels` levels, only messages of that level or higher will be echoed.
 
 `callback(error, result)` -- Result is true if logging was successful. When running as `Meteor.isServer` with fibers, for a saved object the callback may be omitted and the return value is the result. If called on an unsaved object, the result is `job` and can be chained.
 
@@ -628,6 +628,9 @@ job.log(
     }
   }
 );
+
+var verbosityLevel = 'warning';
+job.log("Don't echo this", { level: 'info', echo: verbosityLevel } );
 ```
 
 #### `j.progress(completed, total, [options], [cb])`

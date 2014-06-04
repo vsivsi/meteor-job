@@ -530,14 +530,14 @@ describe 'Job', () ->
             j = job.delay()
             assert.equal j, job
             assert.instanceOf doc.after, Date
-            assert.closeTo doc.after.valueOf(), new Date().valueOf(), 1000
+            assert.closeTo doc.after, new Date(), 1000
 
          it 'should throw when given an invalid parameter', () ->
             assert.throw (() -> job.delay -1.234), /Bad parameter, delay requires a non-negative integer/
             assert.throw (() -> job.delay new Date()), /Bad parameter, delay requires a non-negative integer/
             assert.throw (() -> job.delay false), /Bad parameter, delay requires a non-negative integer/
 
-   describe 'class method', () ->
+   describe 'communicating', () ->
 
       ddp = null
 
@@ -555,38 +555,140 @@ describe 'Job', () ->
          ddp = new DDP()
          Job.setDDP ddp
 
-      describe 'getWork', () ->
+      describe 'job status method', () ->
 
-         before () ->
-            sinon.stub Job, "ddp_apply", makeDdpStub (name, params) ->
-               throw new Error 'Bad method name' unless name is 'root_getWork'
-               type = params[0][0]
-               max = params[1]?.maxJobs ? 1
-               res = switch type
-                  when 'work'
-                     ( Job('root', type, { i: 1 })._doc for i in [1..max] )
-                  when 'nowork'
-                     []
-               return [null, res]
+         job = null
+         doc = null
 
-         it 'should make a DDP method call and return a Job by default without callback', () ->
-            res = Job.getWork 'root', 'work', {}
-            assert.instanceOf res, Job
+         beforeEach () ->
+            job = Job('root', 'work', {})
+            doc = job._doc
 
-         it 'should return undefined when no work is available without callback', () ->
-            res = Job.getWork 'root', 'nowork', {}
-            assert.isUndefined res
+         describe '.log()', () ->
 
-         it 'should return an array of Jobs when options.maxJobs > 1 without callback', () ->
-            res = Job.getWork 'root', 'work', { maxJobs: 2 }
-            assert.isArray res
-            assert.lengthOf res, 2
-            assert.instanceOf res[0], Job
+            before () ->
+               sinon.stub Job, "ddp_apply", makeDdpStub (name, params) ->
+                  throw new Error 'Bad method name' unless name is 'root_jobLog'
+                  id = params[0]
+                  runId = params[1]
+                  msg = params[2]
+                  level = params[3]?.level ? 'gerinfo'
+                  if id is 'thisId' and runId is 'thatId' and msg is 'Hello' and level in Job.jobLogLevels
+                     res = level
+                  else
+                     res = false
+                  return [null, res]
 
-         it 'should return an empty array when options.maxJobs > 1 and there is no work without callback', () ->
-            res = Job.getWork 'root', 'nowork', { maxJobs: 2 }
-            assert.isArray res
-            assert.lengthOf res, 0
+            it 'should add a valid log entry to the local state when invoked before a job is saved', () ->
+               j = job.log 'Hello', { level: 'success' }
+               assert.equal j, job
+               thisLog = doc.log[1] #  [0] is the 'Created' log message
+               assert.equal thisLog.message, 'Hello'
+               assert.equal thisLog.level, 'success'
+               assert.instanceOf thisLog.time, Date
+               assert.closeTo thisLog.time, new Date(), 1000
+
+            it 'should make valid DDP call when invoked on a saved job', () ->
+               doc._id = 'thisId'
+               doc.runId = 'thatId'
+               res = job.log 'Hello'
+               assert.equal res, 'info'
+
+            it 'should correctly pass level option', () ->
+               doc._id = 'thisId'
+               doc.runId = 'thatId'
+               res = job.log 'Hello', { level: 'danger' }
+               assert.equal res, 'danger'
+
+            it 'should work with a callback', (done) ->
+               doc._id = 'thisId'
+               doc.runId = 'thatId'
+               job.log 'Hello', { level: 'success' }, (err, res) ->
+                  assert.equal res, 'success'
+                  done()
+
+            it 'should throw when passed an invalid message', () ->
+               doc._id = 'thisId'
+               doc.runId = 'thatId'
+               assert.throw (() -> job.log 43, { level: 'danger' }), /Log message must be a string/
+
+            it 'should throw when passed an invalid level', () ->
+               doc._id = 'thisId'
+               doc.runId = 'thatId'
+               assert.throw (() -> job.log 'Hello', { level: 'blargh' }), /Log level options must be one of Job.jobLogLevels/
+               assert.throw (() -> job.log 'Hello', { level: [] }), /Log level options must be one of Job.jobLogLevels/
+
+            describe 'echo option', () ->
+
+               jobConsole = null
+
+               before () ->
+                  Job.__set__ 'console',
+                     info: (params...) -> throw new Error 'info'
+                     log: (params...) -> throw new Error 'success'
+                     warn: (params...) -> throw new Error 'warning'
+                     error: (params...) -> throw new Error 'danger'
+
+               it 'should echo the log to the console at the level requested', () ->
+                  assert.throw (() -> job.log 'Hello', { echo: true }), /info/
+                  assert.throw (() -> job.log 'Hello', { echo: true, level: 'info' }), /info/
+                  assert.throw (() -> job.log 'Hello', { echo: true, level: 'success' }), /success/
+                  assert.throw (() -> job.log 'Hello', { echo: true, level: 'warning' }), /warning/
+                  assert.throw (() -> job.log 'Hello', { echo: true, level: 'danger' }), /danger/
+
+               it "shouldn't echo the log to the console below the level requested", () ->
+                  assert.doesNotThrow (() -> job.log 'Hello', { echo: 'warning' }), /info/
+                  assert.doesNotThrow (() -> job.log 'Hello', { echo: 'warning', level: 'info' }), /info/
+                  assert.doesNotThrow (() -> job.log 'Hello', { echo: 'warning', level: 'success' }), /success/
+                  assert.throw (() -> job.log 'Hello', { echo: 'warning', level: 'warning' }), /warning/
+                  assert.throw (() -> job.log 'Hello', { echo: 'warning', level: 'danger' }), /danger/
+
+               after () ->
+                  Job.__set__ 'console', jobConsole
+
+         # describe '.progress()', () ->
+
+            # before () ->
+            #    sinon.stub Job, "ddp_apply", makeDdpStub (name, params) ->
+            #       throw new Error 'Bad method name' unless name is 'root_jobProgress'
+            #       id = params[0]
+            #       runId = params[1]
+            #       completed = params[2]
+            #       total = params[3]
+            #       if id is 'thisId' and runId is 'thatId' and completed is 50 and total is 100
+            #          res = true
+            #       else
+            #          res = false
+            #       return [null, res]
+
+            # it 'should add a valid log entry to the local state when invoked before a job is saved', () ->
+            #    j = job.log 'Hello', { level: 'success' }
+            #    assert.equal j, job
+            #    thisLog = doc.log[1] #  [0] is the 'Created' log message
+            #    assert.equal thisLog.message, 'Hello'
+            #    assert.equal thisLog.level, 'success'
+            #    assert.instanceOf thisLog.time, Date
+            #    assert.closeTo thisLog.time, new Date(), 1000
+
+            # it 'should make valid DDP call when invoked on a saved job', () ->
+            #    doc._id = 'thisId'
+            #    doc.runId = 'thatId'
+            #    res = job.log 'Hello'
+            #    assert.isTrue res
+
+            # it 'should correctly pass level option', () ->
+            #    doc._id = 'thisId'
+            #    doc.runId = 'thatId'
+            #    res = job.log 'Hello', { level: 'badLevel' }
+            #    assert.isFalse res
+
+            # it 'should work with a callback', (done) ->
+            #    doc._id = 'thisId'
+            #    doc.runId = 'thatId'
+            #    job.log 'Hello', (err, res) ->
+            #       assert.isTrue res
+            #       done()
+
 
          afterEach () ->
             Job.ddp_apply.reset()
@@ -594,78 +696,38 @@ describe 'Job', () ->
          after () ->
             Job.ddp_apply.restore()
 
-      describe 'makeJob', () ->
+      describe 'class method', () ->
 
-         jobDoc = () ->
-            j = Job('root', 'work', {})._doc
-            j._id = { _str: 'skljfdf9s0ujfsdfl3' }
-            return j
-
-         it 'should return a valid job instance when called with a valid job document', () ->
-            res = Job.makeJob 'root', jobDoc()
-            assert.instanceOf res, Job
-
-         it 'should throw when passed invalid params', () ->
-            assert.throw (() -> Job.makeJob()), /Bad params/
-            assert.throw (() -> Job.makeJob(5, jobDoc())), /Bad params/
-            assert.throw (() -> Job.makeJob('work', {})), /Bad params/
-
-      describe 'get Job(s) by ID', () ->
-
-         getJobStub = (name, params) ->
-            throw new Error 'Bad method name' unless name is 'root_getJob'
-            ids = params[0]
-
-            one = (id) ->
-               j = switch id
-                  when 'goodID'
-                     Job('root', 'work', { i: 1 })._doc
-                  else
-                     undefined
-               return j
-
-            if ids instanceof Array
-               res = (one(j) for j in ids when j is 'goodID')
-            else
-               res = one(ids)
-
-            return [null, res]
-
-         describe 'getJob', () ->
+         describe 'getWork', () ->
 
             before () ->
-               sinon.stub Job, "ddp_apply", makeDdpStub getJobStub
+               sinon.stub Job, "ddp_apply", makeDdpStub (name, params) ->
+                  throw new Error 'Bad method name' unless name is 'root_getWork'
+                  type = params[0][0]
+                  max = params[1]?.maxJobs ? 1
+                  res = switch type
+                     when 'work'
+                        ( Job('root', type, { i: 1 })._doc for i in [1..max] )
+                     when 'nowork'
+                        []
+                  return [null, res]
 
-            it 'should return a valid job instance when called with a good id', () ->
-               res = Job.getJob 'root', 'goodID'
+            it 'should make a DDP method call and return a Job by default without callback', () ->
+               res = Job.getWork 'root', 'work', {}
                assert.instanceOf res, Job
 
-            it 'should return undefined when called with a bad id', () ->
-               res = Job.getJob 'root', 'badID'
+            it 'should return undefined when no work is available without callback', () ->
+               res = Job.getWork 'root', 'nowork', {}
                assert.isUndefined res
 
-            afterEach () ->
-               Job.ddp_apply.reset()
-
-            after () ->
-               Job.ddp_apply.restore()
-
-         describe 'getJobs', () ->
-
-            before () ->
-               sinon.stub Job, "ddp_apply", makeDdpStub getJobStub
-
-            it 'should return valid job instances for good IDs only', () ->
-               res = Job.getJobs 'root', ['goodID', 'badID', 'goodID']
-               assert Job.ddp_apply.calledOnce, 'getJob method called more than once'
+            it 'should return an array of Jobs when options.maxJobs > 1 without callback', () ->
+               res = Job.getWork 'root', 'work', { maxJobs: 2 }
                assert.isArray res
                assert.lengthOf res, 2
                assert.instanceOf res[0], Job
-               assert.instanceOf res[1], Job
 
-            it 'should return an empty array for all bad IDs', () ->
-               res = Job.getJobs 'root', ['badID', 'badID', 'badID']
-               assert Job.ddp_apply.calledOnce, 'getJob method called more than once'
+            it 'should return an empty array when options.maxJobs > 1 and there is no work without callback', () ->
+               res = Job.getWork 'root', 'nowork', { maxJobs: 2 }
                assert.isArray res
                assert.lengthOf res, 0
 
@@ -675,31 +737,55 @@ describe 'Job', () ->
             after () ->
                Job.ddp_apply.restore()
 
-      describe 'multijob operation', () ->
+         describe 'makeJob', () ->
 
-         makeMulti = (op, method) ->
+            jobDoc = () ->
+               j = Job('root', 'work', {})._doc
+               j._id = { _str: 'skljfdf9s0ujfsdfl3' }
+               return j
 
-            describe op, () ->
+            it 'should return a valid job instance when called with a valid job document', () ->
+               res = Job.makeJob 'root', jobDoc()
+               assert.instanceOf res, Job
+
+            it 'should throw when passed invalid params', () ->
+               assert.throw (() -> Job.makeJob()), /Bad params/
+               assert.throw (() -> Job.makeJob(5, jobDoc())), /Bad params/
+               assert.throw (() -> Job.makeJob('work', {})), /Bad params/
+
+         describe 'get Job(s) by ID', () ->
+
+            getJobStub = (name, params) ->
+               throw new Error 'Bad method name' unless name is 'root_getJob'
+               ids = params[0]
+
+               one = (id) ->
+                  j = switch id
+                     when 'goodID'
+                        Job('root', 'work', { i: 1 })._doc
+                     else
+                        undefined
+                  return j
+
+               if ids instanceof Array
+                  res = (one(j) for j in ids when j is 'goodID')
+               else
+                  res = one(ids)
+
+               return [null, res]
+
+            describe 'getJob', () ->
 
                before () ->
-                  sinon.stub Job, "ddp_apply", makeDdpStub (name, params) ->
-                     throw new Error "Bad method name: #{name}" unless name is "root_#{method}"
-                     ids = params[0]
-                     return [null, ids.indexOf('goodID') isnt -1]
+                  sinon.stub Job, "ddp_apply", makeDdpStub getJobStub
 
-               it 'should return true if there are any good IDs', () ->
-                  assert.isFunction Job[op]
-                  res = Job[op]('root', ['goodID', 'badID', 'goodID'])
-                  assert Job.ddp_apply.calledOnce, "#{op} method called more than once"
-                  assert.isBoolean res
-                  assert.isTrue res
+               it 'should return a valid job instance when called with a good id', () ->
+                  res = Job.getJob 'root', 'goodID'
+                  assert.instanceOf res, Job
 
-               it 'should return false if there are all bad IDs', () ->
-                  assert.isFunction Job[op]
-                  res = Job[op]('root', ['badID', 'badID'])
-                  assert Job.ddp_apply.calledOnce, "#{op} method called more than once"
-                  assert.isBoolean res
-                  assert.isFalse res
+               it 'should return undefined when called with a bad id', () ->
+                  res = Job.getJob 'root', 'badID'
+                  assert.isUndefined res
 
                afterEach () ->
                   Job.ddp_apply.reset()
@@ -707,28 +793,24 @@ describe 'Job', () ->
                after () ->
                   Job.ddp_apply.restore()
 
-         makeMulti 'pauseJobs', 'jobPause'
-         makeMulti 'resumeJobs', 'jobResume'
-         makeMulti 'cancelJobs', 'jobCancel'
-         makeMulti 'restartJobs', 'jobRestart'
-         makeMulti 'removeJobs', 'jobRemove'
-
-      describe 'control method', () ->
-
-         makeControl = (op) ->
-
-            describe op, () ->
+            describe 'getJobs', () ->
 
                before () ->
-                  sinon.stub Job, "ddp_apply", makeDdpStub (name, params) ->
-                     throw new Error "Bad method name: #{name}" unless name is "root_#{op}"
-                     return [null, true]
+                  sinon.stub Job, "ddp_apply", makeDdpStub getJobStub
 
-               it 'should return a boolean', () ->
-                  assert.isFunction Job[op]
-                  res = Job[op]('root')
-                  assert Job.ddp_apply.calledOnce, "#{op} method called more than once"
-                  assert.isBoolean res
+               it 'should return valid job instances for good IDs only', () ->
+                  res = Job.getJobs 'root', ['goodID', 'badID', 'goodID']
+                  assert Job.ddp_apply.calledOnce, 'getJob method called more than once'
+                  assert.isArray res
+                  assert.lengthOf res, 2
+                  assert.instanceOf res[0], Job
+                  assert.instanceOf res[1], Job
+
+               it 'should return an empty array for all bad IDs', () ->
+                  res = Job.getJobs 'root', ['badID', 'badID', 'badID']
+                  assert Job.ddp_apply.calledOnce, 'getJob method called more than once'
+                  assert.isArray res
+                  assert.lengthOf res, 0
 
                afterEach () ->
                   Job.ddp_apply.reset()
@@ -736,6 +818,67 @@ describe 'Job', () ->
                after () ->
                   Job.ddp_apply.restore()
 
-         makeControl 'startJobs'
-         makeControl 'stopJobs'
+         describe 'multijob operation', () ->
+
+            makeMulti = (op, method) ->
+
+               describe op, () ->
+
+                  before () ->
+                     sinon.stub Job, "ddp_apply", makeDdpStub (name, params) ->
+                        throw new Error "Bad method name: #{name}" unless name is "root_#{method}"
+                        ids = params[0]
+                        return [null, ids.indexOf('goodID') isnt -1]
+
+                  it 'should return true if there are any good IDs', () ->
+                     assert.isFunction Job[op]
+                     res = Job[op]('root', ['goodID', 'badID', 'goodID'])
+                     assert Job.ddp_apply.calledOnce, "#{op} method called more than once"
+                     assert.isBoolean res
+                     assert.isTrue res
+
+                  it 'should return false if there are all bad IDs', () ->
+                     assert.isFunction Job[op]
+                     res = Job[op]('root', ['badID', 'badID'])
+                     assert Job.ddp_apply.calledOnce, "#{op} method called more than once"
+                     assert.isBoolean res
+                     assert.isFalse res
+
+                  afterEach () ->
+                     Job.ddp_apply.reset()
+
+                  after () ->
+                     Job.ddp_apply.restore()
+
+            makeMulti 'pauseJobs', 'jobPause'
+            makeMulti 'resumeJobs', 'jobResume'
+            makeMulti 'cancelJobs', 'jobCancel'
+            makeMulti 'restartJobs', 'jobRestart'
+            makeMulti 'removeJobs', 'jobRemove'
+
+         describe 'control method', () ->
+
+            makeControl = (op) ->
+
+               describe op, () ->
+
+                  before () ->
+                     sinon.stub Job, "ddp_apply", makeDdpStub (name, params) ->
+                        throw new Error "Bad method name: #{name}" unless name is "root_#{op}"
+                        return [null, true]
+
+                  it 'should return a boolean', () ->
+                     assert.isFunction Job[op]
+                     res = Job[op]('root')
+                     assert Job.ddp_apply.calledOnce, "#{op} method called more than once"
+                     assert.isBoolean res
+
+                  afterEach () ->
+                     Job.ddp_apply.reset()
+
+                  after () ->
+                     Job.ddp_apply.restore()
+
+            makeControl 'startJobs'
+            makeControl 'stopJobs'
 

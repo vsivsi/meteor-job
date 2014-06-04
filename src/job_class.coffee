@@ -526,18 +526,23 @@ class Job
   log: (message, options..., cb) ->
     [options, cb] = optionsHelp options, cb
     options.level ?= 'info'
-    if options.echo?
+    unless typeof message is 'string'
+      throw new Error 'Log message must be a string'
+    unless typeof options.level is 'string' and options.level in Job.jobLogLevels
+      throw new Error 'Log level options must be one of Job.jobLogLevels'
+    if options.echo? and Job.jobLogLevels.indexOf(options.level) >= Job.jobLogLevels.indexOf(options.echo)
       delete options.echo
       out = "LOG: #{options.level}, #{@_doc._id} #{@_doc.runId}: #{message}"
       switch options.level
         when 'danger' then console.error out
         when 'warning' then console.warn out
-        else console.log out
+        when 'success' then console.log out
+        else console.info out
     if @_doc._id?
       return methodCall @root, "jobLog", [@_doc._id, @_doc.runId, message, options], cb
     else  # Log can be called on an unsaved job
       @_doc.log ?= []
-      @_doc.log.push { time: new Date(), runId: null, level: 'success', message: message }
+      @_doc.log.push { time: new Date(), runId: null, level: options.level, message: message }
       if cb? and typeof cb is 'function'
         _setImmediate cb, null, true   # DO NOT release Zalgo
       return @  # Allow call chaining in this case
