@@ -924,6 +924,73 @@ describe 'Job', () ->
             after () ->
                Job.ddp_apply.restore()
 
+         describe 'job control operation', () ->
+
+            makeJobControl = (op, method) ->
+
+               describe op, () ->
+
+                  before () ->
+                     sinon.stub Job, "ddp_apply", makeDdpStub (name, params) ->
+                        throw new Error "Bad method name: #{name}" unless name is "root_#{method}"
+                        id = params[0]
+                        if id is 'thisId'
+                           res = true
+                        else
+                           res = false
+                        return [null, res]
+
+                  it 'should properly invoke the DDP method', () ->
+                     assert.isFunction job[op]
+                     doc._id = 'thisId'
+                     res = job[op]()
+                     assert.isTrue res
+
+                  it 'should return false if the id is not on the server', () ->
+                     assert.isFunction job[op]
+                     doc._id = 'badId'
+                     res = job[op]()
+                     assert.isFalse res
+
+                  it 'should work with a callback', (done) ->
+                     assert.isFunction job[op]
+                     doc._id = 'thisId'
+                     res = job[op] (err, res) ->
+                        assert.isTrue res
+                        done()
+
+                  if op in ['pause', 'resume']
+                     it 'should alter local state when called on an unsaved job', () ->
+                        bad = 'badStatus'
+                        doc.status = bad
+                        res = job[op]()
+                        assert.equal res, job
+                        assert.notEqual doc.status, bad
+
+                     it 'should alter local state when called on an unsaved job with callback', (done) ->
+                        bad = 'badStatus'
+                        doc.status = bad
+                        res = job[op] (err, res) ->
+                           assert.isTrue res
+                           assert.notEqual doc.status, bad
+                           done()
+                  else
+                     it 'should throw when called on an unsaved job', () ->
+                        assert.throw (() -> job[op]()), /on an unsaved job/
+
+                  afterEach () ->
+                     Job.ddp_apply.reset()
+
+                  after () ->
+                     Job.ddp_apply.restore()
+
+            makeJobControl 'pause', 'jobPause'
+            makeJobControl 'resume', 'jobResume'
+            makeJobControl 'cancel', 'jobCancel'
+            makeJobControl 'restart', 'jobRestart'
+            makeJobControl 'rerun', 'jobRerun'
+            makeJobControl 'remove', 'jobRemove'
+
       describe 'class method', () ->
 
          describe 'getWork', () ->

@@ -637,11 +637,10 @@ class Job
     if @_doc._id?
       return methodCall @root, "jobPause", [@_doc._id, options], cb
     else
-      if @_doc.status is 'waiting'
-        @_doc.status = 'paused'
-        if cb? and typeof cb is 'function'
-          _setImmediate cb, null, true  # DO NOT release Zalgo
-        return @
+      @_doc.status = 'paused'
+      if cb? and typeof cb is 'function'
+        _setImmediate cb, null, true  # DO NOT release Zalgo
+      return @
     return null
 
   # Resume this job, only Paused jobs can be resumed
@@ -651,11 +650,10 @@ class Job
     if @_doc._id?
       return methodCall @root, "jobResume", [@_doc._id, options], cb
     else
-      if @_doc.status is 'paused'
-        @_doc.status = 'waiting'
-        if cb? and typeof cb is 'function'
-          _setImmediate cb, null, true  # DO NOT release Zalgo
-        return @
+      @_doc.status = 'waiting'
+      if cb? and typeof cb is 'function'
+        _setImmediate cb, null, true  # DO NOT release Zalgo
+      return @
     return null
 
   # Cancel this job if it is running or able to run (waiting, ready)
@@ -665,9 +663,7 @@ class Job
     if @_doc._id?
       return methodCall @root, "jobCancel", [@_doc._id, options], cb
     else
-      if cb? and typeof cb is 'function'
-        _setImmediate cb, null, false  # DO NOT release Zalgo
-      console.warn "Can't cancel an unsaved job"
+      throw new Error "Can't call .cancel() on an unsaved job"
     return null
 
   # Restart a failed or cancelled job
@@ -678,9 +674,7 @@ class Job
     if @_doc._id?
       return methodCall @root, "jobRestart", [@_doc._id, options], cb
     else
-      console.warn "Can't restart an unsaved job"
-      if cb? and typeof cb is 'function'
-        _setImmediate cb, null, null   # DO NOT release Zalgo
+      throw new Error "Can't call .restart() on an unsaved job"
     return null
 
   # Run a completed job again as a new job, essentially a manual repeat
@@ -691,9 +685,7 @@ class Job
     if @_doc._id?
       return methodCall @root, "jobRerun", [@_doc._id, options], cb
     else
-      console.warn "Can't rerun an unsaved job"
-      if cb? and typeof cb is 'function'
-        _setImmediate cb, null, null   # DO NOT release Zalgo
+      throw new Error "Can't call .rerun() on an unsaved job"
     return null
 
   # Remove a job that is not able to run (completed, cancelled, failed) from the queue
@@ -702,9 +694,7 @@ class Job
     if @_doc._id?
       return methodCall @root, "jobRemove", [@_doc._id, options], cb
     else
-      console.warn "Can't remove an unsaved job"
-      if cb? and typeof cb is 'function'
-        _setImmediate cb, null, null   # DO NOT release Zalgo
+      throw new Error "Can't call .remove() on an unsaved job"
     return null
 
 # Export Job in a npm package
