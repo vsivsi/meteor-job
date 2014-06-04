@@ -530,7 +530,7 @@ class Job
       throw new Error 'Log message must be a string'
     unless typeof options.level is 'string' and options.level in Job.jobLogLevels
       throw new Error 'Log level options must be one of Job.jobLogLevels'
-    if options.echo? and Job.jobLogLevels.indexOf(options.level) >= Job.jobLogLevels.indexOf(options.echo)
+    if options.echo and Job.jobLogLevels.indexOf(options.level) >= Job.jobLogLevels.indexOf(options.echo)
       delete options.echo
       out = "LOG: #{options.level}, #{@_doc._id} #{@_doc.runId}: #{message}"
       switch options.level
@@ -560,9 +560,9 @@ class Job
         completed: completed
         total: total
         percent: 100*completed/total
-      if options.echo?
+      if options.echo
         delete options.echo
-        console.log "PROGRESS: #{@_doc._id} #{@_doc.runId}: #{progress.completed} out of #{progress.total} (#{progress.percent}%)"
+        console.info "PROGRESS: #{@_doc._id} #{@_doc.runId}: #{progress.completed} out of #{progress.total} (#{progress.percent}%)"
       if @_doc._id? and @_doc.runId?
         return methodCall @root, "jobProgress", [@_doc._id, @_doc.runId, completed, total, options], cb, (res) =>
           if res
@@ -574,14 +574,13 @@ class Job
           _setImmediate cb, null, true   # DO NOT release Zalgo
         return @
     else
-      console.warn "job.progress: something's wrong with progress: #{@id}, #{completed} out of #{total}"
+      throw new Error "job.progress: something is wrong with progress params: #{@id}, #{completed} out of #{total}"
     return null
 
   # Save this job to the server job queue Collection it will also resave a modified job if the
   # job is not running and hasn't completed.
   save: (options..., cb) ->
     [options, cb] = optionsHelp options, cb
-    console.log "About to submit a job", @_doc
     return methodCall @root, "jobSave", [@_doc, options], cb, (id) =>
       if id
         @_doc._id = id
@@ -601,32 +600,35 @@ class Job
         else
           false
     else
-      console.warn "Can't refresh an unsaved job"
-      if cb? and typeof cb is 'function'
-        _setImmediate cb, null, null   # DO NOT release Zalgo
-      return false
+      throw new Error "Can't call .refresh() on an unsaved job"
 
-  # Indicate to the server than this run has successfully finished.
+  # Indicate to the server that this run has successfully finished.
   done: (result = {}, options..., cb) ->
+    if typeof result is 'function'
+      cb = result
+      result = {}
     [options, cb] = optionsHelp options, cb
+    unless result? and typeof result is 'object'
+      result = { value: result }
     if @_doc._id? and @_doc.runId?
       return methodCall @root, "jobDone", [@_doc._id, @_doc.runId, result, options], cb
     else
-      console.warn "Can't finish an unsaved job"
-      if cb? and typeof cb is 'function'
-        _setImmediate cb, null, null   # DO NOT release Zalgo
+      throw new Error "Can't call .done() on an unsaved or non-running job"
     return null
 
-  # Indicate to the server than this run has failed and provide an error message.
-  fail: (err, options..., cb) ->
+  # Indicate to the server that this run has failed and provide an error message.
+  fail: (err = "No error information provided", options..., cb) ->
+    if typeof err is 'function'
+      cb = err
+      err = "No error information provided"
+    unless typeof err is 'string'
+      throw new Error 'Error message passed to .fail() must be a string'
     [options, cb] = optionsHelp options, cb
     options.fatal ?= false
     if @_doc._id? and @_doc.runId?
       return methodCall @root, "jobFail", [@_doc._id, @_doc.runId, err, options], cb
     else
-      console.warn "Can't fail an unsaved job"
-      if cb? and typeof cb is 'function'
-        _setImmediate cb, null, null   # DO NOT release Zalgo
+      throw new Error "Can't call .fail() on an unsaved or non-running job"
     return null
 
   # Pause this job, only Ready and Waiting jobs can be paused

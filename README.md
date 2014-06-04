@@ -692,7 +692,7 @@ job.refresh(function (err, result) {
 
 #### `j.done(result, [options], [callback])`
 
-Change the state of a running job to `'completed'`. `result` is any EJSON object.  If this job is configured to repeat, a new job will automatically be cloned to rerun in the future.
+Change the state of a running job to `'completed'`. `result` is any EJSON object.  If this job is configured to repeat, a new job will automatically be cloned to rerun in the future.  Result will be saved as an object. If passed result is not an object, it will be wrapped in one.
 
 `options:` -- None currently.
 
@@ -704,6 +704,11 @@ job.done(function (err, result) {
     // Status updated
   }
 });
+
+// Pass a non-object result
+job.done("Done!");
+// This will be saved as:
+// { "value": "Done!" }
 ```
 
 #### `j.fail(message, [options], [callback])`

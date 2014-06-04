@@ -564,6 +564,87 @@ describe 'Job', () ->
             job = Job('root', 'work', {})
             doc = job._doc
 
+         describe '.save()', () ->
+
+            before () ->
+               sinon.stub Job, "ddp_apply", makeDdpStub (name, params) ->
+                  throw new Error 'Bad method name' unless name is 'root_jobSave'
+                  doc = params[0]
+                  options = params[1]
+                  if options.cancelRepeats
+                     throw new Error 'cancelRepeats'
+                  if typeof doc is 'object'
+                     res = "newId"
+                  else
+                     res = null
+                  return [null, res]
+
+            it 'should make valid DDP call when invoked', () ->
+               res = job.save()
+               assert.equal res, "newId"
+
+            it 'should work with a callback', (done) ->
+               job.save (err, res) ->
+                  assert.equal res, "newId"
+                  done()
+
+            it 'should properly pass cancelRepeats option', () ->
+               assert.throw (() -> job.save({ cancelRepeats: true })), /cancelRepeats/
+
+            it 'should properly pass cancelRepeats option with callback', () ->
+               assert.throw (() -> job.save({ cancelRepeats: true }, () -> )), /cancelRepeats/
+
+            afterEach () ->
+               Job.ddp_apply.reset()
+
+            after () ->
+               Job.ddp_apply.restore()
+
+         describe '.refresh()', () ->
+
+            before () ->
+               sinon.stub Job, "ddp_apply", makeDdpStub (name, params) ->
+                  throw new Error 'Bad method name' unless name is 'root_getJob'
+                  id = params[0]
+                  options = params[1]
+                  if options.getLog
+                     throw new Error 'getLog'
+                  if id is 'thisId'
+                     res = { foo: 'bar' }
+                  else
+                     res = null
+                  return [null, res]
+
+            it 'should make valid DDP call when invoked', () ->
+               doc._id = 'thisId'
+               res = job.refresh()
+               assert.deepEqual job._doc, { foo: 'bar' }
+
+            it 'should work with a callback', (done) ->
+               doc._id = 'thisId'
+               job.refresh (err, res) ->
+                  assert.deepEqual job._doc, { foo: 'bar' }
+                  done()
+
+            it "shouldn't modify job when not found on server", () ->
+               doc._id = 'thatId'
+               res = job.refresh()
+               assert.isFalse res
+               assert.deepEqual job._doc, doc
+
+            it 'should properly pass getLog option', () ->
+               doc._id = 'thisId'
+               assert.throw (() -> job.refresh({ getLog: true })), /getLog/
+
+            it 'should throw when called on an unsaved job', () ->
+               assert.throw (() -> job.refresh()), /on an unsaved job/
+
+            afterEach () ->
+               Job.ddp_apply.reset()
+
+            after () ->
+               Job.ddp_apply.restore()
+
          describe '.log()', () ->
 
             before () ->
@@ -623,6 +704,7 @@ describe 'Job', () ->
                jobConsole = null
 
                before () ->
+                  jobConsole = Job.__get__ 'console'
                   Job.__set__ 'console',
                      info: (params...) -> throw new Error 'info'
                      log: (params...) -> throw new Error 'success'
@@ -630,6 +712,8 @@ describe 'Job', () ->
                      error: (params...) -> throw new Error 'danger'
 
                it 'should echo the log to the console at the level requested', () ->
+                  assert.doesNotThrow (() -> job.log 'Hello')
+                  assert.doesNotThrow (() -> job.log 'Hello', { echo: false })
                   assert.throw (() -> job.log 'Hello', { echo: true }), /info/
                   assert.throw (() -> job.log 'Hello', { echo: true, level: 'info' }), /info/
                   assert.throw (() -> job.log 'Hello', { echo: true, level: 'success' }), /success/
@@ -637,64 +721,208 @@ describe 'Job', () ->
                   assert.throw (() -> job.log 'Hello', { echo: true, level: 'danger' }), /danger/
 
                it "shouldn't echo the log to the console below the level requested", () ->
-                  assert.doesNotThrow (() -> job.log 'Hello', { echo: 'warning' }), /info/
-                  assert.doesNotThrow (() -> job.log 'Hello', { echo: 'warning', level: 'info' }), /info/
-                  assert.doesNotThrow (() -> job.log 'Hello', { echo: 'warning', level: 'success' }), /success/
+                  assert.doesNotThrow (() -> job.log 'Hello', { echo: 'warning' })
+                  assert.doesNotThrow (() -> job.log 'Hello', { echo: 'warning', level: 'info' })
+                  assert.doesNotThrow (() -> job.log 'Hello', { echo: 'warning', level: 'success' })
                   assert.throw (() -> job.log 'Hello', { echo: 'warning', level: 'warning' }), /warning/
                   assert.throw (() -> job.log 'Hello', { echo: 'warning', level: 'danger' }), /danger/
 
                after () ->
                   Job.__set__ 'console', jobConsole
 
-         # describe '.progress()', () ->
+            afterEach () ->
+               Job.ddp_apply.reset()
 
-            # before () ->
-            #    sinon.stub Job, "ddp_apply", makeDdpStub (name, params) ->
-            #       throw new Error 'Bad method name' unless name is 'root_jobProgress'
-            #       id = params[0]
-            #       runId = params[1]
-            #       completed = params[2]
-            #       total = params[3]
-            #       if id is 'thisId' and runId is 'thatId' and completed is 50 and total is 100
-            #          res = true
-            #       else
-            #          res = false
-            #       return [null, res]
+            after () ->
+               Job.ddp_apply.restore()
 
-            # it 'should add a valid log entry to the local state when invoked before a job is saved', () ->
-            #    j = job.log 'Hello', { level: 'success' }
-            #    assert.equal j, job
-            #    thisLog = doc.log[1] #  [0] is the 'Created' log message
-            #    assert.equal thisLog.message, 'Hello'
-            #    assert.equal thisLog.level, 'success'
-            #    assert.instanceOf thisLog.time, Date
-            #    assert.closeTo thisLog.time, new Date(), 1000
+         describe '.progress()', () ->
 
-            # it 'should make valid DDP call when invoked on a saved job', () ->
-            #    doc._id = 'thisId'
-            #    doc.runId = 'thatId'
-            #    res = job.log 'Hello'
-            #    assert.isTrue res
+            before () ->
+               sinon.stub Job, "ddp_apply", makeDdpStub (name, params) ->
+                  throw new Error 'Bad method name' unless name is 'root_jobProgress'
+                  id = params[0]
+                  runId = params[1]
+                  completed = params[2]
+                  total = params[3]
+                  if ( id is 'thisId' and
+                       runId is 'thatId' and
+                       typeof completed is 'number' and
+                       typeof total is 'number' and
+                       0 <= completed <= total and
+                       total > 0 )
+                     res = 100 * completed / total
+                  else
+                     res = false
+                  return [null, res]
 
-            # it 'should correctly pass level option', () ->
-            #    doc._id = 'thisId'
-            #    doc.runId = 'thatId'
-            #    res = job.log 'Hello', { level: 'badLevel' }
-            #    assert.isFalse res
+            it 'should add a valid progress update to the local state when invoked before a job is saved', () ->
+               j = job.progress 2.5, 10
+               assert.equal j, job
+               assert.deepEqual doc.progress, { completed: 2.5, total: 10, percent: 25 }
 
-            # it 'should work with a callback', (done) ->
-            #    doc._id = 'thisId'
-            #    doc.runId = 'thatId'
-            #    job.log 'Hello', (err, res) ->
-            #       assert.isTrue res
-            #       done()
+            it 'should make valid DDP call when invoked on a saved job', () ->
+               doc._id = 'thisId'
+               doc.runId = 'thatId'
+               res = job.progress 5, 10
+               assert.equal res, 50
 
+            it 'should work with a callback', (done) ->
+               doc._id = 'thisId'
+               doc.runId = 'thatId'
+               job.progress 7.5, 10, (err, res) ->
+                  assert.equal res, 75
+                  done()
 
-         afterEach () ->
-            Job.ddp_apply.reset()
+            describe 'echo option', () ->
 
-         after () ->
-            Job.ddp_apply.restore()
+               jobConsole = null
+
+               before () ->
+                  jobConsole = Job.__get__ 'console'
+                  Job.__set__ 'console',
+                     info: (params...) -> throw new Error 'info'
+
+               it 'should progress updates to the console when requested', () ->
+                  assert.doesNotThrow (() -> job.progress 0, 100)
+                  assert.doesNotThrow (() -> job.progress 0, 100, { echo: false })
+                  assert.throw (() -> job.progress 0, 100, { echo: true }), /info/
+
+               after () ->
+                  Job.__set__ 'console', jobConsole
+
+            it 'should throw when given invalid paramters', () ->
+               assert.throw (() -> job.progress true, 100), /job.progress: something is wrong with progress params/
+               assert.throw (() -> job.progress 0, "hundred"), /job.progress: something is wrong with progress params/
+               assert.throw (() -> job.progress -1, 100), /job.progress: something is wrong with progress params/
+               assert.throw (() -> job.progress 2, 1), /job.progress: something is wrong with progress params/
+               assert.throw (() -> job.progress 0, 0), /job.progress: something is wrong with progress params/
+               assert.throw (() -> job.progress 0, -1), /job.progress: something is wrong with progress params/
+               assert.throw (() -> job.progress -2, -1), /job.progress: something is wrong with progress params/
+
+            afterEach () ->
+               Job.ddp_apply.reset()
+
+            after () ->
+               Job.ddp_apply.restore()
+
+         describe '.done()', () ->
+
+            before () ->
+               sinon.stub Job, "ddp_apply", makeDdpStub (name, params) ->
+                  throw new Error 'Bad method name' unless name is 'root_jobDone'
+                  id = params[0]
+                  runId = params[1]
+                  result = params[2]
+                  if ( id is 'thisId' and
+                       runId is 'thatId' and
+                       typeof result is 'object')
+                     res = result
+                  else
+                     res = false
+                  return [null, res]
+
+            it 'should make valid DDP call when invoked on a running job', () ->
+               doc._id = 'thisId'
+               doc.runId = 'thatId'
+               res = job.done()
+               assert.deepEqual res, {}
+
+            it 'should properly handle a result object', () ->
+               doc._id = 'thisId'
+               doc.runId = 'thatId'
+               result =
+                  foo: 'bar'
+                  status: 0
+               res = job.done result
+               assert.deepEqual res, result
+
+            it 'should properly handle a non-object result', () ->
+               doc._id = 'thisId'
+               doc.runId = 'thatId'
+               result = "Done!"
+               res = job.done result
+               assert.deepEqual res, { value: result }
+
+            it 'should work with a callback', (done) ->
+               doc._id = 'thisId'
+               doc.runId = 'thatId'
+               job.done (err, res) ->
+                  assert.deepEqual res, {}
+                  done()
+
+            it 'should throw when called on an unsaved job', () ->
+               assert.throw (() -> job.done()), /an unsaved or non-running job/
+
+            it 'should throw when called on a nonrunning job', () ->
+               doc._id = 'thisId'
+               assert.throw (() -> job.done()), /an unsaved or non-running job/
+
+            afterEach () ->
+               Job.ddp_apply.reset()
+
+            after () ->
+               Job.ddp_apply.restore()
+
+         describe '.fail()', () ->
+
+            before () ->
+               sinon.stub Job, "ddp_apply", makeDdpStub (name, params) ->
+                  throw new Error 'Bad method name' unless name is 'root_jobFail'
+                  id = params[0]
+                  runId = params[1]
+                  err = params[2]
+                  options = params[3]
+                  if ( id is 'thisId' and
+                       runId is 'thatId' and
+                       typeof err is 'string')
+                     if options.fatal
+                        throw new Error "Fatal Error!"
+                     res = err
+                  else
+                     res = false
+                  return [null, res]
+
+            it 'should make valid DDP call when invoked on a running job', () ->
+               doc._id = 'thisId'
+               doc.runId = 'thatId'
+               res = job.fail()
+               assert.equal res, "No error information provided"
+
+            it 'should properly handle an error string', () ->
+               doc._id = 'thisId'
+               doc.runId = 'thatId'
+               err = 'This is an error'
+               res = job.fail err
+               assert.equal res, err
+
+            it 'should work with a callback', (done) ->
+               doc._id = 'thisId'
+               doc.runId = 'thatId'
+               job.fail (err, res) ->
+                  assert.equal res, "No error information provided"
+                  done()
+
+            it 'should properly handle the fatal option', () ->
+               doc._id = 'thisId'
+               doc.runId = 'thatId'
+               assert.throw (() -> job.fail "Fatal error!", { fatal: true }), /Fatal Error!/
+
+            it 'should throw when called with a non-string error', () ->
+               assert.throw (() -> job.fail(false)), /must be a string/
+
+            it 'should throw when called on an unsaved job', () ->
+               assert.throw (() -> job.fail()), /an unsaved or non-running job/
+
+            it 'should throw when called on a nonrunning job', () ->
+               doc._id = 'thisId'
+               assert.throw (() -> job.fail()), /an unsaved or non-running job/
+
+            afterEach () ->
+               Job.ddp_apply.reset()
+
+            after () ->
+               Job.ddp_apply.restore()
 
       describe 'class method', () ->
 
