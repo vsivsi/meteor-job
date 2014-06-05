@@ -1,15 +1,15 @@
 {
   "name": "meteor-job",
   "version": "0.0.2",
-  "description": "WIP! Class for Meteor jobCollection jobs for use both within meteor.js and with pure node.js workers",
+  "description": "Class for Meteor jobCollection jobs for use both within meteor.js and with pure node.js workers",
   "main": "lib/job_class.js",
   "dependencies": {
   },
   "devDependencies": {
     "coffee-script": ">=1.7.1",
-    "mocha": "1.20.0",
+    "mocha": "1.20.1",
     "rewire": "2.0.1",
-    "sinon": "1.10.1",
+    "sinon": "1.10.2",
     "chai": "1.9.1"
   },
   "scripts": {

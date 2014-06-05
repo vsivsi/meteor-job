@@ -1,4 +1,4 @@
-#### v0.0.2 -- Improved docs.
+#### v0.0.2 -- Numerous small API refinements. Improved docs. Added extensive unit tests.
 
 #### v0.0.1 -- Changed tons of stuff, added documentation
 
