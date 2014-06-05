@@ -1,7 +1,7 @@
 meteor-job
 ======================================
 
-**NOTE** This Package remains experimental until v0.1.0 is released, and while the API methods described here are maturing, they may still change.
+**NOTE:** This Package remains experimental until v0.1.0 is released, and while the API methods described here are maturing, they may still change.
 
 ## Intro
 
@@ -67,7 +67,7 @@ First you need to establish a [DDP connection](https://github.com/oortcloud/node
 
 ```js
 var DDP = require('ddp');
-var DDPlogin = require('DDP-login');
+var DDPlogin = require('ddp-login');
 var Job = require('meteor-job')
 
 // See DDP package docs for options here...
@@ -82,6 +82,12 @@ Job.setDDP(ddp);
 ddp.connect(function (err) {
   if (err) throw err;
 
+  // The call below will look for an existing authentication token in
+  // process.env.METEOR_TOKEN. If it find one and it is still valid,
+  // authentication will be transparent. If not, the user will be prompted
+  // for the e-mail and password to an account on the connected Meteor
+  // server. This is the default case... ddp-login has other options
+  // documented at https://www.npmjs.org/package/ddp-login
   DDPlogin(ddp, function (err, token) {
     if (err) throw err;
 
