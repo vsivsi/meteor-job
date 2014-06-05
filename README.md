@@ -5,7 +5,7 @@ meteor-job
 
 ## Intro
 
-Meteor Job is a pure Javascript implementation of the `Job` and `JobQueue` classes that form the foundation of the `jobCollection` Atmosphere package for Meteor. This package is used internally by `jobCollection` but you should also use it for any job workers you need to create and run outside of the Meteor environment as pure node.js programs.
+Meteor Job is a pure Javascript implementation of the `Job` and `JobQueue` classes that form the foundation of the `jobCollection` Atmosphere package for Meteor. This package is used internally by `jobCollection` on Meteor, but you should also use it for any job workers you would like to run outside of the Meteor environment as ordinary node.js programs.
 
 Here's a very basic example that ignores authentication and connection error handling:
 
@@ -35,6 +35,7 @@ ddp.connect(function (err) {
     // Work on job...
     job.progress(50, 100);  // Half done!
     // Work some more...
+    var jobError = (Math.random() > 0.9); // Could fail!
     if (jobError) {
       job.fail("Some error happened...");
     } else {
