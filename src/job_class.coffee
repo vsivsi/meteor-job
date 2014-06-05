@@ -111,20 +111,21 @@ class JobQueue
 
   _getWork: () ->
     numJobsToGet = @prefetch + @payload*(@concurrency - @running()) - @length()
-    console.log "Trying to get #{numJobsToGet} jobs via DDP"
     if numJobsToGet > 0
       @_getWorkOutstanding = true
       Job.getWork @root, @type, { maxJobs: numJobsToGet }, (err, jobs) =>
         if err
-          console.error "Received error from getWork: ", err
-        else if jobs?
+          console.error "JobQueue: Received error from getWork(): ", err
+        else if jobs? and jobs instanceof Array
+          if jobs.length > numJobsToGet
+            console.error "JobQueue: getWork() returned jobs (#{jobs.length}) in excess of maxJobs (#{numJobsToGet})"
           for j in jobs
             @_tasks.push j
             _setImmediate @_process.bind(@) unless @_stoppingGetWork?
           @_getWorkOutstanding = false
           @_stoppingGetWork() if @_stoppingGetWork?
         else
-          console.log "No work from server"
+          console.error "JobQueue: Non array response from server from getWork()"
 
   _only_once: (fn) ->
     called = false
@@ -156,15 +157,16 @@ class JobQueue
     if @_getWorkOutstanding
       @_stoppingGetWork = callback
     else
-      callback()
+      _setImmediate callback  # No Zalgo, thanks
 
   _waitForTasks: (callback) ->
     unless @running() is 0
       @_stoppingTasks = callback
     else
-      callback()
+      _setImmediate callback  # No Zalgo, thanks
 
   _failJobs: (tasks, callback) ->
+    setImmediate callback if tasks.length is 0  # No Zalgo, thanks
     count = 0
     for job in tasks
       job.fail "Worker shutdown", (err, res) =>
@@ -199,36 +201,39 @@ class JobQueue
 
   idle: () -> @length() + @running() is 0
 
-  full: () -> @running is @concurrency
+  full: () -> @running() is @concurrency
 
   pause: () ->
     return if @paused
     _clearInterval @_interval
     @paused = true
+    @
 
   resume: () ->
     return unless @paused
     @paused = false
-    # @_getWork()
+    _setImmediate @_getWork.bind(@)
     @_interval = _setInterval @_getWork.bind(@), @pollInterval
     for w in [1..@concurrency]
-      _setImmediate @_process.bind(@)()
+      _setImmediate @_process.bind(@)
+    @
 
   shutdown: (options..., cb) ->
     [options, cb] = optionsHelp options, cb
     options.level ?= 'normal'
+    options.quiet ?= false
     unless cb?
       cb = () =>
-        console.warn "default shutdown complete callback!"
+        console.warn "using default shutdown callback!" unless options.quiet
     switch options.level
       when 'hard'
-        console.warn "Shutting down hard"
+        console.warn "Shutting down hard" unless options.quiet
         @_hard cb
       when 'soft'
-        console.warn "Shutting down soft"
+        console.warn "Shutting down soft" unless options.quiet
         @_soft cb
       else
-        console.warn "Shutting down normally"
+        console.warn "Shutting down normally" unless options.quiet
         @_stop cb
 
 ###################################################################

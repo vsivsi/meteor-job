@@ -923,7 +923,7 @@ q.resume()
 
 `options:`
 * `level` -- May be 'hard' or 'soft'. Any other value will lead to a "normal" shutdown.
-
+* `quiet` -- true or false. False by default, which leads to a "Shutting down..." message on stderr.
 `callback()` -- Invoked once the requested shutdown conditions have been achieved.
 
 Shutdown levels:
@@ -932,7 +932,7 @@ Shutdown levels:
 * `'hard'` -- Fail all local jobs, running or not. Return as soon as the server has been updated. Note: after a hard shutdown, there may still be outstanding work in the event loop. To exit immediately may require `process.exit()` depending on how often asynchronous workers invoke `'job.progress()'` and whether they die when it fails.
 
 ```js
-q.shutdown({ level: 'soft' }, function () {
+q.shutdown({ quiet: true, level: 'soft' }, function () {
   // shutdown complete
 });
 ```

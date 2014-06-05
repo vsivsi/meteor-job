@@ -10,7 +10,6 @@ Job = rewire '../src/job_class.coffee'
 class DDP
 
    call: (name, params, cb = null) ->
-      console.log "DDP prototype call invoked with '#{name}'' method"
       unless cb? and typeof cb is 'function'
          switch name
             when 'root_true'
@@ -36,6 +35,19 @@ class DDP
 
    loginWithToken: (token, cb) ->
       process.nextTick () -> cb(null, "fake_token")
+
+
+makeDdpStub = (action) ->
+   return (name, params, cb) ->
+      [err, res] = action name, params
+      # console.dir res
+      if cb?
+         return process.nextTick () -> cb err, res
+      else if err
+         throw err
+      return res
+
+###########################################
 
 describe 'Job', () ->
 
@@ -540,16 +552,6 @@ describe 'Job', () ->
    describe 'communicating', () ->
 
       ddp = null
-
-      makeDdpStub = (action) ->
-         return (name, params, cb) ->
-            [err, res] = action name, params
-            # console.dir res
-            if cb?
-               return process.nextTick () -> cb err, res
-            else if err
-               throw err
-            return res
 
       before () ->
          ddp = new DDP()
@@ -1176,4 +1178,265 @@ describe 'Job', () ->
 
             makeControl 'startJobs'
             makeControl 'stopJobs'
+
+###########################################
+
+describe 'JobQueue', () ->
+
+   ddp = new DDP()
+   failCalls = 0
+   doneCalls = 0
+
+   before () ->
+      Job.setDDP ddp
+      sinon.stub Job, "ddp_apply", makeDdpStub (name, params) ->
+         # console.log "#{name} Called"
+         err = null
+         res = null
+         makeJobDoc = (idx) ->
+            job = new Job('root', 'work', { idx: idx })
+            doc = job._doc
+            doc._id = 'thisId' + idx
+            doc.runId = 'thatId' + idx
+            doc.status = 'running'
+            return doc
+         switch name
+            when 'root_jobDone'
+               doneCalls++
+               res = true
+            when 'root_jobFail'
+               failCalls++
+               res = true
+            when 'root_getWork'
+               type = params[0][0]
+               max = params[1]?.maxJobs ? 1
+               res = []
+               switch type
+                  when 'work'
+                     res = [ makeJobDoc() ]
+                  when 'workMax'
+                     res = (makeJobDoc(i) for i in [1..max])
+            else
+               throw new Error "Bad method name: #{name}"
+         return [err, res]
+
+   beforeEach () ->
+      failCalls = 0
+      doneCalls = 0
+
+   it 'should return a valid JobQueue when called', (done) ->
+      q = Job.processJobs 'root', 'noWork', { pollInterval: 100 }, (job, cb) ->
+         job.done()
+         cb null
+      assert.instanceOf q, Job.processJobs
+      q.shutdown { quiet: true }, () ->
+         assert.equal doneCalls, 0
+         assert.equal failCalls, 0
+         done()
+
+   it 'should send shutdown notice to console when quiet is false', (done) ->
+      jobConsole = Job.__get__ 'console'
+      Job.__set__ 'console',
+         info: (params...) -> throw new Error 'info'
+         log: (params...) -> throw new Error 'success'
+         warn: (params...) -> throw new Error 'warning'
+         error: (params...) -> throw new Error 'danger'
+      q = Job.processJobs 'root', 'noWork', { pollInterval: 100 }, (job, cb) ->
+         job.done()
+         cb null
+      assert.instanceOf q, Job.processJobs
+      assert.throws (() -> (q.shutdown () -> done())), /warning/
+      q.shutdown { quiet: true }, () ->
+         assert.equal doneCalls, 0
+         assert.equal failCalls, 0
+         done()
+
+   it 'should invoke worker when work is returned', (done) ->
+      q = Job.processJobs 'root', 'work', { pollInterval: 100 }, (job, cb) ->
+         job.done()
+         q.shutdown { quiet: true }, () ->
+            assert.equal doneCalls, 1
+            assert.equal failCalls, 0
+            done()
+         cb null
+
+   it 'should successfully start in paused state and resume', (done) ->
+      flag = false
+      q = Job.processJobs('root', 'work', { pollInterval: 10 }, (job, cb) ->
+         assert.isTrue flag
+         job.done()
+         q.shutdown { quiet: true }, () ->
+            assert.equal doneCalls, 1
+            assert.equal failCalls, 0
+            done()
+         cb null
+      ).pause()
+      setTimeout(
+         () ->
+            flag = true
+            q.resume()
+         20
+      )
+
+   it 'should successfully accept multiple jobs from getWork', (done) ->
+      count = 5
+      q = Job.processJobs('root', 'workMax', { pollInterval: 100, prefetch: 4 }, (job, cb) ->
+         assert.equal q.length(), count-1
+         assert.equal q.running(), 1
+         if count is 5
+            assert.isTrue q.full(), 'q.full should be true'
+            assert.isFalse q.idle(), 'q.idle should be false'
+         job.done()
+         count--
+         if count is 0
+            q.shutdown { quiet: true }, () ->
+               assert.equal doneCalls, 5
+               assert.equal failCalls, 0
+               done()
+
+         cb null
+      )
+
+   it 'should successfully accept and process multiple simultaneous jobs concurrently', (done) ->
+      count = 0
+      q = Job.processJobs('root', 'workMax', { pollInterval: 100, concurrency: 5 }, (job, cb) ->
+         count++
+         setTimeout(
+            () ->
+               assert.equal q.length(), 0
+               assert.equal q.running(), count
+               count--
+               job.done()
+               unless count > 0
+                  q.shutdown { quiet: true }, () ->
+                     assert.equal doneCalls, 5
+                     assert.equal failCalls, 0
+                     done()
+               cb null
+            25
+         )
+      )
+
+   it 'should successfully accept and process multiple simultaneous jobs in one worker', (done) ->
+      q = Job.processJobs('root', 'workMax', { pollInterval: 100, payload: 5 }, (jobs, cb) ->
+         assert.equal jobs.length, 5
+         assert.equal q.length(), 0
+         assert.equal q.running(), 1
+         j.done() for j in jobs
+         q.shutdown { quiet: true }, () ->
+            assert.equal doneCalls, 5
+            assert.equal failCalls, 0
+            done()
+         cb()
+      )
+
+   it 'should successfully accept and process multiple simultaneous jobs concurrently and within workers', (done) ->
+      count = 0
+      q = Job.processJobs('root', 'workMax', { pollInterval: 100, payload: 5, concurrency: 5 }, (jobs, cb) ->
+         count += jobs.length
+         setTimeout(
+            () ->
+               assert.equal q.length(), 0
+               assert.equal q.running(), count / 5
+               count -= jobs.length
+               j.done() for j in jobs
+               unless count > 0
+                  q.shutdown { quiet: true }, () ->
+                     assert.equal doneCalls, 25
+                     assert.equal failCalls, 0
+                     done()
+               cb null
+            25
+         )
+      )
+
+   it 'should successfully perform a soft shutdown', (done) ->
+      count = 5
+      q = Job.processJobs('root', 'workMax', { pollInterval: 100, prefetch: 4 }, (job, cb) ->
+         count--
+         assert.equal q.length(), count
+         assert.equal q.running(), 1
+         assert.isTrue q.full()
+         job.done()
+         if count is 4
+            q.shutdown { quiet: true, level: 'soft' }, () ->
+               assert count is 0
+               assert.equal q.length(), 0
+               assert.isFalse Job.ddp_apply.calledWith("root_jobFail")
+               assert.equal doneCalls, 5
+               assert.equal failCalls, 0
+               done()
+         cb null
+      )
+
+   it 'should successfully perform a normal shutdown', (done) ->
+      count = 5
+      q = Job.processJobs('root', 'workMax', { pollInterval: 100, concurrency: 2, prefetch: 3 }, (job, cb) ->
+         setTimeout(
+            () ->
+               count--
+               job.done()
+               if count is 4
+                  q.shutdown { quiet: true, level: 'normal' }, () ->
+                     assert.equal count, 3
+                     assert.equal q.length(), 0
+                     assert.isTrue Job.ddp_apply.calledWith("root_jobFail")
+                     assert.equal doneCalls, 2
+                     assert.equal failCalls, 3
+                     done()
+               cb null
+            25
+         )
+      )
+
+
+   it 'should successfully perform a normal shutdown with both payload and concurrency', (done) ->
+      count = 0
+      q = Job.processJobs('root', 'workMax', { pollInterval: 100, payload: 5, concurrency: 2, prefetch: 15 }, (jobs, cb) ->
+         count += jobs.length
+         setTimeout(
+            () ->
+               assert.equal q.running(), count / 5
+               count -= jobs.length
+               j.done() for j in jobs
+               if count is 5
+                  q.shutdown { quiet: true }, () ->
+                     assert.equal q.length(), 0, 'jobs remain in task list'
+                     assert.equal count, 0, 'count is wrong value'
+                     assert.isTrue Job.ddp_apply.calledWith("root_jobFail")
+                     assert.equal doneCalls, 10
+                     assert.equal failCalls, 15
+                     done()
+               cb null
+            25
+         )
+      )
+
+   it 'should successfully perform a hard shutdown', (done) ->
+      count = 0
+      time = 20
+      q = Job.processJobs('root', 'workMax', { pollInterval: 100, concurrency: 2, prefetch: 3 }, (job, cb) ->
+         setTimeout(
+            () ->
+               job.done()
+               count++
+               if count is 1
+                  q.shutdown { quiet: true, level: 'hard' }, () ->
+                     assert.equal q.length(), 0
+                     assert.equal count, 1
+                     assert.isTrue Job.ddp_apply.calledWith("root_jobFail")
+                     assert.equal doneCalls, 1, 'wrong number of .done() calls'
+                     assert.equal failCalls, 4, 'wrong number of .fail() calls'
+                     done()
+                  cb null  # Other workers will never call back
+            time
+         )
+         time += 20
+      )
+
+   afterEach () ->
+      Job.ddp_apply.reset()
+
+   after () ->
+      Job.ddp_apply.restore()
 
