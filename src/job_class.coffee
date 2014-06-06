@@ -223,8 +223,8 @@ class JobQueue
     options.level ?= 'normal'
     options.quiet ?= false
     unless cb?
+      console.warn "using default shutdown callback!" unless options.quiet
       cb = () =>
-        console.warn "using default shutdown callback!" unless options.quiet
     switch options.level
       when 'hard'
         console.warn "Shutting down hard" unless options.quiet
