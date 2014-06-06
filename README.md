@@ -925,6 +925,7 @@ q.resume()
 `options:`
 * `level` -- May be 'hard' or 'soft'. Any other value will lead to a "normal" shutdown.
 * `quiet` -- true or false. False by default, which leads to a "Shutting down..." message on stderr.
+
 `callback()` -- Invoked once the requested shutdown conditions have been achieved.
 
 Shutdown levels:
