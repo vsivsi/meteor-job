@@ -299,21 +299,21 @@ class Job
 
   # These are the four levels of the allow/deny permission heirarchy
   @methodPermissionLevels =
-    'startJobs' : ['admin']
-    'stopJobs' : ['admin']
-    'jobRemove' : ['admin', 'manager']
-    'jobPause' : ['admin', 'manager']
-    'jobResume' : ['admin', 'manager']
-    'jobCancel' : ['admin', 'manager']
-    'jobRestart' : ['admin', 'manager']
-    'jobSave' : ['admin', 'creator']
-    'jobRerun' : ['admin', 'creator']
-    'getWork' : ['admin', 'worker']
-    'getJob' : ['admin', 'worker']
-    'jobLog' : ['admin', 'worker']
-    'jobProgress' : ['admin', 'worker']
-    'jobDone' : ['admin', 'worker']
-    'jobFail' : ['admin', 'worker']
+    'startJobs' : ['startJobs', 'admin']
+    'stopJobs' : ['stopJobs', 'admin']
+    'jobRemove' : ['jobRemove', 'admin', 'manager']
+    'jobPause' : ['jobPause', 'admin', 'manager']
+    'jobResume' : ['jobResume', 'admin', 'manager']
+    'jobCancel' : ['jobCancel', 'admin', 'manager']
+    'jobRestart' : ['jobRestart', 'admin', 'manager']
+    'jobSave' : ['jobSave', 'admin', 'creator']
+    'jobRerun' : ['jobRerun', 'admin', 'creator']
+    'getWork' : ['getWork', 'admin', 'worker']
+    'getJob' : ['getJob', 'admin', 'worker']
+    'jobLog' : [ 'jobLog', 'admin', 'worker']
+    'jobProgress' : ['jobProgress', 'admin', 'worker']
+    'jobDone' : ['jobDone', 'admin', 'worker']
+    'jobFail' : ['jobFail', 'admin', 'worker']
 
   # Automatically work within Meteor, otherwise see @setDDP below
   @ddp_apply: Meteor?.apply
