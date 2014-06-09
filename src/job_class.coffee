@@ -272,6 +272,24 @@ class Job
   @jobStatusRemovable:   [ 'cancelled', 'completed', 'failed' ]
   @jobStatusRestartable: [ 'cancelled', 'failed' ]
 
+  @ddpMethods = [
+    'startJobs'
+    'stopJobs'
+    'jobRemove'
+    'jobPause'
+    'jobResume'
+    'jobCancel'
+    'jobRestart'
+    'jobSave'
+    'jobRerun'
+    'getWork'
+    'getJob'
+    'jobLog'
+    'jobProgress'
+    'jobDone'
+    'jobFail'
+  ]
+
   @permissionLevels = [
     'admin'
     'manager'
