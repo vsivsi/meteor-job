@@ -272,14 +272,19 @@ class Job
   @jobStatusRemovable:   [ 'cancelled', 'completed', 'failed' ]
   @jobStatusRestartable: [ 'cancelled', 'failed' ]
 
-  # These are the four levels of the allow/deny permission heirarchy
-  @permissionLevels = ['admin', 'creator', 'manager', 'worker']
+  @permissionLevels = [
+    'admin'
+    'manager'
+    'creator'
+    'worker'
+  ]
 
-  # These define the four levels of the allow/deny heirarchy
-  @adminMethods = ['startJobs', 'stopJobs']
-  @creatorMethods = ['jobSave', 'jobRerun']
-  @managerMethods = ['jobRemove', 'jobPause', 'jobResume', 'jobCancel', 'jobRestart']
-  @workerMethods = ['getWork', 'getJob', 'jobLog', 'jobProgress', 'jobDone', 'jobFail']
+  # These are the four levels of the allow/deny permission heirarchy
+  @permissionLevelMethods =
+    'admin': ['startJobs', 'stopJobs']
+    'manager': ['jobRemove', 'jobPause', 'jobResume', 'jobCancel', 'jobRestart']
+    'creator': ['jobSave', 'jobRerun']
+    'worker':  ['getWork', 'getJob', 'jobLog', 'jobProgress', 'jobDone', 'jobFail']
 
   # Automatically work within Meteor, otherwise see @setDDP below
   @ddp_apply: Meteor?.apply
