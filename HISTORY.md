@@ -1,3 +1,5 @@
+#### v0.0.4 -- Added class constants for DDP Method names and permission levels.
+
 #### v0.0.3 -- Numerous small API refinements. Improved docs. Added unit tests for jobQueue.
 
 #### v0.0.2 -- Numerous small API refinements. Improved docs. Added extensive unit tests.

@@ -67,6 +67,12 @@ describe 'Job', () ->
       assert.lengthOf Job.jobStatusRemovable, 3
       assert.isArray Job.jobStatusRestartable
       assert.lengthOf Job.jobStatusRestartable, 2
+      assert.isArray Job.ddpPermissionLevels
+      assert.lengthOf Job.ddpPermissionLevels , 4
+      assert.isArray Job.ddpMethods
+      assert.lengthOf Job.ddpMethods, 15
+      assert.isObject Job.ddpMethodPermissions
+      assert.lengthOf Object.keys(Job.ddpMethodPermissions), Job.ddpMethods.length
 
    it 'has a ddp_apply class variable that defaults as undefined outside of Meteor', () ->
       assert.isUndefined Job.ddp_apply

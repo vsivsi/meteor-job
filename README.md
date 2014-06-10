@@ -520,6 +520,50 @@ Job status states that can be restarted.
 jobStatusRestartable = [ 'cancelled', 'failed' ];
 ```
 
+### `Job.ddpMethods`
+
+Array of the names of all DDP methods used by `Job`
+
+```js
+Job.ddpMethods = [
+    'startJobs', 'stopJobs', 'jobRemove', 'jobPause', 'jobResume'
+    'jobCancel', 'jobRestart', 'jobSave', 'jobRerun', 'getWork'
+    'getJob', 'jobLog', 'jobProgress', 'jobDone', 'jobFail'
+    ];
+```
+
+### `Job.ddpPermissionLevels`
+
+Array of the predefined DDP method permission levels
+
+```js
+Job.ddpPermissionLevels = [ 'admin', 'manager', 'creator', 'worker' ];
+```
+
+### `Job.ddpMethodPermissions`
+
+Object mapping permission levels to DDP method names.
+
+```js
+Job.ddpMethodPermissions = {
+    'startJobs': ['startJobs', 'admin'],
+    'stopJobs': ['stopJobs', 'admin'],
+    'jobRemove': ['jobRemove', 'admin', 'manager'],
+    'jobPause': ['jobPause', 'admin', 'manager'],
+    'jobResume': ['jobResume', 'admin', 'manager'],
+    'jobCancel': ['jobCancel', 'admin', 'manager'],
+    'jobRestart': ['jobRestart', 'admin', 'manager'],
+    'jobSave': ['jobSave', 'admin', 'creator'],
+    'jobRerun': ['jobRerun', 'admin', 'creator'],
+    'getWork': ['getWork', 'admin', 'worker'],
+    'getJob': ['getJob', 'admin', 'worker'],
+    'jobLog': [ 'jobLog', 'admin', 'worker'],
+    'jobProgress': ['jobProgress', 'admin', 'worker'],
+    'jobDone': ['jobDone', 'admin', 'worker'],
+    'jobFail': ['jobFail', 'admin', 'worker']
+};
+```
+
 ## Instances of Job
 
 ### `j = Job(root, type, data)`
