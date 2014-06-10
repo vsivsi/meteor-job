@@ -272,48 +272,29 @@ class Job
   @jobStatusRemovable:   [ 'cancelled', 'completed', 'failed' ]
   @jobStatusRestartable: [ 'cancelled', 'failed' ]
 
-  @ddpMethods = [
-    'startJobs'
-    'stopJobs'
-    'jobRemove'
-    'jobPause'
-    'jobResume'
-    'jobCancel'
-    'jobRestart'
-    'jobSave'
-    'jobRerun'
-    'getWork'
-    'getJob'
-    'jobLog'
-    'jobProgress'
-    'jobDone'
-    'jobFail'
-  ]
+  @ddpMethods = [ 'startJobs', 'stopJobs', 'jobRemove', 'jobPause', 'jobResume'
+                  'jobCancel', 'jobRestart', 'jobSave', 'jobRerun', 'getWork'
+                  'getJob', 'jobLog', 'jobProgress', 'jobDone', 'jobFail' ]
 
-  @permissionLevels = [
-    'admin'
-    'manager'
-    'creator'
-    'worker'
-  ]
+  @ddpPermissionLevels = [ 'admin', 'manager', 'creator', 'worker' ]
 
   # These are the four levels of the allow/deny permission heirarchy
-  @methodPermissionLevels =
-    'startJobs' : ['startJobs', 'admin']
-    'stopJobs' : ['stopJobs', 'admin']
-    'jobRemove' : ['jobRemove', 'admin', 'manager']
-    'jobPause' : ['jobPause', 'admin', 'manager']
-    'jobResume' : ['jobResume', 'admin', 'manager']
-    'jobCancel' : ['jobCancel', 'admin', 'manager']
-    'jobRestart' : ['jobRestart', 'admin', 'manager']
-    'jobSave' : ['jobSave', 'admin', 'creator']
-    'jobRerun' : ['jobRerun', 'admin', 'creator']
-    'getWork' : ['getWork', 'admin', 'worker']
-    'getJob' : ['getJob', 'admin', 'worker']
-    'jobLog' : [ 'jobLog', 'admin', 'worker']
-    'jobProgress' : ['jobProgress', 'admin', 'worker']
-    'jobDone' : ['jobDone', 'admin', 'worker']
-    'jobFail' : ['jobFail', 'admin', 'worker']
+  @ddpMethodPermissions =
+    'startJobs': ['startJobs', 'admin']
+    'stopJobs': ['stopJobs', 'admin']
+    'jobRemove': ['jobRemove', 'admin', 'manager']
+    'jobPause': ['jobPause', 'admin', 'manager']
+    'jobResume': ['jobResume', 'admin', 'manager']
+    'jobCancel': ['jobCancel', 'admin', 'manager']
+    'jobRestart': ['jobRestart', 'admin', 'manager']
+    'jobSave': ['jobSave', 'admin', 'creator']
+    'jobRerun': ['jobRerun', 'admin', 'creator']
+    'getWork': ['getWork', 'admin', 'worker']
+    'getJob': ['getJob', 'admin', 'worker']
+    'jobLog': [ 'jobLog', 'admin', 'worker']
+    'jobProgress': ['jobProgress', 'admin', 'worker']
+    'jobDone': ['jobDone', 'admin', 'worker']
+    'jobFail': ['jobFail', 'admin', 'worker']
 
   # Automatically work within Meteor, otherwise see @setDDP below
   @ddp_apply: Meteor?.apply
