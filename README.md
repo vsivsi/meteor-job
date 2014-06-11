@@ -517,7 +517,7 @@ Job.jobStatusRemovable = [ 'cancelled', 'completed', 'failed' ];
 Job status states that can be restarted.
 
 ```js
-jobStatusRestartable = [ 'cancelled', 'failed' ];
+Job.jobStatusRestartable = [ 'cancelled', 'failed' ];
 ```
 
 ### `Job.ddpMethods`
