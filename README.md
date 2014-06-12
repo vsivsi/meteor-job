@@ -30,7 +30,7 @@ ddp.connect(function (err) {
   if (err) throw err;
 
   // Worker function for jobs of type 'somejob'
-  somejobWorker = function (job, cb) {
+  var somejobWorker = function (job, cb) {
     job.log("Some message");
     // Work on job...
     job.progress(50, 100);  // Half done!
@@ -45,7 +45,7 @@ ddp.connect(function (err) {
   };
 
   // Get jobs of type 'somejob' available in the 'jobPile' jobCollection for somejobWorker
-  workers = Job.processJobs('jobPile', 'somejob', somejobWorker);
+  var workers = Job.processJobs('jobPile', 'somejob', somejobWorker);
 });
 ```
 
@@ -120,7 +120,7 @@ Job.getWork('jobQueue', 'jobType', function (err, job) {
 However, `Job.getWork()` is kind of low-level. It only makes one request for a job. What you probably really want is to get some work whenever it becomes available and you aren't too busy:
 
 ```js
-workers = Job.processJobs('jobQueue', 'jobType', { concurrency: 4 }, function (job, cb) {
+var workers = Job.processJobs('jobQueue', 'jobType', { concurrency: 4 }, function (job, cb) {
   // This will only be called if a job is obtained from Job.getWork()
   // Up to four of these worker functions can be outstanding at
   // a time based on the concurrency option...
@@ -173,12 +173,12 @@ However, the retry mechanism in the above code seems pretty clunky... How do tho
 This approach probably will probably be easier to manage:
 
 ```js
-workers = Job.processJobs('jobQueue', 'jobType', { payload: 20 }, function (jobs, cb) {
+var workers = Job.processJobs('jobQueue', 'jobType', { payload: 20 }, function (jobs, cb) {
   // jobs is an array of jobs, between 1 and 20 long, triggered by the option payload > 1
   var count = 0;
 
   jobs.forEach(function (job) {
-    email = job.data.email // Only one email per job
+    var email = job.data.email // Only one email per job
     sendEmail(email.address, email.subject, email.message, function(err) {
       count++;
       if (err) {
@@ -204,7 +204,7 @@ The jobQueue object returned by `Job.processJobs()` has methods that can be used
 If you'd like to create an entirely new job and submit it to a jobCollection, here's how:
 
 ```js
-job = new Job('jobQueue', 'jobType', { work: "to", be: "done" });
+var job = new Job('jobQueue', 'jobType', { work: "to", be: "done" });
 
 // Set some options on the new job before submitting it. These option setting
 // methods do not take callbacks because they only affect the local job object.
