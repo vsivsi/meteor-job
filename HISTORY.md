@@ -1,3 +1,5 @@
+#### v0.0.6 -- Documentation improvements
+
 #### v0.0.5 -- Added links to jobCollection on Atmosphere. Fixed a couple of typos.
 
 #### v0.0.4 -- Added class constants for DDP Method names and permission levels.
