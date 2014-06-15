@@ -44,7 +44,8 @@ ddp.connect(function (err) {
     cb(null); // Don't forget!
   };
 
-  // Get jobs of type 'somejob' available in the 'jobPile' jobCollection for somejobWorker
+  // Get jobs of type 'somejob' available in the
+  // 'jobPile' jobCollection for somejobWorker
   var workers = Job.processJobs('jobPile', 'somejob', somejobWorker);
 });
 ```
@@ -93,7 +94,8 @@ ddp.connect(function (err) {
     if (err) throw err;
 
     // From here we can get to work, as long as the DDP connection is good.
-    // See the DDP package for details on DDP auto_reconnect, and handling socket events.
+    // See the DDP package for details on DDP auto_reconnect, and handling
+    // socket events.
 
     // Do stuff!!!
 
@@ -111,8 +113,9 @@ Okay, so you've got an authenticated DDP connection, and you'd like to get to wo
 Job.getWork('jobQueue', 'jobType', function (err, job) {
   if (job) {
      // You got a job!!!  Better work on it!
-     // At this point the jobCollection has changed the job status to 'running'
-     // so you are now responsible to eventually call either job.done() or job.fail()
+     // At this point the jobCollection has changed the job status to
+     // 'running' so you are now responsible to eventually call either
+     // job.done() or job.fail()
   }
 });
 ```
@@ -120,14 +123,18 @@ Job.getWork('jobQueue', 'jobType', function (err, job) {
 However, `Job.getWork()` is kind of low-level. It only makes one request for a job. What you probably really want is to get some work whenever it becomes available and you aren't too busy:
 
 ```js
-var workers = Job.processJobs('jobQueue', 'jobType', { concurrency: 4 }, function (job, cb) {
-  // This will only be called if a job is obtained from Job.getWork()
-  // Up to four of these worker functions can be outstanding at
-  // a time based on the concurrency option...
+var workers = Job.processJobs('jobQueue', 'jobType', { concurrency: 4 },
+  function (job, cb) {
+    // This will only be called if a job is obtained from Job.getWork()
+    // Up to four of these worker functions can be outstanding at
+    // a time based on the concurrency option...
 
-  cb(); // Be sure to invoke the callback when this job has been completed or failed.
+    // Be sure to invoke the callback when this job has been
+    // completed or failed.
+    cb();
 
-});
+  }
+);
 ```
 
 Once you have a job, you can work on it, log messages, indicate progress and either succeed or fail.
@@ -135,14 +142,19 @@ Once you have a job, you can work on it, log messages, indicate progress and eit
 ```js
 // This code assumed to be running in a Job.processJobs() callback
 var count = 0;
+
+// In this example, assume that each job may contain
+// multiple emails to be sent within the job's data.
 var total = job.data.emailsToSend.length;
 var retryLater = [];
 
 // Most job methods have optional callbacks if you really want to be sure...
-job.log("Attempting to send " + total + " emails", function(err, result) {
-  // err would be a DDP or server error
-  // If no error, the result will indicate what happened in jobCollection
-});
+job.log("Attempting to send " + total + " emails",
+  function(err, result) {
+    // err would be a DDP or server error
+    // If no error, the result will indicate what happened in jobCollection
+  }
+);
 
 job.progress(count, total);
 
@@ -152,47 +164,53 @@ if (networkDown()) {
   cb();
 } else {
   job.data.emailsToSend.forEach(function (email) {
-    sendEmail(email.address, email.subject, email.message, function(err) {
-      count++;
-      job.progress(count, total);
-      if (err) {
-        job.log("Sending email to " + email.address + "failed"., {level: 'warning'});
-        retryLater.push(email);
+    sendEmail(email.address, email.subject, email.message,
+      function(err) {
+        count++;
+        job.progress(count, total);
+        if (err) {
+          job.log("Sending to " + email.address + "failed",
+                  {level: 'warning'});
+          retryLater.push(email);
+        }
+        if (count === total) {
+          // You can attach a result object to a successful job
+          job.done({ retry: retryLater });
+          cb();
+        }
       }
-      if (count === total) {
-        // You can attach a result object to a successful job
-        job.done({ retry: retryLater });
-        cb();
-      }
-    });
+    );
   });
 }
 ```
 
-However, the retry mechanism in the above code seems pretty clunky... How do those failed messages get retried?
+The error handling mechanism in the above code seems pretty clunky... How do those failed messages get retried?
 This approach probably will probably be easier to manage:
 
 ```js
-var workers = Job.processJobs('jobQueue', 'jobType', { payload: 20 }, function (jobs, cb) {
-  // jobs is an array of jobs, between 1 and 20 long, triggered by the option payload > 1
-  var count = 0;
+var workers = Job.processJobs('jobQueue', 'jobType', { payload: 20 },
+  function (jobs, cb) {
+    // jobs is an array of jobs, between 1 and 20 long,
+    // triggered by the option payload being > 1
+    var count = 0;
 
-  jobs.forEach(function (job) {
-    var email = job.data.email // Only one email per job
-    sendEmail(email.address, email.subject, email.message, function(err) {
-      count++;
-      if (err) {
-        job.log("Sending failed with error" + err, {level: 'warning'});
-        job.fail("" + err);
-      } else {
-        job.done();
-      }
-      if (count === jobs.length) {
-        cb();  // Tells the processJobs we're done
-      }
+    jobs.forEach(function (job) {
+      var email = job.data.email // Only one email per job
+      sendEmail(email.address, email.subject, email.message, function(err) {
+        count++;
+        if (err) {
+          job.log("Sending failed with error" + err, {level: 'warning'});
+          job.fail("" + err);
+        } else {
+          job.done();
+        }
+        if (count === jobs.length) {
+          cb();  // Tells the processJobs we're done
+        }
+      });
     });
-  });
-});
+  }
+);
 ```
 
 With the above logic, each email can succeed or fail individually, and retrying later can be directly handled by the jobCollection itself.
@@ -210,11 +228,13 @@ var job = new Job('jobQueue', 'jobType', { work: "to", be: "done" });
 // methods do not take callbacks because they only affect the local job object.
 // See also: job.repeat(), job.after(), job.depends()
 
-job.priority('normal')                    // These methods return job and so are chainable.
-   .retry({retries: 5, wait: 15*60*1000}) // Retry up to five times, waiting 15 minutes per attempt
-   .delay(15000);                         // Don't run until 15 seconds have passed
+job.priority('normal')     // These methods return job and so are chainable.
+   .retry({retries: 5,     // Retry up to five times, waiting 15 minutes per attempt
+           wait: 15*60*1000})
+   .delay(15000);          // Don't run until 15 seconds have passed
 
-job.save(function (err, result) { //Save the job to be added to the Meteor jobCollection via DDP
+// Save the job to be added to the Meteor jobCollection via DDP
+job.save(function (err, result) {
   if (!err && result) {
     console.log("New job saved with Id: " + result);
   }
@@ -231,7 +251,8 @@ Management of the jobCollection itself is accomplished using a mixture of Job cl
 // Get a job object by Id
 Job.getJob('jobQueue', id, function (err, job) {
   // Note, this is NOT the same a Job.getWork()
-  // This call returns a job object, but does not change the status to 'running'.
+  // This call returns a job object, but does not change
+  // the status to 'running'.
   // So you can't work on this job.
 });
 
@@ -240,14 +261,19 @@ job.refresh(function (err, result) {
   // job is refreshed
 });
 
-// Make a job object from a job document (which you can obtain by subscribing to a jobCollection)
+// Make a job object from a job document (which you
+// can obtain by subscribing to a jobCollection)
 job = Job.makeJob('jobQueue', jobDoc);  // No callback!
-// Note that jobCollections are reactive, just like any other Meteor collection. So if you are
-// subscribed, the job documents in the collection will auto-update. Then you can use Job.makeJob
-// to turn a job doc into a job object whenever necessary without another DDP round trip
 
-// Once you have a job object you can change many of its settings (but only while it's paused)
-job.pause(function (err, result) {   // Prohibit the job from running on the queue
+// Note that jobCollections are reactive, just like any
+// other Meteor collection. So if you are subscribed,
+// the job documents in the collection will auto-update.
+// Then you can use Job.makeJob to turn a job doc into a
+// job object whenever necessary without another DDP round trip
+
+// Once you have a job object you can change many of its
+// settings (but only while it's paused)
+job.pause(function (err, result) {   // Prohibit the job from running
   job.priority('low');   // Change its priority
   job.save();            // Update its priority in the jobCollection
                          // This also automatically triggers a job.resume()
@@ -263,14 +289,17 @@ job.restart();
 // Or re-run a job that has already completed successfully
 job.rerun();
 
-// And you can remove a job, so long as it's cancelled, completed or failed
-// If its running or in any other state, you'll need to cancel it before you can remove it
+// And you can remove a job, so long as it's cancelled,
+// completed or failed. If it's running or in any other state,
+// you'll need to cancel it before you can remove it.
 job.remove();
 
-// For bulk operations on acting on more than one job at a time, there are also Class methods
-// that take arrays of job Ids.  For example, cancelling a whole batch of jobs at once:
+// For bulk operations on acting on more than one job at a time,
+// there are also Class methods that take arrays of job Ids.
+// For example, cancelling a whole batch of jobs at once:
 Job.cancelJobs('jobQueue', Ids, function(err, result) {
-  // Operation complete. result is true if any jobs were cancelled (assuming no error)
+  // Operation complete. result is true if any jobs were
+  // cancelled (assuming no error)
 });
 ```
 
@@ -343,7 +372,8 @@ See documentation below for `JobQueue`
 Make a Job object from a job Collection document.
 
 ```js
-job = Job.makeJob('jobQueue', doc);  // doc is obtained from a job Collection subscription
+// doc is obtained from a job Collection subscription
+job = Job.makeJob('jobQueue', doc);
 ```
 
 ### `Job.getJob(root, id, [options], [callback])`
@@ -450,13 +480,8 @@ job = new Job('jobQueue', 'jobType', { work: "to", be: "done" })
 Valid non-numeric job priorities.
 
 ```js
-Job.jobPriorities = {
-  low: 10
-  normal: 0
-  medium: -5
-  high: -10
-  critical: -15
-};
+Job.jobPriorities = { low: 10, normal: 0, medium: -5,
+                      high: -10, critical: -15 };
 ```
 
 ### `Job.jobStatuses`
@@ -464,15 +489,8 @@ Job.jobPriorities = {
 Possible states for the status of a job in the job collection.
 
 ```js
-Job.jobStatuses = [
-    'waiting'
-    'paused'
-    'ready'
-    'running'
-    'failed'
-    'cancelled'
-    'completed'
-];
+Job.jobStatuses = [ 'waiting', 'paused', 'ready', 'running',
+                    'failed', 'cancelled', 'completed' ];
 ```
 
 ### `Job.jobLogLevels`
@@ -480,12 +498,7 @@ Job.jobStatuses = [
 Valid log levels. If these look familiar, it's because they correspond to some the Bootstrap [context](http://getbootstrap.com/css/#helper-classes) and [alert](http://getbootstrap.com/components/#alerts) classes.
 
 ```js
-Job.jobLogLevels: [
-    'info'
-    'success'
-    'warning'
-    'danger'
-];
+Job.jobLogLevels: [ 'info', 'success', 'warning', 'danger' ];
 ```
 
 ### `Job.jobStatusCancellable`
@@ -526,10 +539,9 @@ Array of the names of all DDP methods used by `Job`
 
 ```js
 Job.ddpMethods = [
-    'startJobs', 'stopJobs', 'jobRemove', 'jobPause', 'jobResume'
-    'jobCancel', 'jobRestart', 'jobSave', 'jobRerun', 'getWork'
-    'getJob', 'jobLog', 'jobProgress', 'jobDone', 'jobFail'
-    ];
+    'startJobs', 'stopJobs', 'jobRemove', 'jobPause', 'jobResume',
+    'jobCancel', 'jobRestart', 'jobSave', 'jobRerun', 'getWork',
+    'getJob', 'jobLog', 'jobProgress', 'jobDone', 'jobFail' ];
 ```
 
 ### `Job.ddpPermissionLevels`
@@ -584,7 +596,9 @@ Adds jobs that this job depends upon (antecedents). This job will not run until 
 Added jobs must have already had `.save()` run on them, so they will have the `_id` attribute that is used to form the dependency. Calling `j.depends()` with a falsy value will clear any existing dependencies for this job.
 
 ```js
-job.depends([job1, job2]);  // job1 and job2 are Job objects, and must successfully complete before job will run
+ // job1 and job2 are Job objects, and they both
+ // must successfully complete before job will run
+job.depends([job1, job2]);
 job.depends();  // Clear any dependencies previously added on this job
 ```
 
@@ -648,7 +662,8 @@ job.delay(0);   // Do not wait. This is the default.
 `time` is a date object. This sets the time after which a job may be run. It is not guaranteed to run "at" this time because there may be no workers available when it is reached. Returns `job`, so it is chainable.
 
 ```js
-job.after(new Date());   // Run the job anytime after right now. This is the default.
+// Run the job anytime after right now. This is the default.
+job.after(new Date());
 ```
 
 ### `j.log(message, [options], [callback])`
@@ -715,7 +730,10 @@ Submits this job to the job Collection. Only valid if this is a new job, or if t
 ```js
 job.save(
   {
-    cancelRepeats: false  // Do not cancel any jobs of the same type, even if this job repeats forever.  Default: true.
+    // Do not cancel any jobs of the same type,
+    // even if this job repeats forever.
+    // Default: true.
+    cancelRepeats: false
   }
 );
 ```
@@ -850,7 +868,8 @@ Change the state of a `'failed'` or `'cancelled'` job to `'waiting'` to be retri
 ```js
 job.restart(
   {
-    antecedents: true,  // Also restart all jobs that must complete before this job can run.
+    antecedents: true,  // Also restart all jobs that must
+                        // complete before this job can run.
     dependents: false,
     retries: 0          // Only try one more time. This is the default.
   },
@@ -876,7 +895,8 @@ Clone a completed job and run it again.
 job.rerun(
   {
     repeats: 0,         // Only repeat this once. This is the default.
-    wait: 60000         // Wait a minute between repeats. Default is previous setting.
+    wait: 60000         // Wait a minute between repeats.
+                        // Default is value from job being rerun.
   },
   function (err, result) {
     if (result) {
