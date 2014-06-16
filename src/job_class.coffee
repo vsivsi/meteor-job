@@ -132,9 +132,9 @@ class JobQueue
     return () =>
       if called
         console.error "Callback called multiple times in JobQueue"
-        throw new Error("Callback was already called.")
+        throw new Error "Callback was already called."
       called = true
-      fn.apply root, arguments
+      fn.apply @, arguments
 
   _process: () ->
     if not @paused and @running() < @concurrency and @length()
