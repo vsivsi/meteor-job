@@ -229,8 +229,8 @@ var job = new Job('jobQueue', 'jobType', { work: "to", be: "done" });
 // See also: job.repeat(), job.after(), job.depends()
 
 job.priority('normal')     // These methods return job and so are chainable.
-   .retry({retries: 5,     // Retry up to five times, waiting 15 minutes per attempt
-           wait: 15*60*1000})
+   .retry({retries: 5,         // Retry up to five times
+           wait: 15*60*1000})  //waiting 15 minutes per attempt
    .delay(15000);          // Don't run until 15 seconds have passed
 
 // Save the job to be added to the Meteor jobCollection via DDP

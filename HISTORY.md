@@ -1,3 +1,7 @@
+#### v0.0.8 -- Fixed case where Meteor.setImmediate wasn't being used when available. Documentation improvements
+
+#### v0.0.7 -- Erroneous npm publish... no changes from v0.0.6
+
 #### v0.0.6 -- Documentation improvements
 
 #### v0.0.5 -- Added links to jobCollection on Atmosphere. Fixed a couple of typos.

@@ -166,7 +166,7 @@ class JobQueue
       _setImmediate callback  # No Zalgo, thanks
 
   _failJobs: (tasks, callback) ->
-    setImmediate callback if tasks.length is 0  # No Zalgo, thanks
+    _setImmediate callback if tasks.length is 0  # No Zalgo, thanks
     count = 0
     for job in tasks
       job.fail "Worker shutdown", (err, res) =>
