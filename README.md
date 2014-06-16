@@ -934,7 +934,7 @@ Always an object, contains the job data needed by the worker to complete a job o
 
 JobQueue is similar in spirit to the [async.js](https://github.com/caolan/async) [queue](https://github.com/caolan/async#queue) and [cargo]([queue](https://github.com/caolan/async#cargo)) except that it gets its work from the Meteor jobCollection via calls to `Job.getWork()`
 
-### `q = Job.processJobs()`
+### `q = Job.processJobs(root, type, [options], worker)`
 
 Create a `JobQueue` to automatically get work from the job Collection, and asynchronously call the worker function.
 

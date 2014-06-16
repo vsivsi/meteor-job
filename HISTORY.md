@@ -1,3 +1,5 @@
+#### v0.0.9 -- Fixed bug in processJobs that caused crash on Meteor.client side. Doc improvements.
+
 #### v0.0.8 -- Fixed case where Meteor.setImmediate wasn't being used when available. Documentation improvements
 
 #### v0.0.7 -- Erroneous npm publish... no changes from v0.0.6
