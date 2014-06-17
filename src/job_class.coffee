@@ -252,22 +252,12 @@ class Job
     high: -10
     critical: -15
 
-  @jobStatuses: [
-    'waiting'
-    'paused'
-    'ready'
-    'running'
-    'failed'
-    'cancelled'
-    'completed'
-  ]
+  @jobRetryBackoffMethods: [ 'constant', 'exponential' ]
 
-  @jobLogLevels: [
-    'info'
-    'success'
-    'warning'
-    'danger'
-  ]
+  @jobStatuses: [ 'waiting', 'paused', 'ready', 'running'
+                  'failed', 'cancelled', 'completed' ]
+
+  @jobLogLevels: [ 'info', 'success', 'warning', 'danger' ]
 
   @jobStatusCancellable: [ 'running', 'ready', 'waiting', 'paused' ]
   @jobStatusPausable: [ 'ready', 'waiting' ]
@@ -509,9 +499,16 @@ class Job
         throw new Error 'bad option: wait must be an integer >= 0'
     else
       options.wait = 5*60*1000
+    if options.backoff?
+      unless options.backoff in Job.jobRetryBackoffMethods
+        throw new Error 'bad option: invalid retry backoff method'
+    else
+      options.backoff = 'constant'
+
     @_doc.retries = options.retries
     @_doc.retryWait = options.wait
     @_doc.retried ?= 0
+    @_doc.retryBackoff = options.backoff
     return @
 
   # Sets the number of times to repeatedly run this job

@@ -54,7 +54,7 @@ ddp.connect(function (err) {
 
 `npm install meteor-job`
 
-Unit tests may be run from within the nopde_modules/meteor-job directory by:
+Unit tests may be run from within the node_modules/meteor-job directory by:
 ```bash
 npm test
 # or
@@ -484,6 +484,14 @@ Job.jobPriorities = { low: 10, normal: 0, medium: -5,
                       high: -10, critical: -15 };
 ```
 
+### `Job.jobRetryBackoffMethods`
+
+Valid retry backoff methods.
+
+```js
+jobRetryBackoffMethods = [ 'constant', 'exponential' ];
+```
+
 ### `Job.jobStatuses`
 
 Possible states for the status of a job in the job collection.
@@ -617,7 +625,10 @@ Set how failing jobs are rescheduled and retried by the job Collection. Returns 
 
 `options:`
 * `retries` -- Number of times to retry a failing job. Default: `Job.forever`
-* `wait`  -- How long to wait between attempts, in ms. Default: `300000` (5 minutes)
+* `wait` -- Initial value for how long to wait between attempts, in ms. Default: `300000` (5 minutes)
+* `backoff` -- Method to use in determining how to calculate wait value for each retry. Default: `'constant'`
+    * `'constant'`:  Always delay retrying by `wait` ms.
+    * `'exponential'`:  Delay by twice as long for each subsequent retry, e.g. `wait`, `2*wait`, `4*wait` ...
 
 `[options]` may also be a non-negative integer, which is interpreted as `{ retries: [options] }`
 
@@ -627,6 +638,7 @@ Note that the above stated defaults are those when `.retry()` is explicitly call
 job.retry({
   retries: 5,   // Retry 5 times,
   wait: 20000   // waiting 20 seconds between attempts
+  backoff: 'constant'  // wait constant amount of time between each retry
 });
 ```
 

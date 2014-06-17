@@ -55,6 +55,8 @@ describe 'Job', () ->
       assert.isNumber Job.forever
       assert.isObject Job.jobPriorities
       assert.lengthOf Object.keys(Job.jobPriorities), 5
+      assert.isArray Job.jobRetryBackoffMethods
+      assert.lengthOf Job.jobRetryBackoffMethods, 2
       assert.isArray Job.jobStatuses
       assert.lengthOf Job.jobStatuses, 7
       assert.isArray Job.jobLogLevels
@@ -358,6 +360,7 @@ describe 'Job', () ->
          assert.isNumber doc.retries
          assert.isNumber doc.retryWait
          assert.isNumber doc.retried
+         assert.isString doc.retryBackoff
          assert.isNumber doc.repeats
          assert.isNumber doc.repeatWait
          assert.isNumber doc.repeated
@@ -463,12 +466,15 @@ describe 'Job', () ->
             j = job.retry 3
             assert.equal j, job
             assert.equal doc.retries, 3 + 1 # This is correct, it adds one.
+            assert.equal doc.retryWait, 5*60*1000
+            assert.equal doc.retryBackoff, 'constant'
 
          it 'should accept an option object', () ->
-            j = job.retry { retries: 3, wait: 5000 }
+            j = job.retry { retries: 3, wait: 5000, backoff: 'exponential' }
             assert.equal j, job
             assert.equal doc.retries, 3 + 1
             assert.equal doc.retryWait, 5000
+            assert.equal doc.retryBackoff, 'exponential'
 
          it 'should throw when given a bad parameter', () ->
             assert.throw (() -> job.retry 'badness'), /bad parameter: accepts either an integer/
@@ -486,6 +492,7 @@ describe 'Job', () ->
             assert.throw (() -> job.retry { wait: 'badness' }), /bad option: wait must be an integer/
             assert.throw (() -> job.retry { wait: -1 }), /bad option: wait must be an integer/
             assert.throw (() -> job.retry { wait: 3.14 }), /bad option: wait must be an integer/
+            assert.throw (() -> job.retry { backoff: 'bogus' }), /bad option: invalid retry backoff method/
 
       describe '.repeat()', () ->
 
