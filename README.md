@@ -506,7 +506,7 @@ Job.jobStatuses = [ 'waiting', 'paused', 'ready', 'running',
 Valid log levels. If these look familiar, it's because they correspond to some the Bootstrap [context](http://getbootstrap.com/css/#helper-classes) and [alert](http://getbootstrap.com/components/#alerts) classes.
 
 ```js
-Job.jobLogLevels: [ 'info', 'success', 'warning', 'danger' ];
+Job.jobLogLevels = [ 'info', 'success', 'warning', 'danger' ];
 ```
 
 ### `Job.jobStatusCancellable`
@@ -626,8 +626,8 @@ Set how failing jobs are rescheduled and retried by the job Collection. Returns 
 `options:`
 * `retries` -- Number of times to retry a failing job. Default: `Job.forever`
 * `wait` -- Initial value for how long to wait between attempts, in ms. Default: `300000` (5 minutes)
-* `backoff` -- Method to use in determining how to calculate wait value for each retry. Default: `'constant'`
-    * `'constant'`:  Always delay retrying by `wait` ms.
+* `backoff` -- Method to use in determining how to calculate wait value for each retry:
+    * `'constant'`:  Always delay retrying by `wait` ms. Default value.
     * `'exponential'`:  Delay by twice as long for each subsequent retry, e.g. `wait`, `2*wait`, `4*wait` ...
 
 `[options]` may also be a non-negative integer, which is interpreted as `{ retries: [options] }`
@@ -637,7 +637,7 @@ Note that the above stated defaults are those when `.retry()` is explicitly call
 ```js
 job.retry({
   retries: 5,   // Retry 5 times,
-  wait: 20000   // waiting 20 seconds between attempts
+  wait: 20000,  // waiting 20 seconds between attempts
   backoff: 'constant'  // wait constant amount of time between each retry
 });
 ```
