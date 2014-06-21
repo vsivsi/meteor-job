@@ -125,7 +125,7 @@ class JobQueue
           @_getWorkOutstanding = false
           @_stoppingGetWork() if @_stoppingGetWork?
         else
-          console.error "JobQueue: Non array response from server from getWork()"
+          console.error "JobQueue: Nonarray response from server from getWork()"
 
   _only_once: (fn) ->
     called = false
@@ -558,14 +558,15 @@ class Job
       throw new Error 'Log message must be a string'
     unless typeof options.level is 'string' and options.level in Job.jobLogLevels
       throw new Error 'Log level options must be one of Job.jobLogLevels'
-    if options.echo and Job.jobLogLevels.indexOf(options.level) >= Job.jobLogLevels.indexOf(options.echo)
+    if options.echo?
+      if options.echo and Job.jobLogLevels.indexOf(options.level) >= Job.jobLogLevels.indexOf(options.echo)
+        out = "LOG: #{options.level}, #{@_doc._id} #{@_doc.runId}: #{message}"
+        switch options.level
+          when 'danger' then console.error out
+          when 'warning' then console.warn out
+          when 'success' then console.log out
+          else console.info out
       delete options.echo
-      out = "LOG: #{options.level}, #{@_doc._id} #{@_doc.runId}: #{message}"
-      switch options.level
-        when 'danger' then console.error out
-        when 'warning' then console.warn out
-        when 'success' then console.log out
-        else console.info out
     if @_doc._id?
       return methodCall @root, "jobLog", [@_doc._id, @_doc.runId, message, options], cb
     else  # Log can be called on an unsaved job

@@ -727,8 +727,8 @@ describe 'Job', () ->
                      error: (params...) -> throw new Error 'danger'
 
                it 'should echo the log to the console at the level requested', () ->
-                  assert.doesNotThrow (() -> job.log 'Hello')
-                  assert.doesNotThrow (() -> job.log 'Hello', { echo: false })
+                  assert.doesNotThrow (() -> job.log 'Hello'), 'echo occurred without being requested'
+                  assert.doesNotThrow (() -> job.log 'Hello', { echo: false }), 'echo occurred when explicitly disabled'
                   assert.throw (() -> job.log 'Hello', { echo: true }), /info/
                   assert.throw (() -> job.log 'Hello', { echo: true, level: 'info' }), /info/
                   assert.throw (() -> job.log 'Hello', { echo: true, level: 'success' }), /success/
