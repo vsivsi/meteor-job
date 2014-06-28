@@ -1,3 +1,5 @@
+#### v0.0.11 -- Updated documentation to reflect a change in the default value of `cancelRepeats` on `job.save()`
+
 #### v0.0.10 -- Added support for new `backoff` option to `job.retry()`. Doc improvements.
 
 #### v0.0.9 -- Fixed bug in processJobs that caused crash on Meteor.client side. Doc improvements.
