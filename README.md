@@ -884,6 +884,7 @@ Change the state of a `'failed'` or `'cancelled'` job to `'waiting'` to be retri
 
 `options:`
 * `retries` -- Number of additional retries to attempt before failing with `job.retry()`. Default: `0`. These retries add to any remaining retries already on the job (such as if it was cancelled).
+* `until` -- Keep retrying until this `Date`, or until the number of retries is exhausted, whichever comes first. Default: Prior value of `until`.
 * `antecedents` -- Also restart all `'cancelled'` or `'failed'` jobs that this job depends on.  Default: `true`
 * `dependents` -- Also restart all `'cancelled'` or `'failed'` jobs that depend on this job.  Default: `false`
 
@@ -911,6 +912,7 @@ Clone a completed job and run it again.
 
 `options:`
 * `repeats` -- Number of times to repeat the job, as with `job.repeat()`.
+* `until` -- Keep repeating until this `Date`, or until the number of repeats is exhausted, whichever comes first. Default: prior value of `until`
 * `wait` -- Time to wait between reruns. Default is the existing `job.repeat({ wait: ms }) setting for the job.
 
 `callback(error, result)` -- Result is true if rerun was successful. When running as `Meteor.isServer` with fibers, the callback may be omitted and the return value is the result.
