@@ -1,6 +1,6 @@
 {
   "name": "meteor-job",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "description": "Class for Meteor jobCollection for use both within meteor.js and with pure node.js workers",
   "main": "lib/job_class.js",
   "dependencies": {
@@ -8,8 +8,8 @@
   "devDependencies": {
     "coffee-script": ">=1.7.1",
     "mocha": "1.20.1",
-    "rewire": "2.0.1",
-    "sinon": "1.10.2",
+    "rewire": "2.1.0",
+    "sinon": "1.10.3",
     "chai": "1.9.1"
   },
   "scripts": {
