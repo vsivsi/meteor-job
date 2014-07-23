@@ -625,6 +625,8 @@ class Job
   # job is not running and hasn't completed.
   save: (options..., cb) ->
     [options, cb] = optionsHelp options, cb
+    if @_doc.repeat > 0 and @_doc.retryUntil isnt Job.foreverDate
+      throw new Error "Can't specify retryUntil on a repeating job"
     return methodCall @root, "jobSave", [@_doc, options], cb, (id) =>
       if id
         @_doc._id = id

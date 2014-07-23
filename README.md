@@ -635,7 +635,7 @@ Set how failing jobs are rescheduled and retried by the job Collection. Returns 
 
 `options:`
 * `retries` -- Number of times to retry a failing job. Default: `Job.forever`
-* `until` -- Keep retrying until this `Date`, or until the number of retries is exhausted, whichever comes first. Default: `Job.foreverDate`
+* `until` -- Keep retrying until this `Date`, or until the number of retries is exhausted, whichever comes first. Default: `Job.foreverDate`. Note that the only valid value for `until` on a repeating job is `Job.foreverDate`
 * `wait` -- Initial value for how long to wait between attempts, in ms. Default: `300000` (5 minutes)
 * `backoff` -- Method to use in determining how to calculate wait value for each retry:
     * `'constant'`:  Always delay retrying by `wait` ms. Default value.
