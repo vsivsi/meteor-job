@@ -1,6 +1,6 @@
 #### v0.0.12
 
-* Default time for `job.after()` should be in the past (thanks @)
+* Default time for `job.after()` should be in the past (thanks @daeq)
 
 #### v0.0.11
 
