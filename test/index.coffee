@@ -361,9 +361,11 @@ describe 'Job', () ->
          assert.isNumber doc.retryWait
          assert.isNumber doc.retried
          assert.isString doc.retryBackoff
+         assert.instanceOf doc.retryUntil, Date
          assert.isNumber doc.repeats
          assert.isNumber doc.repeatWait
          assert.isNumber doc.repeated
+         assert.instanceOf doc.repeatUntil, Date
          assert.instanceOf doc.after, Date
          assert.isArray doc.log
          assert.isObject doc.progress
@@ -470,9 +472,10 @@ describe 'Job', () ->
             assert.equal doc.retryBackoff, 'constant'
 
          it 'should accept an option object', () ->
-            j = job.retry { retries: 3, wait: 5000, backoff: 'exponential' }
+            j = job.retry { retries: 3, until: new Date(new Date().valueOf() + 60000), wait: 5000, backoff: 'exponential' }
             assert.equal j, job
             assert.equal doc.retries, 3 + 1
+            assert.ok doc.retryUntil > new Date()
             assert.equal doc.retryWait, 5000
             assert.equal doc.retryBackoff, 'exponential'
 
@@ -493,6 +496,7 @@ describe 'Job', () ->
             assert.throw (() -> job.retry { wait: -1 }), /bad option: wait must be an integer/
             assert.throw (() -> job.retry { wait: 3.14 }), /bad option: wait must be an integer/
             assert.throw (() -> job.retry { backoff: 'bogus' }), /bad option: invalid retry backoff method/
+            assert.throw (() -> job.retry { until: 'bogus' }), /bad option: until must be a Date object/
 
       describe '.repeat()', () ->
 
@@ -502,9 +506,10 @@ describe 'Job', () ->
             assert.equal doc.repeats, 3
 
          it 'should accept an option object', () ->
-            j = job.repeat { repeats: 3, wait: 5000 }
+            j = job.repeat { repeats: 3, until: new Date(new Date().valueOf() + 60000), wait: 5000 }
             assert.equal j, job
             assert.equal doc.repeats, 3
+            assert.ok(doc.repeatUntil > new Date())
             assert.equal doc.repeatWait, 5000
 
          it 'should throw when given a bad parameter', () ->
@@ -523,6 +528,7 @@ describe 'Job', () ->
             assert.throw (() -> job.repeat { wait: 'badness' }), /bad option: wait must be an integer/
             assert.throw (() -> job.repeat { wait: -1 }), /bad option: wait must be an integer/
             assert.throw (() -> job.repeat { wait: 3.14 }), /bad option: wait must be an integer/
+            assert.throw (() -> job.retry { until: 'bogus' }), /bad option: until must be a Date object/
 
       describe '.after()', () ->
 

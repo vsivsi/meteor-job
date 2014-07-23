@@ -1,5 +1,7 @@
 #### v0.0.12
 
+* Added `until` option for `job.repeat()` and `job.retry()`
+* Added `job.foreverDate` to indicate a time that will never come
 * Default time for `job.after()` should be in the past (thanks @daeq)
 
 #### v0.0.11

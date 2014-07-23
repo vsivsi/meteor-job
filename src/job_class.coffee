@@ -245,6 +245,9 @@ class Job
   # This is the JS max int value = 2^53
   @forever = 9007199254740992
 
+  # This is the maximum date value in JS
+  @foreverDate = new Date 8640000000000000
+
   @jobPriorities:
     low: 10
     normal: 0
@@ -494,6 +497,11 @@ class Job
       options.retries++
     else
       options.retries = Job.forever
+    if options.until?
+      unless options.until instanceof Date
+        throw new Error 'bad option: until must be a Date object'
+    else
+      options.until = Job.foreverDate
     if options.wait?
       unless isInteger(options.wait) and options.wait >= 0
         throw new Error 'bad option: wait must be an integer >= 0'
@@ -509,6 +517,7 @@ class Job
     @_doc.retryWait = options.wait
     @_doc.retried ?= 0
     @_doc.retryBackoff = options.backoff
+    @_doc.retryUntil = options.until
     return @
 
   # Sets the number of times to repeatedly run this job
@@ -524,6 +533,11 @@ class Job
         throw new Error 'bad option: repeats must be an integer >= 0'
     else
       options.repeats = Job.forever
+    if options.until?
+      unless options.until instanceof Date
+        throw new Error 'bad option: until must be a Date object'
+    else
+      options.until = Job.foreverDate
     if options.wait?
       unless isInteger(options.wait) and options.wait >= 0
         throw new Error 'bad option: wait must be an integer >= 0'
@@ -533,6 +547,7 @@ class Job
     @_doc.repeats = options.repeats
     @_doc.repeatWait = options.wait
     @_doc.repeated ?= 0
+    @_doc.repeatUntil = options.until
     return @
 
   # Sets the delay before this job can run after it is saved

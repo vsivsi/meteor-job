@@ -467,12 +467,22 @@ Job.stopJobs(
 
 ### `Job.forever`
 
-Constant value used to indicate that something should repeat forever.
+Constant value used to indicate the count of something should repeat forever.
 
 ```js
 job = new Job('jobQueue', 'jobType', { work: "to", be: "done" })
    .retry({ retries: Job.forever })    // Default for .retry()
    .repeat({ repeats: Job.forever });  // Default for .repeat()
+```
+
+### `Job.foreverDate`
+
+Constant value used to indicate a future Date that will never arrive.
+
+```js
+job = new Job('jobQueue', 'jobType', { work: "to", be: "done" })
+   .retry({ until: Job.foreverDate })    // Default for .retry()
+   .repeat({ until: Job.foreverDate });  // Default for .repeat()
 ```
 
 ### `Job.jobPriorities`
@@ -625,6 +635,7 @@ Set how failing jobs are rescheduled and retried by the job Collection. Returns 
 
 `options:`
 * `retries` -- Number of times to retry a failing job. Default: `Job.forever`
+* `until` -- Keep retrying until this `Date`, or until the number of retries is exhausted, whichever comes first. Default: `Job.foreverDate`
 * `wait` -- Initial value for how long to wait between attempts, in ms. Default: `300000` (5 minutes)
 * `backoff` -- Method to use in determining how to calculate wait value for each retry:
     * `'constant'`:  Always delay retrying by `wait` ms. Default value.
@@ -648,6 +659,7 @@ Set how many times this job will be automatically re-run by the job Collection. 
 
 `options:`
 * `repeats` -- Number of times to rerun the job. Default: `Job.forever`
+* `until` -- Keep repeating until this `Date`, or until the number of repeats is exhausted, whichever comes first. Default: `Job.foreverDate`
 * `wait`  -- How long to wait between re-runs, in ms. Default: `300000` (5 minutes)
 
 `[options]` may also be a non-negative integer, which is interpreted as `{ repeats: [options] }`
