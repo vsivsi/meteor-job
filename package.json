@@ -1,6 +1,6 @@
 {
   "name": "meteor-job",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "description": "Class for Meteor jobCollection for use both within meteor.js and with pure node.js workers",
   "main": "lib/job_class.js",
   "dependencies": {

@@ -1,3 +1,7 @@
+#### v0.0.13
+
+* Remove job_class.js from .gitignore. It causes problems with npm
+
 #### v0.0.12
 
 * Added `until` option for `job.repeat()`, `job.retry()`, job.restart() and job.rerun().
