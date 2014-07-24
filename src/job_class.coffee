@@ -298,7 +298,7 @@ class Job
 
   # This needs to be called when not running in Meteor to use the local DDP connection.
   @setDDP: (ddp) ->
-    if ddp? and ddp.call? and ddp.loginWithToken? # Since all functions have a call method...
+    if ddp? and ddp.call? and ddp.connect? and ddp.subscribe? # Since all functions have a call method...
       @ddp_apply = ddp.call.bind ddp
     else
       throw new Error "Bad ddp object in Job.setDDP()"

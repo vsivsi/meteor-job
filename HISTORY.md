@@ -1,3 +1,7 @@
+#### v0.0.14
+
+* Changed validity check in `setDDP`, since ddp npm package no longer does login.
+
 #### v0.0.13
 
 * Remove job_class.js from .gitignore. It causes problems with npm

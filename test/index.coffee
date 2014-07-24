@@ -33,9 +33,11 @@ class DDP
                process.nextTick () -> cb new Error "Method failed"
          return
 
-   loginWithToken: (token, cb) ->
-      process.nextTick () -> cb(null, "fake_token")
+   connect: () ->
+      process.nextTick () -> cb(null)
 
+   subscribe: () ->
+      process.nextTick () -> cb(null)
 
 makeDdpStub = (action) ->
    return (name, params, cb) ->
