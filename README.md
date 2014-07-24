@@ -1,7 +1,7 @@
 meteor-job
 ======================================
 
-**NOTE:** This Package remains experimental until v0.1.0 is released, and while the API methods described here are maturing, they may still change.
+**NOTE:** This Package remains experimental until v0.1.0 is released (which will be soon). The API methods described herein are maturing, but they may still change.
 
 ## Intro
 
