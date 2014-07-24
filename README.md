@@ -635,7 +635,7 @@ Set how failing jobs are rescheduled and retried by the job Collection. Returns 
 
 `options:`
 * `retries` -- Number of times to retry a failing job. Default: `Job.forever`
-* `until` -- Keep retrying until this `Date`, or until the number of retries is exhausted, whichever comes first. Default: `Job.foreverDate`. Note that for repeating jobs this value will be set to the repeat `until` value.
+* `until` -- Keep retrying until this `Date`, or until the number of retries is exhausted, whichever comes first. Default: `Job.foreverDate`. Note that if you specify a value for `until` on a repeating job, it will only apply to the first run of the job. Any repeated runs of the job will use the repeat `until` value for all retries.
 * `wait` -- Initial value for how long to wait between attempts, in ms. Default: `300000` (5 minutes)
 * `backoff` -- Method to use in determining how to calculate wait value for each retry:
     * `'constant'`:  Always delay retrying by `wait` ms. Default value.
@@ -884,7 +884,7 @@ Change the state of a `'failed'` or `'cancelled'` job to `'waiting'` to be retri
 
 `options:`
 * `retries` -- Number of additional retries to attempt before failing with `job.retry()`. Default: `0`. These retries add to any remaining retries already on the job (such as if it was cancelled).
-* `until` -- Keep retrying until this `Date`, or until the number of retries is exhausted, whichever comes first. Default: Prior value of `until`.
+* `until` -- Keep retrying until this `Date`, or until the number of retries is exhausted, whichever comes first. Default: Prior value of `until`. Note that if you specify a value for `until` when restarting a repeating job, it will only apply to the first run of the job. Any repeated runs of the job will use the repeat `until` value for all retries.
 * `antecedents` -- Also restart all `'cancelled'` or `'failed'` jobs that this job depends on.  Default: `true`
 * `dependents` -- Also restart all `'cancelled'` or `'failed'` jobs that depend on this job.  Default: `false`
 
