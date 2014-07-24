@@ -557,7 +557,7 @@ class Job
     return @after new Date(new Date().valueOf() + wait)
 
   # Sets a time after which this job can run once it is saved
-  after: (time = new Date(0)) ->
+  after: (time = new Date()) ->
     if typeof time is 'object' and time instanceof Date
       after = time
     else

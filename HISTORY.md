@@ -2,7 +2,6 @@
 
 * Added `until` option for `job.repeat()`, `job.retry()`, job.restart() and job.rerun().
 * Added `job.foreverDate` to indicate a Date that will never come
-* Default Date for `job.after()` should be in the past (thanks @daeq)
 
 #### v0.0.11
 
