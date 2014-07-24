@@ -369,6 +369,7 @@ describe 'Job', () ->
          assert.instanceOf doc.after, Date
          assert.isArray doc.log
          assert.isObject doc.progress
+         assert.instanceOf doc.created, Date
 
       it 'should return a new valid Job object', () ->
          job = new Job('root', 'work', { foo: "bar" })

@@ -438,12 +438,14 @@ class Job
       @type = type
       @data = data
     else  # This is the normal "create a new object" case
+      time = new Date()
       @_doc =
         runId: null
         type : type
         data: data
         status: 'waiting'
-        updated: new Date()
+        updated: time
+        created: time
       @priority().retry().repeat().after().progress().depends().log("Created")
       @type = @_doc.type
       @data = @_doc.data  # Make data a little easier to get to
