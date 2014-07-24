@@ -446,7 +446,7 @@ class Job
         status: 'waiting'
         updated: time
         created: time
-      @priority().retry().repeat().after().progress().depends().log("Created")
+      @priority().retry().repeat().after().progress().depends().log("Constructed")
       @type = @_doc.type
       @data = @_doc.data  # Make data a little easier to get to
       return @
