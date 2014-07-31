@@ -663,16 +663,16 @@ class Job
     return null
 
   # Indicate to the server that this run has failed and provide an error message.
-  fail: (err = "No error information provided", options..., cb) ->
-    if typeof err is 'function'
-      cb = err
-      err = "No error information provided"
-    unless typeof err is 'string'
-      throw new Error 'Error message passed to .fail() must be a string'
+  fail: (result = "No error information provided", options..., cb) ->
+    if typeof result is 'function'
+      cb = result
+      result = "No error information provided"
     [options, cb] = optionsHelp options, cb
+    unless result? and typeof result is 'object'
+      result = { value: result }
     options.fatal ?= false
     if @_doc._id? and @_doc.runId?
-      return methodCall @root, "jobFail", [@_doc._id, @_doc.runId, err, options], cb
+      return methodCall @root, "jobFail", [@_doc._id, @_doc.runId, result, options], cb
     else
       throw new Error "Can't call .fail() on an unsaved or non-running job"
     return null

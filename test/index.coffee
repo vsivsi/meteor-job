@@ -899,7 +899,7 @@ describe 'Job', () ->
                   options = params[3]
                   if ( id is 'thisId' and
                        runId is 'thatId' and
-                       typeof err is 'string')
+                       typeof err is 'object')
                      if options.fatal
                         throw new Error "Fatal Error!"
                      res = err
@@ -911,12 +911,19 @@ describe 'Job', () ->
                doc._id = 'thisId'
                doc.runId = 'thatId'
                res = job.fail()
-               assert.equal res, "No error information provided"
+               assert.deepEqual res, { value: "No error information provided" }
 
             it 'should properly handle an error string', () ->
                doc._id = 'thisId'
                doc.runId = 'thatId'
                err = 'This is an error'
+               res = job.fail err
+               assert.deepEqual res, { value: err }
+
+            it 'should properly handle an error object', () ->
+               doc._id = 'thisId'
+               doc.runId = 'thatId'
+               err = { message: 'This is an error' }
                res = job.fail err
                assert.equal res, err
 
@@ -924,16 +931,13 @@ describe 'Job', () ->
                doc._id = 'thisId'
                doc.runId = 'thatId'
                job.fail (err, res) ->
-                  assert.equal res, "No error information provided"
+                  assert.equal res.value, "No error information provided"
                   done()
 
             it 'should properly handle the fatal option', () ->
                doc._id = 'thisId'
                doc.runId = 'thatId'
                assert.throw (() -> job.fail "Fatal error!", { fatal: true }), /Fatal Error!/
-
-            it 'should throw when called with a non-string error', () ->
-               assert.throw (() -> job.fail(false)), /must be a string/
 
             it 'should throw when called on an unsaved job', () ->
                assert.throw (() -> job.fail()), /an unsaved or non-running job/
