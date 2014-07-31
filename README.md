@@ -780,7 +780,7 @@ job.refresh(function (err, result) {
 
 ### `j.done(result, [options], [callback])`
 
-Change the state of a running job to `'completed'`. `result` is any EJSON object.  If this job is configured to repeat, a new job will automatically be cloned to rerun in the future.  Result will be saved as an object. If passed result is not an object, it will be wrapped in one.
+Change the state of a running job to `'completed'`. `result` is any EJSON object.  If this job is configured to repeat, a new job will automatically be cloned to rerun in the future. Result will be saved as an object. If passed result is not an object, it will be wrapped in one.
 
 `options:` -- None currently.
 
@@ -799,9 +799,9 @@ job.done("Done!");
 // { "value": "Done!" }
 ```
 
-### `j.fail(message, [options], [callback])`
+### `j.fail(error, [options], [callback])`
 
-Cause this job to fail. It's next state depends on how the job's `job.retry()` settings are configured. It will either become `'failed'` or go to `'waiting'` for the next retry. `message` is a string.
+Cause this job to fail. It's next state depends on how the job's `job.retry()` settings are configured. It will either become `'failed'` or go to `'waiting'` for the next retry. `error` is any EJSON object. Error will be saved as an object. If passed error is not an object, it will be wrapped in one.
 
 `options:`
 * `fatal` -- If true, no additional retries will be attempted and this job will go to a `'failed'` state. Default: `false`
@@ -820,6 +820,11 @@ job.fail(
     }
   }
 });
+
+// Pass a non-object error
+job.fail("Error!");
+// This will be saved as:
+// { "value": "Error!" }
 ```
 
 ### `j.pause([options], [callback])`

@@ -1,3 +1,7 @@
+#### v.NEXT
+
+* `.fail()` now takes an error object instead of a string, just like `.done()`
+
 #### v0.0.14
 
 * Changed validity check in `setDDP`, since ddp npm package no longer does login.
