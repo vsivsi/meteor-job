@@ -767,6 +767,7 @@ Refreshes the current job object state with the state on the remote job Collecti
 
 `options:`
 * `getLog` -- If true, also refresh the jobs log data (which may be large).  Default: `false`
+* `getFailures` -- If true, also refresh the jobs failure results (which may be large).  Default: `false`
 
 `callback(error, result)` -- Result is true if refresh was successful. When running as `Meteor.isServer` with fibers, the callback may be omitted and the return value is the result.
 
