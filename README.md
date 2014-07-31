@@ -810,7 +810,10 @@ Cause this job to fail. It's next state depends on how the job's `job.retry()` s
 
 ```js
 job.fail(
-  'This job has failed again!',
+  {
+    reason: 'This job has failed again!',
+    code: 44
+  }
   {
     fatal: false  // Default case
   },
