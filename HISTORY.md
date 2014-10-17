@@ -1,6 +1,8 @@
 #### v.NEXT
 
 * `.fail()` now takes an error object instead of a string, just like `.done()`
+* Bumped coffee-script and chai versions
+* Fixed broken tests
 
 #### v0.0.14
 

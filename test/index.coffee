@@ -564,7 +564,7 @@ describe 'Job', () ->
             j = job.delay()
             assert.equal j, job
             assert.instanceOf doc.after, Date
-            assert.closeTo doc.after, new Date(), 1000
+            assert.closeTo doc.after.valueOf(), new Date().valueOf(), 1000
 
          it 'should throw when given an invalid parameter', () ->
             assert.throw (() -> job.delay -1.234), /Bad parameter, delay requires a non-negative integer/
@@ -691,7 +691,7 @@ describe 'Job', () ->
                assert.equal thisLog.message, 'Hello'
                assert.equal thisLog.level, 'success'
                assert.instanceOf thisLog.time, Date
-               assert.closeTo thisLog.time, new Date(), 1000
+               assert.closeTo thisLog.time.valueOf(), new Date().valueOf(), 1000
 
             it 'should make valid DDP call when invoked on a saved job', () ->
                doc._id = 'thisId'
