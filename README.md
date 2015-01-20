@@ -5,7 +5,7 @@ meteor-job
 
 ## Intro
 
-Meteor Job is a pure Javascript implementation of the `Job` and `JobQueue` classes that form the foundation of the [`job-collection` Atmosphere package](https://atmospherejs.com/vsivsi/job-collection) for Meteor. This package is used internally by `job-bollection` on Meteor, but you should also use it for any job workers you would like to run outside of the Meteor environment as ordinary node.js programs.
+Meteor Job is a pure Javascript implementation of the `Job` and `JobQueue` classes that form the foundation of the [`job-collection` Atmosphere package](https://atmospherejs.com/vsivsi/job-collection) for Meteor. This package is used internally by `job-collection` on Meteor, but you should also use it for any job workers you would like to run outside of the Meteor environment as ordinary node.js programs.
 
 Here's a very basic example that ignores authentication and connection error handling:
 
