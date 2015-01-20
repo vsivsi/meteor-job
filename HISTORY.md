@@ -1,5 +1,9 @@
 #### v.NEXT
 
+* Updated README to reflect name change to job-collection and fix broken links to Atmosphere
+
+#### v0.0.15
+
 * `.fail()` now takes an error object instead of a string, just like `.done()`
 * Bumped coffee-script and chai versions
 * Fixed broken tests
