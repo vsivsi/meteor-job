@@ -325,7 +325,7 @@ class Job
         doc? and typeof doc is 'object' and doc.type? and
         typeof doc.type is 'string' and doc.data? and
         typeof doc.data is 'object' and doc._id?
-      new Job root, doc.type, doc.data, doc
+      new Job root, doc
     else
       throw new Error 'makeJob: Bad params'
 
@@ -336,7 +336,7 @@ class Job
     options.getLog ?= false
     methodCall root, "getJob", [id, options], cb, (doc) =>
       if doc
-        new Job root, doc.type, doc.data, doc
+        new Job root, doc
       else
         undefined
 
@@ -422,10 +422,17 @@ class Job
     methodCall root, "stopJobs", [options], cb
 
   # Job class instance constructor. When "new Job(...)" is run
-  constructor: (@root, type, data, doc = null) ->
+  constructor: (@root, type, data) ->
     unless @ instanceof Job
-      return new Job @root, type, data, doc
+      return new Job @root, type, data
     @ddp_apply = Job.ddp_apply
+    # Handle (root, doc) case
+    if not data? and type.data? and type.type?
+      doc = type
+      data = doc.data
+      type = doc.type
+    else
+      doc = {}
     unless typeof doc is 'object' and
            typeof data is 'object' and
            typeof type is 'string' and
