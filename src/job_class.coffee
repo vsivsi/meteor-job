@@ -291,6 +291,32 @@ class Job
     'jobDone': ['jobDone', 'admin', 'worker']
     'jobFail': ['jobFail', 'admin', 'worker']
 
+  @jobAttribs = 
+    _id: true # Match.Optional Match.OneOf(Match.Where(_validId), null)
+    runId: true # Match.OneOf(Match.Where(_validId), null)
+    type: true # String
+    status: true # Match.Where _validStatus
+    data: true # Object
+    result: false # Match.Optional Object
+    failures: false # Match.Optional [ Object ]
+    priority: true # Match.Integer
+    depends: true # [ Match.Where(_validId) ]
+    resolved: true # [ Match.Where(_validId) ]
+    after: true # Date
+    updated: true # Date
+    log: false # Match.Optional _validLog()
+    progress: true # _validProgress()
+    retries: true # Match.Where _validIntGTEZero
+    retried: true # Match.Where _validIntGTEZero
+    retryUntil: true # Date
+    retryWait: true # Match.Where _validIntGTEZero
+    retryBackoff: true # Match.Where _validRetryBackoff
+    repeats: true # Match.Where _validIntGTEZero
+    repeated: true # Match.Where _validIntGTEZero
+    repeatUntil: true # Date
+    repeatWait: true # Match.Where _validIntGTEZero
+    created: true # Date
+
   # Automatically work within Meteor, otherwise see @setDDP below
   @ddp_apply: Meteor?.apply
 
@@ -319,15 +345,13 @@ class Job
   # This is defined above
   @processJobs: JobQueue
 
-  # Makes a job object from a job document
-  @makeJob: (root, doc) ->
-    if root? and typeof root is 'string' and
-        doc? and typeof doc is 'object' and doc.type? and
-        typeof doc.type is 'string' and doc.data? and
-        typeof doc.data is 'object' and doc._id?
-      new Job root, doc.type, doc.data, doc
-    else
-      throw new Error 'makeJob: Bad params'
+  @copyJobDoc = (doc, d = {}) ->
+    for a, v of @jobAttribs
+      if doc[a]?
+        d[a] = doc[a]
+      else if v
+        return null
+    return d
 
   # Creates a job object by id from the server queue root
   # returns null if no such job exists
@@ -422,10 +446,15 @@ class Job
     methodCall root, "stopJobs", [options], cb
 
   # Job class instance constructor. When "new Job(...)" is run
-  constructor: (@root, type, data, doc = null) ->
+  constructor: (@root, type, data = null, doc = null) ->
     unless @ instanceof Job
       return new Job @root, type, data, doc
     @ddp_apply = Job.ddp_apply
+    # Handle (root, doc) case
+    if not data? and not doc? and type.data? and type.type?
+      doc = type
+      data = doc.data
+      type = doc.type
     unless typeof doc is 'object' and
            typeof data is 'object' and
            typeof type is 'string' and
@@ -434,22 +463,19 @@ class Job
     else if doc?  # This case is used to create local Job objects from DDP calls
       unless doc.type is type and doc.data is data
         throw new Error "rebuild Job: bad parameter(s), #{@root} #{type}, #{data}, #{doc}"
-      @_doc = doc
-      @type = type
-      @data = data
+      res = Job.copyJobDoc @, doc
+      unless res
+        throw new Error "rebuild Job: Invalid job document, missing required attributes"
     else  # This is the normal "create a new object" case
       time = new Date()
-      @_doc =
-        runId: null
-        type : type
-        data: data
-        status: 'waiting'
-        updated: time
-        created: time
+      @runId = null
+      @type = type
+      @data = data
+      @status = 'waiting'
+      @updated = time
+      @created = time
       @priority().retry().repeat().after().progress().depends().log("Constructed")
-      @type = @_doc.type
-      @data = @_doc.data  # Make data a little easier to get to
-      return @
+    return @
 
   # Adds a run dependancy on one or more existing jobs to this job
   # Calling with a falsy value resets the dependencies to []
@@ -458,17 +484,17 @@ class Job
       if jobs instanceof Job
         jobs = [ jobs ]
       if jobs instanceof Array
-        depends = @_doc.depends
+        depends = @depends
         for j in jobs
-          unless j instanceof Job and j._doc._id?
+          unless j instanceof Job and j._id?
             throw new Error 'Each provided object must be a saved Job instance (with an _id)'
-          depends.push j._doc._id
+          depends.push j._id
       else
         throw new Error 'Bad input parameter: depends() accepts a falsy value, or Job or array of Jobs'
     else
       depends = []
-    @_doc.depends = depends
-    @_doc.resolved = []  # This is where prior depends go as they are satisfied
+    @depends = depends
+    @resolved = []  # This is where prior depends go as they are satisfied
     return @
 
   # Set the run priority of this job
@@ -482,7 +508,7 @@ class Job
     else
       throw new Error 'priority must be an integer or valid priority level'
       priority = 0
-    @_doc.priority = priority
+    @priority = priority
     return @
 
   # Sets the number of attempted runs of this job and
@@ -515,11 +541,11 @@ class Job
     else
       options.backoff = 'constant'
 
-    @_doc.retries = options.retries
-    @_doc.retryWait = options.wait
-    @_doc.retried ?= 0
-    @_doc.retryBackoff = options.backoff
-    @_doc.retryUntil = options.until
+    @retries = options.retries
+    @retryWait = options.wait
+    @retried ?= 0
+    @retryBackoff = options.backoff
+    @retryUntil = options.until
     return @
 
   # Sets the number of times to repeatedly run this job
@@ -546,10 +572,10 @@ class Job
     else
       options.wait = 5*60*1000
 
-    @_doc.repeats = options.repeats
-    @_doc.repeatWait = options.wait
-    @_doc.repeated ?= 0
-    @_doc.repeatUntil = options.until
+    @repeats = options.repeats
+    @repeatWait = options.wait
+    @repeated ?= 0
+    @repeatUntil = options.until
     return @
 
   # Sets the delay before this job can run after it is saved
@@ -564,7 +590,7 @@ class Job
       after = time
     else
       throw new Error 'Bad parameter, after requires a valid Date object'
-    @_doc.after = after
+    @after = after
     return @
 
   # Write a message to this job's log.
@@ -577,18 +603,18 @@ class Job
       throw new Error 'Log level options must be one of Job.jobLogLevels'
     if options.echo?
       if options.echo and Job.jobLogLevels.indexOf(options.level) >= Job.jobLogLevels.indexOf(options.echo)
-        out = "LOG: #{options.level}, #{@_doc._id} #{@_doc.runId}: #{message}"
+        out = "LOG: #{options.level}, #{@_id} #{@runId}: #{message}"
         switch options.level
           when 'danger' then console.error out
           when 'warning' then console.warn out
           when 'success' then console.log out
           else console.info out
       delete options.echo
-    if @_doc._id?
-      return methodCall @root, "jobLog", [@_doc._id, @_doc.runId, message, options], cb
+    if @_id?
+      return methodCall @root, "jobLog", [@_id, @runId, message, options], cb
     else  # Log can be called on an unsaved job
-      @_doc.log ?= []
-      @_doc.log.push { time: new Date(), runId: null, level: options.level, message: message }
+      @log ?= []
+      @log.push { time: new Date(), runId: null, level: options.level, message: message }
       if cb? and typeof cb is 'function'
         _setImmediate cb, null, true   # DO NOT release Zalgo
       return @  # Allow call chaining in this case
@@ -608,14 +634,14 @@ class Job
         percent: 100*completed/total
       if options.echo
         delete options.echo
-        console.info "PROGRESS: #{@_doc._id} #{@_doc.runId}: #{progress.completed} out of #{progress.total} (#{progress.percent}%)"
-      if @_doc._id? and @_doc.runId?
-        return methodCall @root, "jobProgress", [@_doc._id, @_doc.runId, completed, total, options], cb, (res) =>
+        console.info "PROGRESS: #{@_id} #{@runId}: #{progress.completed} out of #{progress.total} (#{progress.percent}%)"
+      if @_id? and @runId?
+        return methodCall @root, "jobProgress", [@_id, @runId, completed, total, options], cb, (res) =>
           if res
-            @_doc.progress = progress
+            @progress = progress
           res
-      else unless @_doc._id?
-        @_doc.progress = progress
+      else unless @_id?
+        @progress = progress
         if cb? and typeof cb is 'function'
           _setImmediate cb, null, true   # DO NOT release Zalgo
         return @
@@ -627,21 +653,20 @@ class Job
   # job is not running and hasn't completed.
   save: (options..., cb) ->
     [options, cb] = optionsHelp options, cb
-    return methodCall @root, "jobSave", [@_doc, options], cb, (id) =>
+    doc = Job.copyJobDoc @
+    return methodCall @root, "jobSave", [doc, options], cb, (id) =>
       if id
-        @_doc._id = id
+        @_id = id
       id
 
   # Refresh the local job state with the server job queue's version
   refresh: (options..., cb) ->
     [options, cb] = optionsHelp options, cb
     options.getLog ?= false
-    if @_doc._id?
-      return methodCall @root, "getJob", [@_doc._id, options], cb, (doc) =>
+    if @_id?
+      return methodCall @root, "getJob", [@_id, options], cb, (doc) =>
         if doc?
-          @_doc = doc
-          @type = @_doc.type
-          @data = @_doc.data
+          Job.copyJobDoc doc, @
           true
         else
           false
@@ -656,8 +681,8 @@ class Job
     [options, cb] = optionsHelp options, cb
     unless result? and typeof result is 'object'
       result = { value: result }
-    if @_doc._id? and @_doc.runId?
-      return methodCall @root, "jobDone", [@_doc._id, @_doc.runId, result, options], cb
+    if @_id? and @runId?
+      return methodCall @root, "jobDone", [@_id, @runId, result, options], cb
     else
       throw new Error "Can't call .done() on an unsaved or non-running job"
     return null
@@ -671,8 +696,8 @@ class Job
     unless result? and typeof result is 'object'
       result = { value: result }
     options.fatal ?= false
-    if @_doc._id? and @_doc.runId?
-      return methodCall @root, "jobFail", [@_doc._id, @_doc.runId, result, options], cb
+    if @_id? and @runId?
+      return methodCall @root, "jobFail", [@_id, @runId, result, options], cb
     else
       throw new Error "Can't call .fail() on an unsaved or non-running job"
     return null
@@ -680,10 +705,10 @@ class Job
   # Pause this job, only Ready and Waiting jobs can be paused
   pause: (options..., cb) ->
     [options, cb] = optionsHelp options, cb
-    if @_doc._id?
-      return methodCall @root, "jobPause", [@_doc._id, options], cb
+    if @_id?
+      return methodCall @root, "jobPause", [@_id, options], cb
     else
-      @_doc.status = 'paused'
+      @status = 'paused'
       if cb? and typeof cb is 'function'
         _setImmediate cb, null, true  # DO NOT release Zalgo
       return @
@@ -693,10 +718,10 @@ class Job
   # Resumed jobs go to waiting
   resume: (options..., cb) ->
     [options, cb] = optionsHelp options, cb
-    if @_doc._id?
-      return methodCall @root, "jobResume", [@_doc._id, options], cb
+    if @_id?
+      return methodCall @root, "jobResume", [@_id, options], cb
     else
-      @_doc.status = 'waiting'
+      @status = 'waiting'
       if cb? and typeof cb is 'function'
         _setImmediate cb, null, true  # DO NOT release Zalgo
       return @
@@ -706,8 +731,8 @@ class Job
   cancel: (options..., cb) ->
     [options, cb] = optionsHelp options, cb
     options.antecedents ?= true
-    if @_doc._id?
-      return methodCall @root, "jobCancel", [@_doc._id, options], cb
+    if @_id?
+      return methodCall @root, "jobCancel", [@_id, options], cb
     else
       throw new Error "Can't call .cancel() on an unsaved job"
     return null
@@ -717,8 +742,8 @@ class Job
     [options, cb] = optionsHelp options, cb
     options.retries ?= 1
     options.dependents ?= true
-    if @_doc._id?
-      return methodCall @root, "jobRestart", [@_doc._id, options], cb
+    if @_id?
+      return methodCall @root, "jobRestart", [@_id, options], cb
     else
       throw new Error "Can't call .restart() on an unsaved job"
     return null
@@ -727,9 +752,9 @@ class Job
   rerun: (options..., cb) ->
     [options, cb] = optionsHelp options, cb
     options.repeats ?= 0
-    options.wait ?= @_doc.repeatWait
-    if @_doc._id?
-      return methodCall @root, "jobRerun", [@_doc._id, options], cb
+    options.wait ?= @repeatWait
+    if @_id?
+      return methodCall @root, "jobRerun", [@_id, options], cb
     else
       throw new Error "Can't call .rerun() on an unsaved job"
     return null
@@ -737,8 +762,8 @@ class Job
   # Remove a job that is not able to run (completed, cancelled, failed) from the queue
   remove: (options..., cb) ->
     [options, cb] = optionsHelp options, cb
-    if @_doc._id?
-      return methodCall @root, "jobRemove", [@_doc._id, options], cb
+    if @_id?
+      return methodCall @root, "jobRemove", [@_id, options], cb
     else
       throw new Error "Can't call .remove() on an unsaved job"
     return null
