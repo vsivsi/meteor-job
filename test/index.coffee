@@ -1221,7 +1221,7 @@ describe 'JobQueue', () ->
          # console.log "#{name} Called"
          err = null
          res = null
-         makeJobDoc = (idx) ->
+         makeJobDoc = (idx=0) ->
             job = new Job('root', 'work', { idx: idx })
             doc = job._doc
             doc._id = 'thisId' + idx
@@ -1281,7 +1281,6 @@ describe 'JobQueue', () ->
 
    it 'should invoke worker when work is returned', (done) ->
       q = Job.processJobs 'root', 'work', { pollInterval: 100 }, (job, cb) ->
-         console.log job
          job.done()
          q.shutdown { quiet: true }, () ->
             assert.equal doneCalls, 1

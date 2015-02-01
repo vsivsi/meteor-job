@@ -310,7 +310,7 @@ class Job
     [options, cb] = optionsHelp options, cb
     type = [type] if typeof type is 'string'
     methodCall root, "getWork", [type, options], cb, (res) =>
-      jobs = (new Job(root, doc.type, doc.data, doc) for doc in res) or []
+      jobs = (new Job(root, doc) for doc in res) or []
       if options.maxJobs?
         return jobs
       else
