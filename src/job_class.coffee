@@ -430,6 +430,10 @@ class Job
 
     # Handle (root, doc) signature
     if not data? and type?.data? and type?.type?
+      if type instanceof Job
+        console.warn "new Job: job document is a job object!"
+        return type
+
       doc = type
       data = doc.data
       type = doc.type
