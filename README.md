@@ -367,15 +367,6 @@ if (Meteor.isServer) {
 
 See documentation below for `JobQueue`
 
-### `Job.makeJob(root, jobDoc)`
-
-Make a Job object from a job Collection document.
-
-```js
-// doc is obtained from a job Collection subscription
-job = Job.makeJob('jobQueue', doc);
-```
-
 ### `Job.getJob(root, id, [options], [callback])`
 
 Creates a job object by id from the server job Collection, returns `undefined` if no such job exists.
@@ -596,7 +587,7 @@ Job.ddpMethodPermissions = {
 
 ## Instances of Job
 
-### `j = Job(root, type, data)`
+### `j = new Job(root, type, data)`
 
 Create a new `Job` object.  Data should be reasonably small, if worker requires a lot of data (e.g. video, image or sound files), they should be included by reference (e.g. with a URL pointing to the data, and another to where the result should be saved).
 
@@ -605,6 +596,17 @@ job = new Job(  // new is optional
   'jobQueue',   // job collection name
   'jobType',    // type of the job
   { /* ... */ } // Data for the worker, any valid EJSON object
+);
+```
+
+### `j = new Job(root, jobDoc)`
+
+Make a Job object from a job Collection document. Creates a new `Job` object. This is used in cases where a valid Job document is obtained from another source, such as a database lookup. **Note:** This constructor signature replaces the old `Job.makeJob(rooc, jobDoc)` class method, which is now deprecated.
+
+```js
+job = new Job(  // new is optional
+  'jobQueue',   // job collection name
+  { /* ... */ } // any valid Job document
 );
 ```
 
@@ -959,11 +961,15 @@ job.remove(function (err, result) {
 
 ### `j.type`
 
-Contains the type of a job. Useful for when `getWork` or `processJobs` are configured to accept multiple job types. This may not be changed after a job is created.
+Always a string. Returns the type of a job. Useful for when `getWork` or `processJobs` are configured to accept multiple job types. This may not be changed after a job is created.
 
 ### `j.data`
 
 Always an object, contains the job data needed by the worker to complete a job of a given type. This may not be changed after a job is created.
+
+### `j.doc`
+
+Always an object, contains the full job document as stored in a JobCollection. This may not be changed after a job is created.
 
 ## class JobQueue
 

@@ -1,6 +1,8 @@
 #### v.NEXT
 
 * Updated README to reflect name change to job-collection and fix broken links to Atmosphere
+* Deprecated Job.makeJob(root, doc) in favor of "new Job(root, doc)" constructor signature.
+* Added value getters for job.doc, job.type and job.data.
 
 #### v0.0.15
 

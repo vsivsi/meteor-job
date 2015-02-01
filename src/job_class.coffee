@@ -320,14 +320,14 @@ class Job
   @processJobs: JobQueue
 
   # Makes a job object from a job document
-  @makeJob: (root, doc) ->
-    if root? and typeof root is 'string' and
-        doc? and typeof doc is 'object' and doc.type? and
-        typeof doc.type is 'string' and doc.data? and
-        typeof doc.data is 'object' and doc._id?
+  # This method is deprecated and will be removed
+  @makeJob: do () ->
+    depFlag = false
+    (root, doc) ->
+      unless depFlag
+        depFlag = true
+        console.warn "Job.makeJob(root, jobDoc) has been deprecated and will be removed in a future release, use 'new Job(root, jobDoc)' instead."
       new Job root, doc
-    else
-      throw new Error 'makeJob: Bad params'
 
   # Creates a job object by id from the server queue root
   # returns null if no such job exists
@@ -425,25 +425,26 @@ class Job
   constructor: (@root, type, data) ->
     unless @ instanceof Job
       return new Job @root, type, data
+
     @ddp_apply = Job.ddp_apply
-    # Handle (root, doc) case
-    if not data? and type.data? and type.type?
+
+    # Handle (root, doc) signature
+    if not data? and type?.data? and type?.type?
       doc = type
       data = doc.data
       type = doc.type
     else
       doc = {}
+
     unless typeof doc is 'object' and
            typeof data is 'object' and
            typeof type is 'string' and
            typeof @root is 'string'
       throw new Error "new Job: bad parameter(s), #{@root} (#{typeof @root}), #{type} (#{typeof type}), #{data} (#{typeof data}), #{doc} (#{typeof doc})"
-    else if doc?  # This case is used to create local Job objects from DDP calls
-      unless doc.type is type and doc.data is data
-        throw new Error "rebuild Job: bad parameter(s), #{@root} #{type}, #{data}, #{doc}"
+
+    else if doc.type? and doc.data? # This case is used to create local Job objects from DDP calls
       @_doc = doc
-      @type = type
-      @data = data
+
     else  # This is the normal "create a new object" case
       time = new Date()
       @_doc =
@@ -454,9 +455,8 @@ class Job
         updated: time
         created: time
       @priority().retry().repeat().after().progress().depends().log("Constructed")
-      @type = @_doc.type
-      @data = @_doc.data  # Make data a little easier to get to
-      return @
+
+    return @
 
   # Adds a run dependancy on one or more existing jobs to this job
   # Calling with a falsy value resets the dependencies to []
@@ -647,8 +647,6 @@ class Job
       return methodCall @root, "getJob", [@_doc._id, options], cb, (doc) =>
         if doc?
           @_doc = doc
-          @type = @_doc.type
-          @data = @_doc.data
           true
         else
           false
@@ -749,6 +747,18 @@ class Job
     else
       throw new Error "Can't call .remove() on an unsaved job"
     return null
+
+    # Define convenience getters for some document properties
+  Object.defineProperties @prototype,
+    doc:
+      get: () -> @_doc
+      set: () -> console.warn "Job.doc cannot be directly assigned."
+    type:
+      get: () -> @_doc.type
+      set: () -> console.warn "Job.type cannot be directly assigned."
+    data:
+      get: () -> @_doc.data
+      set: () -> console.warn "Job.data cannot be directly assigned."
 
 # Export Job in a npm package
 if module?.exports?

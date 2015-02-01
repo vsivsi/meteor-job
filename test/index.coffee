@@ -384,9 +384,11 @@ describe 'Job', () ->
       it 'should throw when given bad parameters', () ->
          assert.throw Job, /new Job: bad parameter/
 
-      it 'should throw when given mismatched doc', () ->
-         job = Job('root', 'work', { foo: "bar" })
-         assert.throw (() -> Job('foo', 'bar', {}, job._doc)), /rebuild Job: bad parameter/
+      it 'should support using a valid job document', () ->
+         job = new Job('root', 'work', { foo: "bar" })
+         checkJob job
+         job2 = new Job('root', job.doc)
+         checkJob job2
 
    describe 'job mutator method', () ->
 
@@ -1072,9 +1074,9 @@ describe 'Job', () ->
                assert.instanceOf res, Job
 
             it 'should throw when passed invalid params', () ->
-               assert.throw (() -> Job.makeJob()), /Bad params/
-               assert.throw (() -> Job.makeJob(5, jobDoc())), /Bad params/
-               assert.throw (() -> Job.makeJob('work', {})), /Bad params/
+               assert.throw (() -> Job.makeJob()), /bad parameter/
+               assert.throw (() -> Job.makeJob(5, jobDoc())), /bad parameter/
+               assert.throw (() -> Job.makeJob('work', {})), /bad parameter/
 
          describe 'get Job(s) by ID', () ->
 
@@ -1279,6 +1281,7 @@ describe 'JobQueue', () ->
 
    it 'should invoke worker when work is returned', (done) ->
       q = Job.processJobs 'root', 'work', { pollInterval: 100 }, (job, cb) ->
+         console.log job
          job.done()
          q.shutdown { quiet: true }, () ->
             assert.equal doneCalls, 1
