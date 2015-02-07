@@ -21,7 +21,8 @@ class DDP
                return params[0]
             when 'root_error'
                throw new Error "Method failed"
-         throw new Error "Bad method in call"
+            else
+               throw new Error "Bad method in call"
       else
          switch name
             when 'root_true'
@@ -32,6 +33,8 @@ class DDP
                process.nextTick () -> cb null, params[0]
             when 'root_error'
                process.nextTick () -> cb new Error "Method failed"
+            else
+               process.nextTick () -> cb new Error "Bad method in call"
          return
 
    connect: () ->
@@ -100,6 +103,10 @@ describe 'Job', () ->
             ddp.call.restore()
             done()
 
+   describe 'Fiber support', () ->
+
+      ddp = new DDP()
+
       it 'accepts a valid Fiber object and properly yields and runs', (done) ->
          sinon.stub(ddp, "call").yieldsAsync()
          Job.setDDP ddp, Fiber
@@ -108,12 +115,22 @@ describe 'Job', () ->
          fib.run()
          assert ddp.call.calledOnce
          ddp.call.restore()
-         done()         
+         done()
+
+      it 'properly returns values from method calls', (done) ->
+         Job.setDDP ddp, Fiber
+         fib = Fiber () ->
+            assert.isTrue Job.ddp_apply('root_true', [])
+            assert.isFalse Job.ddp_apply('root_false', [])
+            assert.deepEqual Job.ddp_apply('root_param', [['a', 1, null]]), ['a', 1, null]
+            done()
+         fib.run()
 
       it 'properly propagates thrown errors within a Fiber', (done) ->
          Job.setDDP ddp, Fiber
          fib = Fiber () ->
             assert.throws (() -> Job.ddp_apply 'root_error', []), /Method failed/
+            assert.throws (() -> Job.ddp_apply 'bad_method', []), /Bad method in call/
             done()
          fib.run()
 
