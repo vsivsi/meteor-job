@@ -35,7 +35,7 @@ class DDP
                process.nextTick () -> cb new Error "Method failed"
             else
                process.nextTick () -> cb new Error "Bad method in call"
-         return
+      return
 
    connect: () ->
       process.nextTick () -> cb(null)
