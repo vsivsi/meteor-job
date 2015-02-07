@@ -20,7 +20,8 @@ class DDP
                return params[0]
             when 'root_error'
                throw new Error "Method failed"
-         throw new Error "Bad method in call"
+            else
+               throw new Error "Bad method in call"
       else
          switch name
             when 'root_true'
@@ -31,7 +32,9 @@ class DDP
                process.nextTick () -> cb null, params[0]
             when 'root_error'
                process.nextTick () -> cb new Error "Method failed"
-         return
+            else
+               process.nextTick () -> cb new Error "Bad method in call"
+      return
 
    connect: () ->
       process.nextTick () -> cb(null)
