@@ -110,14 +110,12 @@ describe 'Job', () ->
          ddp.call.restore()
          done()         
 
-      it 'properly handles thrown errors in a Fiber', (done) ->
+      it 'properly propagates thrown errors within a Fiber', (done) ->
          Job.setDDP ddp, Fiber
          fib = Fiber () ->
-            Job.ddp_apply 'root_error', []
-         try
-            fib.run()
-         catch e
+            assert.throws (() -> Job.ddp_apply 'root_error', []), /Method failed/
             done()
+         fib.run()
 
    describe 'private function', () ->
 

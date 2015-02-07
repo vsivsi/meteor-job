@@ -306,21 +306,14 @@ class Job
             if cb? and typeof cb is 'function'
               cb err, res
             else
-              console.log "I'm in a Fiber! #{name}, #{err}"
               if err
-                console.warn "About to throw!"
-                # fib.throwInto err
-                fib.run err
+                fib.throwInto err
               else
                 fib.run res
           if cb? and typeof cb is 'function'
             return 
           else
-            e = Fiber.yield()
-            if name is 'root_error'
-              console.log "Throwing!"
-              throw new Error "This is the error!"
-            return e
+            return Fiber.yield()
       else
         @ddp_apply = ddp.call.bind ddp
     else
