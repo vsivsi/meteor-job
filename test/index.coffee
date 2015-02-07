@@ -3,6 +3,7 @@
 assert = require('chai').assert
 rewire = require 'rewire'
 sinon = require 'sinon'
+Fiber = require 'fibers'
 
 Job = rewire '../src/job_class.coffee'
 
@@ -97,6 +98,25 @@ describe 'Job', () ->
          Job.ddp_apply 'test', [], () ->
             assert ddp.call.calledOnce
             ddp.call.restore()
+            done()
+
+      it 'accepts a valid Fiber object and properly yields and runs', (done) ->
+         sinon.stub(ddp, "call").yieldsAsync()
+         Job.setDDP ddp, Fiber
+         fib = Fiber () ->
+            Job.ddp_apply 'test', []
+         fib.run()
+         assert ddp.call.calledOnce
+         ddp.call.restore()
+         done()         
+
+      it 'properly handles thrown errors in a Fiber', (done) ->
+         Job.setDDP ddp, Fiber
+         fib = Fiber () ->
+            Job.ddp_apply 'root_error', []
+         try
+            fib.run()
+         catch e
             done()
 
    describe 'private function', () ->

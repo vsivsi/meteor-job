@@ -297,9 +297,32 @@ class Job
   # Class methods
 
   # This needs to be called when not running in Meteor to use the local DDP connection.
-  @setDDP: (ddp) ->
+  @setDDP: (ddp, Fiber) ->
     if ddp? and ddp.call? and ddp.connect? and ddp.subscribe? # Since all functions have a call method...
-      @ddp_apply = ddp.call.bind ddp
+      if Fiber?
+        @ddp_apply = (name, params, cb) ->
+          fib = Fiber.current
+          ddp.call name, params, (err, res) ->
+            if cb? and typeof cb is 'function'
+              cb err, res
+            else
+              console.log "I'm in a Fiber! #{name}, #{err}"
+              if err
+                console.warn "About to throw!"
+                # fib.throwInto err
+                fib.run err
+              else
+                fib.run res
+          if cb? and typeof cb is 'function'
+            return 
+          else
+            e = Fiber.yield()
+            if name is 'root_error'
+              console.log "Throwing!"
+              throw new Error "This is the error!"
+            return e
+      else
+        @ddp_apply = ddp.call.bind ddp
     else
       throw new Error "Bad ddp object in Job.setDDP()"
 
