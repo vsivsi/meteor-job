@@ -655,7 +655,7 @@ class Job
       return methodCall @root, "getJob", [@_doc._id, options], cb, (doc) =>
         if doc?
           @_doc = doc
-          true
+          @
         else
           false
     else
