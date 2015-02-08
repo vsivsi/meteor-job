@@ -648,11 +648,13 @@ describe 'Job', () ->
                doc._id = 'thisId'
                res = job.refresh()
                assert.deepEqual job._doc, { foo: 'bar' }
+               assert.equal res, job
 
             it 'should work with a callback', (done) ->
                doc._id = 'thisId'
                job.refresh (err, res) ->
                   assert.deepEqual job._doc, { foo: 'bar' }
+                  assert.equal res, job
                   done()
 
             it "shouldn't modify job when not found on server", () ->
