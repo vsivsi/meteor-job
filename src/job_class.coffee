@@ -219,6 +219,10 @@ class JobQueue
       _setImmediate @_process.bind(@)
     @
 
+  trigger: () ->
+    _setImmediate @_getWork.bind(@)
+    @
+
   shutdown: (options..., cb) ->
     [options, cb] = optionsHelp options, cb
     options.level ?= 'normal'

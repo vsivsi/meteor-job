@@ -1019,6 +1019,7 @@ Note, if you are running in a non-Meteor node.js environment with Fiber support,
 * `prefetch` -- How many extra jobs to request beyond the capacity of all workers (`concurrency * cargo`) to compensate for latency getting more work.
 
 `worker(result, callback)`
+
 * `result` -- either a single job object or an array of job objects depending on `options.cargo`.
 * `callback` -- must be eventually called exactly once when `job.done()` or `job.fail()` has been called on all jobs in result.
 
@@ -1059,6 +1060,30 @@ Undoes a `q.pause()`, returning the queue to the normal running state.
 
 ```js
 q.resume()
+```
+
+### `q.trigger()`
+
+This method manually causes the same action that expiration of the `pollInterval` does internally within JobQueue. This is useful for creating responsive JobQueues that are triggered by a Meteor [observe](http://docs.meteor.com/#/full/observe) or DDP [observe](https://www.npmjs.com/package/ddp) based mechanisms, rather than time based polling.
+
+```js
+# Simple observe based queue
+var q = jc.processJobs(
+  // Type of job to request
+  // Can also be an array of job types
+  'jobType',
+  {
+    pollInterval: Job.forever, # Don't ever poll
+  },
+  function (job, callback) {
+    // Only called when there is a valid job
+    job.done();
+    callback();
+  }
+);
+
+var observer = ddp.observe("myJobs");
+observer.added = function () { q.trigger(); };
 ```
 
 ### `q.shutdown([options], [callback])`
