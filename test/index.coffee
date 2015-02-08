@@ -1291,6 +1291,19 @@ describe 'JobQueue', () ->
             done()
          cb null
 
+   it 'should invoke worker when work is returned from a manual trigger', (done) ->
+      q = Job.processJobs 'root', 'work', { pollInterval: Job.forever }, (job, cb) ->
+         job.done()
+         q.shutdown { quiet: true }, () ->
+            assert.equal doneCalls, 1
+            assert.equal failCalls, 0
+            done()
+         cb null
+      setTimeout(
+         () -> q.trigger()
+         20
+      )
+
    it 'should successfully start in paused state and resume', (done) ->
       flag = false
       q = Job.processJobs('root', 'work', { pollInterval: 10 }, (job, cb) ->
