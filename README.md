@@ -263,12 +263,12 @@ job.refresh(function (err, result) {
 
 // Make a job object from a job document (which you
 // can obtain by subscribing to a jobCollection)
-job = Job.makeJob('jobQueue', jobDoc);  // No callback!
+job = new Job('jobQueue', jobDoc);  // No callback!
 
 // Note that jobCollections are reactive, just like any
 // other Meteor collection. So if you are subscribed,
 // the job documents in the collection will auto-update.
-// Then you can use Job.makeJob to turn a job doc into a
+// Then you can use new Job() to turn a job doc into a
 // job object whenever necessary without another DDP round trip
 
 // Once you have a job object you can change many of its
@@ -601,7 +601,7 @@ job = new Job(  // new is optional
 
 ### `j = new Job(root, jobDoc)`
 
-Make a Job object from a job Collection document. Creates a new `Job` object. This is used in cases where a valid Job document is obtained from another source, such as a database lookup. **Note:** This constructor signature replaces the old `Job.makeJob(rooc, jobDoc)` class method, which is now deprecated.
+Make a Job object from a job Collection document. Creates a new `Job` object. This is used in cases where a valid Job document is obtained from another source, such as a database lookup.
 
 ```js
 job = new Job(  // new is optional
