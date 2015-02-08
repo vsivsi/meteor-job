@@ -980,12 +980,14 @@ JobQueue is similar in spirit to the [async.js](https://github.com/caolan/async)
 Create a `JobQueue` to automatically get work from the job Collection, and asynchronously call the worker function.
 
 `options:`
+
 * `concurrency` -- Maximum number of async calls to `worker` that can be outstanding at a time. Default: `1`
 * `cargo` -- Maximum number of job objects to provide to each worker, Default: `1` If `cargo > 1` the first paramter to `worker` will be an array of job objects rather than a single job object.
 * `pollInterval` -- How often to ask the remote job Collection for more work, in ms. Default: `5000` (5 seconds)
 * `prefetch` -- How many extra jobs to request beyond the capacity of all workers (`concurrency * cargo`) to compensate for latency getting more work.
 
 `worker(result, callback)`
+
 * `result` -- either a single job object or an array of job objects depending on `options.cargo`.
 * `callback` -- must be eventually called exactly once when `job.done()` or `job.fail()` has been called on all jobs in result.
 
@@ -1011,6 +1013,7 @@ queue.pause();
 queue.resume();
 queue.shutdown();
 ```
+
 ### `q.pause()`
 
 Pause the JobQueue. This means that no more work will be requested from the job collection, and no new workers will be called with jobs that already exist in this local queue. Jobs that are already running locally will run to completion. Note that a JobQueue may be created in the paused state by running `q.pause()` immediately on the returned new jobQueue.
@@ -1018,6 +1021,7 @@ Pause the JobQueue. This means that no more work will be requested from the job 
 ```js
 q.pause()
 ```
+
 ### `q.resume()`
 
 Undoes a `q.pause()`, returning the queue to the normal running state.
@@ -1025,15 +1029,42 @@ Undoes a `q.pause()`, returning the queue to the normal running state.
 ```js
 q.resume()
 ```
+
+### `q.trigger()`
+
+This method manually causes the same action that expiration of the `pollInterval` does internally within JobQueue. This is useful for creating responsive JobQueues that are triggered by a Meteor [observe](http://docs.meteor.com/#/full/observe) or DDP [observe](https://www.npmjs.com/package/ddp) based mechanisms, rather than time based polling.
+
+```js
+# Simple observe based queue
+var q = jc.processJobs(
+  // Type of job to request
+  // Can also be an array of job types
+  'jobType',
+  {
+    pollInterval: Job.forever, # Don't ever poll
+  },
+  function (job, callback) {
+    // Only called when there is a valid job
+    job.done();
+    callback();
+  }
+);
+
+var observer = ddp.observe("myJobs");
+observer.added = function () { q.trigger(); };
+```
+
 ### `q.shutdown([options], [callback])`
 
 `options:`
+
 * `level` -- May be 'hard' or 'soft'. Any other value will lead to a "normal" shutdown.
 * `quiet` -- true or false. False by default, which leads to a "Shutting down..." message on stderr.
 
 `callback()` -- Invoked once the requested shutdown conditions have been achieved.
 
 Shutdown levels:
+
 * `'soft'` -- Allow all local jobs in the queue to start and run to a finish, but do not request any more work. Normal program exit should be possible.
 * `'normal'` -- Allow all running jobs to finish, but do not request any more work and fail any jobs that are in the local queue but haven't started to run. Normal program exit should be possible.
 * `'hard'` -- Fail all local jobs, running or not. Return as soon as the server has been updated. Note: after a hard shutdown, there may still be outstanding work in the event loop. To exit immediately may require `process.exit()` depending on how often asynchronous workers invoke `'job.progress()'` and whether they die when it fails.

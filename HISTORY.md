@@ -2,7 +2,8 @@
 
 * Updated README to reflect name change to job-collection and fix broken links to Atmosphere
 * Deprecated Job.makeJob(root, doc) in favor of "new Job(root, doc)" constructor signature.
-* Added value getters for job.doc, job.type and job.data.
+* Added value getters for job.doc, job.type and job.data
+* Added `jq.trigger()` method to provide a mechanism to trigger `getWork` using an alternative method to `pollInterval`
 
 #### v0.0.15
 
