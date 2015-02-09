@@ -150,6 +150,7 @@ class JobQueue
           @_stoppingTasks()
         else
           _setImmediate @_process.bind(@)
+          _setImmediate @_getWork.bind(@)
       cb = @_only_once next
       @worker job, cb
 
