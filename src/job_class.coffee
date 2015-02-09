@@ -591,6 +591,8 @@ class Job
       throw new Error 'Log message must be a string'
     unless typeof options.level is 'string' and options.level in Job.jobLogLevels
       throw new Error 'Log level options must be one of Job.jobLogLevels'
+    if options.data? and typeof options.data isnt 'object'
+      throw new Error 'Log data must be an Object'
     if options.echo?
       if options.echo and Job.jobLogLevels.indexOf(options.level) >= Job.jobLogLevels.indexOf(options.echo)
         out = "LOG: #{options.level}, #{@_doc._id} #{@_doc.runId}: #{message}"
