@@ -4,7 +4,8 @@
 * Deprecated Job.makeJob(root, doc) in favor of "new Job(root, doc)" constructor signature.
 * Added value getters for job.doc, job.type and job.data
 * Added `jq.trigger()` method to provide a mechanism to trigger `getWork` using an alternative method to `pollInterval`
-* j.refresh() is now chainable
+* `j.refresh()` is now chainable
+* `job.log()` can now accept a `data` option, which must be an object.
 
 #### v0.0.15
 
