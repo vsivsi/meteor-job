@@ -3,6 +3,7 @@
 assert = require('chai').assert
 rewire = require 'rewire'
 sinon = require 'sinon'
+Fiber = require 'fibers'
 
 Job = rewire '../src/job_class.coffee'
 
@@ -101,6 +102,37 @@ describe 'Job', () ->
             assert ddp.call.calledOnce
             ddp.call.restore()
             done()
+
+   describe 'Fiber support', () ->
+
+      ddp = new DDP()
+
+      it 'accepts a valid Fiber object and properly yields and runs', (done) ->
+         sinon.stub(ddp, "call").yieldsAsync()
+         Job.setDDP ddp, Fiber
+         fib = Fiber () ->
+            Job.ddp_apply 'test', []
+         fib.run()
+         assert ddp.call.calledOnce
+         ddp.call.restore()
+         done()
+
+      it 'properly returns values from method calls', (done) ->
+         Job.setDDP ddp, Fiber
+         fib = Fiber () ->
+            assert.isTrue Job.ddp_apply('root_true', [])
+            assert.isFalse Job.ddp_apply('root_false', [])
+            assert.deepEqual Job.ddp_apply('root_param', [['a', 1, null]]), ['a', 1, null]
+            done()
+         fib.run()
+
+      it 'properly propagates thrown errors within a Fiber', (done) ->
+         Job.setDDP ddp, Fiber
+         fib = Fiber () ->
+            assert.throws (() -> Job.ddp_apply 'root_error', []), /Method failed/
+            assert.throws (() -> Job.ddp_apply 'bad_method', []), /Bad method in call/
+            done()
+         fib.run()
 
    describe 'private function', () ->
 
