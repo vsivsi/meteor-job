@@ -10,11 +10,11 @@ methodCall = (root, method, params, cb, after = ((ret) -> ret)) ->
   # console.warn "Calling: #{root}_#{method} with: ", params
   name = "#{root}_#{method}"
   if cb and typeof cb is 'function'
-    Job.ddp_apply name, params, (err, res) =>
+    Job._ddp_apply name, params, (err, res) =>
       return cb err if err
       cb null, after(res)
   else
-    return after(Job.ddp_apply name, params)
+    return after(Job._ddp_apply name, params)
 
 optionsHelp = (options, cb) ->
   # If cb isn't a function, it's assumed to be options...
@@ -297,13 +297,13 @@ class Job
     'jobFail': ['jobFail', 'admin', 'worker']
 
   # Automatically work within Meteor, otherwise see @setDDP below
-  @ddp_apply: null
+  @_ddp_apply: null
 
   # Class methods
 
   @setDDPApply: (apply) ->
     if typeof apply is 'function'
-      @ddp_apply = apply
+      @_ddp_apply = apply
     else
       throw new Error "Bad function in Job.setDDPApply()"
 
@@ -457,8 +457,6 @@ class Job
   constructor: (@root, type, data) ->
     unless @ instanceof Job
       return new Job @root, type, data
-
-    @ddp_apply = Job.ddp_apply
 
     # Handle (root, doc) signature
     if not data? and type?.data? and type?.type?
