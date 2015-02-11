@@ -301,12 +301,18 @@ class Job
 
   # Class methods
 
+  @setDDPApply: (apply) ->
+    if typeof apply is 'function'
+      @ddp_apply = apply
+    else
+      throw new Error "Bad function in Job.setDDPApply()"
+
   # This needs to be called when not running in Meteor to use the local DDP connection.
   @setDDP: (ddp = null, Fiber = null) ->
     if ddp? and ddp.call? and ddp.connect? and ddp.subscribe? # Since all functions have a call method...
       if ddp.observe?  # This is the npm DDP package
         if Fiber? # If Fibers in use, then make sure to yield and throw errors when no callback
-          @ddp_apply = (name, params, cb) ->
+          @setDDPApply (name, params, cb) ->
             fib = Fiber.current
             ddp.call name, params, (err, res) ->
               if cb? and typeof cb is 'function'
@@ -321,11 +327,11 @@ class Job
             else
               return Fiber.yield()
         else
-          @ddp_apply = ddp.call.bind ddp
+          @setDDPApply(ddp.call.bind ddp)
       else  # This is a Meteor DDP object
-        @ddp_apply = ddp.apply.bind ddp
+        @setDDPApply(ddp.apply.bind ddp)
     else if ddp is null and Meteor?.apply?
-      @ddp_apply = Meteor?.apply  # Default to Meteor local server/client
+      @setDDPApply Meteor.apply   # Default to Meteor local server/client
     else
       throw new Error "Bad ddp object in Job.setDDP()"
 
