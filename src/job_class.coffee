@@ -297,14 +297,19 @@ class Job
     'jobFail': ['jobFail', 'admin', 'worker']
 
   # Automatically work within Meteor, otherwise see @setDDP below
-  @ddp_apply: Meteor?.apply
+  @ddp_apply: null
 
   # Class methods
 
   # This needs to be called when not running in Meteor to use the local DDP connection.
-  @setDDP: (ddp) ->
+  @setDDP: (ddp = null) ->
     if ddp? and ddp.call? and ddp.connect? and ddp.subscribe? # Since all functions have a call method...
-      @ddp_apply = ddp.call.bind ddp
+      if ddp.observe?  # This is the npm DDP package
+        @ddp_apply = ddp.call.bind ddp
+      else  # This is a Meteor DDP object
+        @ddp_apply = ddp.apply.bind ddp
+    else if ddp is null and Meteor?.apply?
+      @ddp_apply = Meteor?.apply  # Default to Meteor local server/client
     else
       throw new Error "Bad ddp object in Job.setDDP()"
 
