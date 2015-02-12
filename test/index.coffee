@@ -1254,6 +1254,7 @@ describe 'JobQueue', () ->
    ddp = new DDP()
    failCalls = 0
    doneCalls = 0
+   numJobs = 5
 
    before () ->
       Job.setDDP ddp
@@ -1278,12 +1279,20 @@ describe 'JobQueue', () ->
             when 'root_getWork'
                type = params[0][0]
                max = params[1]?.maxJobs ? 1
-               res = []
-               switch type
-                  when 'work'
-                     res = [ makeJobDoc() ]
-                  when 'workMax'
-                     res = (makeJobDoc(i) for i in [1..max])
+               if numJobs is 0
+                  res = []
+               else
+                  switch type
+                     when 'noWork'
+                        res = []
+                     when 'work'
+                        numJobs--
+                        res = [ makeJobDoc() ]
+                     when 'workMax'
+                        if max < numJobs
+                           max = numJobs
+                        numJobs -= max
+                        res = (makeJobDoc(i) for i in [1..max])
             else
                throw new Error "Bad method name: #{name}"
          return [err, res]
@@ -1291,6 +1300,7 @@ describe 'JobQueue', () ->
    beforeEach () ->
       failCalls = 0
       doneCalls = 0
+      numJobs = 5
 
    it 'should return a valid JobQueue when called', (done) ->
       q = Job.processJobs 'root', 'noWork', { pollInterval: 100 }, (job, cb) ->
@@ -1362,8 +1372,8 @@ describe 'JobQueue', () ->
    it 'should successfully accept multiple jobs from getWork', (done) ->
       count = 5
       q = Job.processJobs('root', 'workMax', { pollInterval: 100, prefetch: 4 }, (job, cb) ->
-         assert.equal q.length(), count-1
-         assert.equal q.running(), 1
+         assert.equal q.length(), count-1, 'q.length is incorrect'
+         assert.equal q.running(), 1, 'q.running is incorrect'
          if count is 5
             assert.isTrue q.full(), 'q.full should be true'
             assert.isFalse q.idle(), 'q.idle should be false'
@@ -1371,10 +1381,9 @@ describe 'JobQueue', () ->
          count--
          if count is 0
             q.shutdown { quiet: true }, () ->
-               assert.equal doneCalls, 5
-               assert.equal failCalls, 0
+               assert.equal doneCalls, 5, 'doneCalls is incorrect'
+               assert.equal failCalls, 0, 'failCalls is incorrect'
                done()
-
          cb null
       )
 
@@ -1413,6 +1422,7 @@ describe 'JobQueue', () ->
 
    it 'should successfully accept and process multiple simultaneous jobs concurrently and within workers', (done) ->
       count = 0
+      numJobs = 25
       q = Job.processJobs('root', 'workMax', { pollInterval: 100, payload: 5, concurrency: 5 }, (jobs, cb) ->
          count += jobs.length
          setTimeout(
@@ -1473,6 +1483,7 @@ describe 'JobQueue', () ->
 
    it 'should successfully perform a normal shutdown with both payload and concurrency', (done) ->
       count = 0
+      numJobs = 25
       q = Job.processJobs('root', 'workMax', { pollInterval: 100, payload: 5, concurrency: 2, prefetch: 15 }, (jobs, cb) ->
          count += jobs.length
          setTimeout(
