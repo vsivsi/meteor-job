@@ -297,7 +297,7 @@ class Job
     'jobFail': ['jobFail', 'admin', 'worker']
 
   # Automatically work within Meteor, otherwise see @setDDP below
-  @_ddp_apply: null
+  @_ddp_apply: undefined
 
   # Class methods
 
