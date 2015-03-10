@@ -1,5 +1,6 @@
 #### v.NEXT
 
+* j.startJobs and j.stopJobs have been renamed to j.startJobServer and j.shutdownJobServer respectively. The old versions will now generate deprecation warnings.
 * Updated README to reflect name change to job-collection and fix broken links to Atmosphere
 * Deprecated Job.makeJob(root, doc) in favor of "new Job(root, doc)" constructor signature.
 * Added value getters for job.doc, job.type and job.data.

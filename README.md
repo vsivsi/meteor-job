@@ -445,7 +445,7 @@ Like `job.restart()` except it restarts a list of jobs by id.
 
 Like `job.remove()` except it removes a list of jobs by id.
 
-### `Job.startJobs(root, [options], [callback])`
+### `Job.startJobServer(root, [options], [callback])`
 
 Starts the server job Collection.
 
@@ -454,12 +454,12 @@ Starts the server job Collection.
 `callback(error, result)` -- Result is true if successful. On Meteor Server or with Fiber support, errors will throw and the return value is the result. 
 
 ```js
-Job.startJobs('jobQueue');  // Callback is optional
+Job.startJobServer('jobQueue');  // Callback is optional
 ```
 
-### `Job.stopJobs(root, [options], [callback])`
+### `Job.shutdownJobServer(root, [options], [callback])`
 
-Stops the server job Collection.
+Shuts down the server job Collection.
 
 `options`:
 
@@ -468,7 +468,7 @@ Stops the server job Collection.
 `callback(error, result)` -- Result is true if successful.
 
 ```js
-Job.stopJobs(
+Job.shutdownJobServer(
   'jobQueue',
   {
     timeout: 60000
@@ -568,9 +568,10 @@ Array of the names of all DDP methods used by `Job`
 
 ```js
 Job.ddpMethods = [
-    'startJobs', 'stopJobs', 'jobRemove', 'jobPause', 'jobResume',
-    'jobCancel', 'jobRestart', 'jobSave', 'jobRerun', 'getWork',
-    'getJob', 'jobLog', 'jobProgress', 'jobDone', 'jobFail' ];
+    'startJobServer', 'stopJobServer', 'jobRemove', 'jobPause',
+    'jobResume', 'jobCancel', 'jobRestart', 'jobSave', 'jobRerun',
+    'getWork', 'getJob', 'jobLog', 'jobProgress', 'jobDone',
+    'jobFail' ];
 ```
 
 ### `Job.ddpPermissionLevels`
@@ -587,8 +588,8 @@ Object mapping permission levels to DDP method names.
 
 ```js
 Job.ddpMethodPermissions = {
-    'startJobs': ['startJobs', 'admin'],
-    'stopJobs': ['stopJobs', 'admin'],
+    'startJobServer': ['startJobServer', 'admin'],
+    'shutdownJobServer': ['shutdownJobServer', 'admin'],
     'jobRemove': ['jobRemove', 'admin', 'manager'],
     'jobPause': ['jobPause', 'admin', 'manager'],
     'jobResume': ['jobResume', 'admin', 'manager'],

@@ -81,7 +81,7 @@ describe 'Job', () ->
       assert.isArray Job.ddpPermissionLevels
       assert.lengthOf Job.ddpPermissionLevels , 4
       assert.isArray Job.ddpMethods
-      assert.lengthOf Job.ddpMethods, 15
+      assert.lengthOf Job.ddpMethods, 17
       assert.isObject Job.ddpMethodPermissions
       assert.lengthOf Object.keys(Job.ddpMethodPermissions), Job.ddpMethods.length
 
@@ -1246,6 +1246,8 @@ describe 'Job', () ->
 
             makeControl 'startJobs'
             makeControl 'stopJobs'
+            makeControl 'startJobServer'
+            makeControl 'shutdownJobServer'
 
 ###########################################
 

@@ -272,7 +272,9 @@ class Job
   @jobStatusRemovable:   [ 'cancelled', 'completed', 'failed' ]
   @jobStatusRestartable: [ 'cancelled', 'failed' ]
 
-  @ddpMethods = [ 'startJobs', 'stopJobs', 'jobRemove', 'jobPause', 'jobResume'
+  @ddpMethods = [ 'startJobs', 'stopJobs',  # Deprecated!
+                  'startJobServer', 'shutDownJobServer',
+                  'jobRemove', 'jobPause', 'jobResume',
                   'jobCancel', 'jobRestart', 'jobSave', 'jobRerun', 'getWork'
                   'getJob', 'jobLog', 'jobProgress', 'jobDone', 'jobFail' ]
 
@@ -280,8 +282,10 @@ class Job
 
   # These are the four levels of the allow/deny permission heirarchy
   @ddpMethodPermissions =
-    'startJobs': ['startJobs', 'admin']
-    'stopJobs': ['stopJobs', 'admin']
+    'startJobs': ['startJobs', 'admin']  # Deprecated!
+    'stopJobs': ['stopJobs', 'admin']    # Deprecated!
+    'startJobServer': ['startJobServer', 'admin']
+    'shutdownJobServer': ['shutdownJobServer', 'admin']
     'jobRemove': ['jobRemove', 'admin', 'manager']
     'jobPause': ['jobPause', 'admin', 'manager']
     'jobResume': ['jobResume', 'admin', 'manager']
@@ -443,15 +447,28 @@ class Job
     return retVal
 
   # Start the job queue
+  # Deprecated!
   @startJobs: (root, options..., cb) ->
     [options, cb] = optionsHelp options, cb
     methodCall root, "startJobs", [options], cb
 
   # Stop the job queue, stop all running jobs
+  # Deprecated!
   @stopJobs: (root, options..., cb) ->
     [options, cb] = optionsHelp options, cb
     options.timeout ?= 60*1000
     methodCall root, "stopJobs", [options], cb
+
+  # Start the job queue
+  @startJobServer: (root, options..., cb) ->
+    [options, cb] = optionsHelp options, cb
+    methodCall root, "startJobServer", [options], cb
+
+  # Shutdown the job queue, stop all running jobs
+  @shutdownJobServer: (root, options..., cb) ->
+    [options, cb] = optionsHelp options, cb
+    options.timeout ?= 60*1000
+    methodCall root, "shutdownJobServer", [options], cb
 
   # Job class instance constructor. When "new Job(...)" is run
   constructor: (@root, type, data) ->
