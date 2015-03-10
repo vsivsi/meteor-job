@@ -273,7 +273,7 @@ class Job
   @jobStatusRestartable: [ 'cancelled', 'failed' ]
 
   @ddpMethods = [ 'startJobs', 'stopJobs',  # Deprecated!
-                  'startJobServer', 'shutDownJobServer',
+                  'startJobServer', 'shutdownJobServer',
                   'jobRemove', 'jobPause', 'jobResume',
                   'jobCancel', 'jobRestart', 'jobSave', 'jobRerun', 'getWork'
                   'getJob', 'jobLog', 'jobProgress', 'jobDone', 'jobFail' ]
