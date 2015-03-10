@@ -1014,13 +1014,13 @@ Note, if you are running in a non-Meteor node.js environment with Fiber support,
 `options:`
 
 * `concurrency` -- Maximum number of async calls to `worker` that can be outstanding at a time. Default: `1`
-* `cargo` -- Maximum number of job objects to provide to each worker, Default: `1` If `cargo > 1` the first paramter to `worker` will be an array of job objects rather than a single job object.
+* `payload` -- Maximum number of job objects to provide to each worker, Default: `1` If `payload > 1` the first paramter to `worker` will be an array of job objects rather than a single job object.
 * `pollInterval` -- How often to ask the remote job Collection for more work, in ms. Default: `5000` (5 seconds)
-* `prefetch` -- How many extra jobs to request beyond the capacity of all workers (`concurrency * cargo`) to compensate for latency getting more work.
+* `prefetch` -- How many extra jobs to request beyond the capacity of all workers (`concurrency * payload`) to compensate for latency getting more work.
 
 `worker(result, callback)`
 
-* `result` -- either a single job object or an array of job objects depending on `options.cargo`.
+* `result` -- either a single job object or an array of job objects depending on `options.payload`.
 * `callback` -- must be eventually called exactly once when `job.done()` or `job.fail()` has been called on all jobs in result.
 
 ```js
@@ -1029,7 +1029,7 @@ queue = Job.processJobs(
   'jobType',    // type of job to request, can also be an array of job types
   {
     concurrency: 4,
-    cargo: 1,
+    payload: 1,
     pollInterval: 5000,
     prefetch: 1
   },
