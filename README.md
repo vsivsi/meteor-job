@@ -1,7 +1,7 @@
 meteor-job
 ======================================
 
-**NOTE:** This Package remains experimental until v0.1.0 is released (which will be soon). The API methods described herein are maturing, but they may still change.
+**NOTE:** This Package remains experimental until v1.0.0 is released (which will be soon). The API methods described herein are maturing, but they may still change.
 
 ## Intro
 
@@ -348,7 +348,7 @@ Get one or more jobs from the job Collection, setting status to `'running'`.
 
 * `maxJobs` -- Maximum number of jobs to get. Default `1`  If `maxJobs > 1` the result will be an array of job objects, otherwise it is a single job object, or `undefined` if no jobs were available.
 
-`callback(error, result)` -- Result will be an array or single value depending on `options.maxJobs`. Optional only on Meteor Server or with Fiber support, in which case errors will throw and the result is the return value. 
+`callback(error, result)` -- Result will be an array or single value depending on `options.maxJobs`. Optional only on Meteor Server or with Fiber support, in which case errors will throw and the result is the return value.
 
 ```js
 if (Meteor.isServer) {
@@ -393,7 +393,7 @@ Creates a job object by id from the server job Collection, returns `undefined` i
 
 * `getLog` -- If `true`, get the current log of the job. Default is `false` to save bandwidth since logs can be large.
 
-`callback(error, result)` -- `result` is a job object or `undefined`. Optional only on Meteor Server or with Fiber support, in which case errors will throw and the result is the return value. 
+`callback(error, result)` -- `result` is a job object or `undefined`. Optional only on Meteor Server or with Fiber support, in which case errors will throw and the result is the return value.
 
 ```js
 if (Meteor.isServer) {
@@ -451,7 +451,7 @@ Starts the server job Collection.
 
 `options`: No options currently
 
-`callback(error, result)` -- Result is true if successful. On Meteor Server or with Fiber support, errors will throw and the return value is the result. 
+`callback(error, result)` -- Result is true if successful. On Meteor Server or with Fiber support, errors will throw and the return value is the result.
 
 ```js
 Job.startJobServer('jobQueue');  // Callback is optional
