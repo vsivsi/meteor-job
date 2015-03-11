@@ -40,6 +40,9 @@ class DDP
    connect: () ->
       process.nextTick () -> cb(null)
 
+   close: () ->
+      process.nextTick () -> cb(null)
+
    subscribe: () ->
       process.nextTick () -> cb(null)
 

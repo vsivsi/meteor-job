@@ -313,7 +313,7 @@ class Job
 
   # This needs to be called when not running in Meteor to use the local DDP connection.
   @setDDP: (ddp = null, Fiber = null) ->
-    if ddp? and ddp.call? and ddp.connect? and ddp.subscribe? # Since all functions have a call method...
+    if ddp? and ddp.call? and ddp.close? and ddp.subscribe? # Since all functions have a call method...
       if ddp.observe?  # This is the npm DDP package
         if Fiber? # If Fibers in use, then make sure to yield and throw errors when no callback
           @_setDDPApply (name, params, cb) ->
