@@ -7,6 +7,7 @@
 * Added `jq.trigger()` method to provide a mechanism to trigger `getWork` using an alternative method to `pollInterval`
 * j.refresh() is now chainable
 * Added Fiber support for non-Meteor node.js clients. See `Job.setDDP(ddp, [Fiber])`
+* Job constructor now supports supplying an object for `root` if that object has a string attribute named `root`.
 
 #### v0.0.15
 

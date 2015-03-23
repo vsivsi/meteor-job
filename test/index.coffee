@@ -431,6 +431,12 @@ describe 'Job', () ->
          job2 = new Job('root', job.doc)
          checkJob job2
 
+      it 'should support using a valid oobject for root', () ->
+         job = new Job({ root: 'root'}, 'work', { foo: "bar" })
+         checkJob job
+         job2 = new Job({ root: 'root'}, job.doc)
+         checkJob job2
+
    describe 'job mutator method', () ->
 
       job = null

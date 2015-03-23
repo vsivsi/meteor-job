@@ -475,6 +475,10 @@ class Job
     unless @ instanceof Job
       return new Job @root, type, data
 
+    # Handle root as object with obj.root attribute
+    if @root?.root? and typeof @root.root is 'string'
+      @root = @root.root
+
     # Handle (root, doc) signature
     if not data? and type?.data? and type?.type?
       if type instanceof Job
