@@ -3,6 +3,7 @@
 assert = require('chai').assert
 rewire = require 'rewire'
 sinon = require 'sinon'
+Fiber = require 'fibers'
 
 Job = rewire '../src/job_class.coffee'
 
@@ -20,7 +21,8 @@ class DDP
                return params[0]
             when 'root_error'
                throw new Error "Method failed"
-         throw new Error "Bad method in call"
+            else
+               throw new Error "Bad method in call"
       else
          switch name
             when 'root_true'
@@ -31,12 +33,20 @@ class DDP
                process.nextTick () -> cb null, params[0]
             when 'root_error'
                process.nextTick () -> cb new Error "Method failed"
-         return
+            else
+               process.nextTick () -> cb new Error "Bad method in call"
+      return
 
    connect: () ->
       process.nextTick () -> cb(null)
 
+   close: () ->
+      process.nextTick () -> cb(null)
+
    subscribe: () ->
+      process.nextTick () -> cb(null)
+
+   observe: () ->
       process.nextTick () -> cb(null)
 
 makeDdpStub = (action) ->
@@ -74,12 +84,12 @@ describe 'Job', () ->
       assert.isArray Job.ddpPermissionLevels
       assert.lengthOf Job.ddpPermissionLevels , 4
       assert.isArray Job.ddpMethods
-      assert.lengthOf Job.ddpMethods, 15
+      assert.lengthOf Job.ddpMethods, 17
       assert.isObject Job.ddpMethodPermissions
       assert.lengthOf Object.keys(Job.ddpMethodPermissions), Job.ddpMethods.length
 
-   it 'has a ddp_apply class variable that defaults as undefined outside of Meteor', () ->
-      assert.isUndefined Job.ddp_apply
+   it 'has a _ddp_apply class variable that defaults as undefined outside of Meteor', () ->
+      assert.isUndefined Job._ddp_apply
 
    it 'has a processJobs method that is the JobQueue constructor', () ->
       assert.equal Job.processJobs, Job.__get__ "JobQueue"
@@ -91,13 +101,44 @@ describe 'Job', () ->
       it 'throws if given a non-ddp object', () ->
          assert.throws (() -> Job.setDDP({})), /Bad ddp object/
 
-      it 'properly sets the ddp_apply class variable', (done) ->
+      it 'properly sets the _ddp_apply class variable', (done) ->
          sinon.stub(ddp, "call").yieldsAsync()
          Job.setDDP ddp
-         Job.ddp_apply 'test', [], () ->
+         Job._ddp_apply 'test', [], () ->
             assert ddp.call.calledOnce
             ddp.call.restore()
             done()
+
+   describe 'Fiber support', () ->
+
+      ddp = new DDP()
+
+      it 'accepts a valid Fiber object and properly yields and runs', (done) ->
+         sinon.stub(ddp, "call").yieldsAsync()
+         Job.setDDP ddp, Fiber
+         fib = Fiber () ->
+            Job._ddp_apply 'test', []
+         fib.run()
+         assert ddp.call.calledOnce
+         ddp.call.restore()
+         done()
+
+      it 'properly returns values from method calls', (done) ->
+         Job.setDDP ddp, Fiber
+         fib = Fiber () ->
+            assert.isTrue Job._ddp_apply('root_true', [])
+            assert.isFalse Job._ddp_apply('root_false', [])
+            assert.deepEqual Job._ddp_apply('root_param', [['a', 1, null]]), ['a', 1, null]
+            done()
+         fib.run()
+
+      it 'properly propagates thrown errors within a Fiber', (done) ->
+         Job.setDDP ddp, Fiber
+         fib = Fiber () ->
+            assert.throws (() -> Job._ddp_apply 'root_error', []), /Method failed/
+            assert.throws (() -> Job._ddp_apply 'bad_method', []), /Bad method in call/
+            done()
+         fib.run()
 
    describe 'private function', () ->
 
@@ -384,9 +425,11 @@ describe 'Job', () ->
       it 'should throw when given bad parameters', () ->
          assert.throw Job, /new Job: bad parameter/
 
-      it 'should throw when given mismatched doc', () ->
-         job = Job('root', 'work', { foo: "bar" })
-         assert.throw (() -> Job('foo', 'bar', {}, job._doc)), /rebuild Job: bad parameter/
+      it 'should support using a valid job document', () ->
+         job = new Job('root', 'work', { foo: "bar" })
+         checkJob job
+         job2 = new Job('root', job.doc)
+         checkJob job2
 
    describe 'job mutator method', () ->
 
@@ -591,7 +634,7 @@ describe 'Job', () ->
          describe '.save()', () ->
 
             before () ->
-               sinon.stub Job, "ddp_apply", makeDdpStub (name, params) ->
+               sinon.stub Job, "_ddp_apply", makeDdpStub (name, params) ->
                   throw new Error 'Bad method name' unless name is 'root_jobSave'
                   doc = params[0]
                   options = params[1]
@@ -619,15 +662,15 @@ describe 'Job', () ->
                assert.throw (() -> job.save({ cancelRepeats: true }, () -> )), /cancelRepeats/
 
             afterEach () ->
-               Job.ddp_apply.reset()
+               Job._ddp_apply.reset()
 
             after () ->
-               Job.ddp_apply.restore()
+               Job._ddp_apply.restore()
 
          describe '.refresh()', () ->
 
             before () ->
-               sinon.stub Job, "ddp_apply", makeDdpStub (name, params) ->
+               sinon.stub Job, "_ddp_apply", makeDdpStub (name, params) ->
                   throw new Error 'Bad method name' unless name is 'root_getJob'
                   id = params[0]
                   options = params[1]
@@ -643,11 +686,13 @@ describe 'Job', () ->
                doc._id = 'thisId'
                res = job.refresh()
                assert.deepEqual job._doc, { foo: 'bar' }
+               assert.equal res, job
 
             it 'should work with a callback', (done) ->
                doc._id = 'thisId'
                job.refresh (err, res) ->
                   assert.deepEqual job._doc, { foo: 'bar' }
+                  assert.equal res, job
                   done()
 
             it "shouldn't modify job when not found on server", () ->
@@ -664,15 +709,15 @@ describe 'Job', () ->
                assert.throw (() -> job.refresh()), /on an unsaved job/
 
             afterEach () ->
-               Job.ddp_apply.reset()
+               Job._ddp_apply.reset()
 
             after () ->
-               Job.ddp_apply.restore()
+               Job._ddp_apply.restore()
 
          describe '.log()', () ->
 
             before () ->
-               sinon.stub Job, "ddp_apply", makeDdpStub (name, params) ->
+               sinon.stub Job, "_ddp_apply", makeDdpStub (name, params) ->
                   throw new Error 'Bad method name' unless name is 'root_jobLog'
                   id = params[0]
                   runId = params[1]
@@ -755,15 +800,15 @@ describe 'Job', () ->
                   Job.__set__ 'console', jobConsole
 
             afterEach () ->
-               Job.ddp_apply.reset()
+               Job._ddp_apply.reset()
 
             after () ->
-               Job.ddp_apply.restore()
+               Job._ddp_apply.restore()
 
          describe '.progress()', () ->
 
             before () ->
-               sinon.stub Job, "ddp_apply", makeDdpStub (name, params) ->
+               sinon.stub Job, "_ddp_apply", makeDdpStub (name, params) ->
                   throw new Error 'Bad method name' unless name is 'root_jobProgress'
                   id = params[0]
                   runId = params[1]
@@ -825,15 +870,15 @@ describe 'Job', () ->
                assert.throw (() -> job.progress -2, -1), /job.progress: something is wrong with progress params/
 
             afterEach () ->
-               Job.ddp_apply.reset()
+               Job._ddp_apply.reset()
 
             after () ->
-               Job.ddp_apply.restore()
+               Job._ddp_apply.restore()
 
          describe '.done()', () ->
 
             before () ->
-               sinon.stub Job, "ddp_apply", makeDdpStub (name, params) ->
+               sinon.stub Job, "_ddp_apply", makeDdpStub (name, params) ->
                   throw new Error 'Bad method name' unless name is 'root_jobDone'
                   id = params[0]
                   runId = params[1]
@@ -883,15 +928,15 @@ describe 'Job', () ->
                assert.throw (() -> job.done()), /an unsaved or non-running job/
 
             afterEach () ->
-               Job.ddp_apply.reset()
+               Job._ddp_apply.reset()
 
             after () ->
-               Job.ddp_apply.restore()
+               Job._ddp_apply.restore()
 
          describe '.fail()', () ->
 
             before () ->
-               sinon.stub Job, "ddp_apply", makeDdpStub (name, params) ->
+               sinon.stub Job, "_ddp_apply", makeDdpStub (name, params) ->
                   throw new Error 'Bad method name' unless name is 'root_jobFail'
                   id = params[0]
                   runId = params[1]
@@ -947,10 +992,10 @@ describe 'Job', () ->
                assert.throw (() -> job.fail()), /an unsaved or non-running job/
 
             afterEach () ->
-               Job.ddp_apply.reset()
+               Job._ddp_apply.reset()
 
             after () ->
-               Job.ddp_apply.restore()
+               Job._ddp_apply.restore()
 
          describe 'job control operation', () ->
 
@@ -959,7 +1004,7 @@ describe 'Job', () ->
                describe op, () ->
 
                   before () ->
-                     sinon.stub Job, "ddp_apply", makeDdpStub (name, params) ->
+                     sinon.stub Job, "_ddp_apply", makeDdpStub (name, params) ->
                         throw new Error "Bad method name: #{name}" unless name is "root_#{method}"
                         id = params[0]
                         if id is 'thisId'
@@ -1007,10 +1052,10 @@ describe 'Job', () ->
                         assert.throw (() -> job[op]()), /on an unsaved job/
 
                   afterEach () ->
-                     Job.ddp_apply.reset()
+                     Job._ddp_apply.reset()
 
                   after () ->
-                     Job.ddp_apply.restore()
+                     Job._ddp_apply.restore()
 
             makeJobControl 'pause', 'jobPause'
             makeJobControl 'resume', 'jobResume'
@@ -1024,7 +1069,7 @@ describe 'Job', () ->
          describe 'getWork', () ->
 
             before () ->
-               sinon.stub Job, "ddp_apply", makeDdpStub (name, params) ->
+               sinon.stub Job, "_ddp_apply", makeDdpStub (name, params) ->
                   throw new Error 'Bad method name' unless name is 'root_getWork'
                   type = params[0][0]
                   max = params[1]?.maxJobs ? 1
@@ -1055,10 +1100,10 @@ describe 'Job', () ->
                assert.lengthOf res, 0
 
             afterEach () ->
-               Job.ddp_apply.reset()
+               Job._ddp_apply.reset()
 
             after () ->
-               Job.ddp_apply.restore()
+               Job._ddp_apply.restore()
 
          describe 'makeJob', () ->
 
@@ -1072,9 +1117,9 @@ describe 'Job', () ->
                assert.instanceOf res, Job
 
             it 'should throw when passed invalid params', () ->
-               assert.throw (() -> Job.makeJob()), /Bad params/
-               assert.throw (() -> Job.makeJob(5, jobDoc())), /Bad params/
-               assert.throw (() -> Job.makeJob('work', {})), /Bad params/
+               assert.throw (() -> Job.makeJob()), /bad parameter/
+               assert.throw (() -> Job.makeJob(5, jobDoc())), /bad parameter/
+               assert.throw (() -> Job.makeJob('work', {})), /bad parameter/
 
          describe 'get Job(s) by ID', () ->
 
@@ -1100,7 +1145,7 @@ describe 'Job', () ->
             describe 'getJob', () ->
 
                before () ->
-                  sinon.stub Job, "ddp_apply", makeDdpStub getJobStub
+                  sinon.stub Job, "_ddp_apply", makeDdpStub getJobStub
 
                it 'should return a valid job instance when called with a good id', () ->
                   res = Job.getJob 'root', 'goodID'
@@ -1111,19 +1156,19 @@ describe 'Job', () ->
                   assert.isUndefined res
 
                afterEach () ->
-                  Job.ddp_apply.reset()
+                  Job._ddp_apply.reset()
 
                after () ->
-                  Job.ddp_apply.restore()
+                  Job._ddp_apply.restore()
 
             describe 'getJobs', () ->
 
                before () ->
-                  sinon.stub Job, "ddp_apply", makeDdpStub getJobStub
+                  sinon.stub Job, "_ddp_apply", makeDdpStub getJobStub
 
                it 'should return valid job instances for good IDs only', () ->
                   res = Job.getJobs 'root', ['goodID', 'badID', 'goodID']
-                  assert Job.ddp_apply.calledOnce, 'getJob method called more than once'
+                  assert Job._ddp_apply.calledOnce, 'getJob method called more than once'
                   assert.isArray res
                   assert.lengthOf res, 2
                   assert.instanceOf res[0], Job
@@ -1131,15 +1176,15 @@ describe 'Job', () ->
 
                it 'should return an empty array for all bad IDs', () ->
                   res = Job.getJobs 'root', ['badID', 'badID', 'badID']
-                  assert Job.ddp_apply.calledOnce, 'getJob method called more than once'
+                  assert Job._ddp_apply.calledOnce, 'getJob method called more than once'
                   assert.isArray res
                   assert.lengthOf res, 0
 
                afterEach () ->
-                  Job.ddp_apply.reset()
+                  Job._ddp_apply.reset()
 
                after () ->
-                  Job.ddp_apply.restore()
+                  Job._ddp_apply.restore()
 
          describe 'multijob operation', () ->
 
@@ -1148,7 +1193,7 @@ describe 'Job', () ->
                describe op, () ->
 
                   before () ->
-                     sinon.stub Job, "ddp_apply", makeDdpStub (name, params) ->
+                     sinon.stub Job, "_ddp_apply", makeDdpStub (name, params) ->
                         throw new Error "Bad method name: #{name}" unless name is "root_#{method}"
                         ids = params[0]
                         return [null, ids.indexOf('goodID') isnt -1]
@@ -1156,22 +1201,22 @@ describe 'Job', () ->
                   it 'should return true if there are any good IDs', () ->
                      assert.isFunction Job[op]
                      res = Job[op]('root', ['goodID', 'badID', 'goodID'])
-                     assert Job.ddp_apply.calledOnce, "#{op} method called more than once"
+                     assert Job._ddp_apply.calledOnce, "#{op} method called more than once"
                      assert.isBoolean res
                      assert.isTrue res
 
                   it 'should return false if there are all bad IDs', () ->
                      assert.isFunction Job[op]
                      res = Job[op]('root', ['badID', 'badID'])
-                     assert Job.ddp_apply.calledOnce, "#{op} method called more than once"
+                     assert Job._ddp_apply.calledOnce, "#{op} method called more than once"
                      assert.isBoolean res
                      assert.isFalse res
 
                   afterEach () ->
-                     Job.ddp_apply.reset()
+                     Job._ddp_apply.reset()
 
                   after () ->
-                     Job.ddp_apply.restore()
+                     Job._ddp_apply.restore()
 
             makeMulti 'pauseJobs', 'jobPause'
             makeMulti 'resumeJobs', 'jobResume'
@@ -1186,24 +1231,26 @@ describe 'Job', () ->
                describe op, () ->
 
                   before () ->
-                     sinon.stub Job, "ddp_apply", makeDdpStub (name, params) ->
+                     sinon.stub Job, "_ddp_apply", makeDdpStub (name, params) ->
                         throw new Error "Bad method name: #{name}" unless name is "root_#{op}"
                         return [null, true]
 
                   it 'should return a boolean', () ->
                      assert.isFunction Job[op]
                      res = Job[op]('root')
-                     assert Job.ddp_apply.calledOnce, "#{op} method called more than once"
+                     assert Job._ddp_apply.calledOnce, "#{op} method called more than once"
                      assert.isBoolean res
 
                   afterEach () ->
-                     Job.ddp_apply.reset()
+                     Job._ddp_apply.reset()
 
                   after () ->
-                     Job.ddp_apply.restore()
+                     Job._ddp_apply.restore()
 
             makeControl 'startJobs'
             makeControl 'stopJobs'
+            makeControl 'startJobServer'
+            makeControl 'shutdownJobServer'
 
 ###########################################
 
@@ -1212,14 +1259,15 @@ describe 'JobQueue', () ->
    ddp = new DDP()
    failCalls = 0
    doneCalls = 0
+   numJobs = 5
 
    before () ->
       Job.setDDP ddp
-      sinon.stub Job, "ddp_apply", makeDdpStub (name, params) ->
+      sinon.stub Job, "_ddp_apply", makeDdpStub (name, params) ->
          # console.log "#{name} Called"
          err = null
          res = null
-         makeJobDoc = (idx) ->
+         makeJobDoc = (idx=0) ->
             job = new Job('root', 'work', { idx: idx })
             doc = job._doc
             doc._id = 'thisId' + idx
@@ -1236,12 +1284,20 @@ describe 'JobQueue', () ->
             when 'root_getWork'
                type = params[0][0]
                max = params[1]?.maxJobs ? 1
-               res = []
-               switch type
-                  when 'work'
-                     res = [ makeJobDoc() ]
-                  when 'workMax'
-                     res = (makeJobDoc(i) for i in [1..max])
+               if numJobs is 0
+                  res = []
+               else
+                  switch type
+                     when 'noWork'
+                        res = []
+                     when 'work'
+                        numJobs--
+                        res = [ makeJobDoc() ]
+                     when 'workMax'
+                        if max < numJobs
+                           max = numJobs
+                        numJobs -= max
+                        res = (makeJobDoc(i) for i in [1..max])
             else
                throw new Error "Bad method name: #{name}"
          return [err, res]
@@ -1249,6 +1305,7 @@ describe 'JobQueue', () ->
    beforeEach () ->
       failCalls = 0
       doneCalls = 0
+      numJobs = 5
 
    it 'should return a valid JobQueue when called', (done) ->
       q = Job.processJobs 'root', 'noWork', { pollInterval: 100 }, (job, cb) ->
@@ -1286,6 +1343,19 @@ describe 'JobQueue', () ->
             done()
          cb null
 
+   it 'should invoke worker when work is returned from a manual trigger', (done) ->
+      q = Job.processJobs 'root', 'work', { pollInterval: Job.forever }, (job, cb) ->
+         job.done()
+         q.shutdown { quiet: true }, () ->
+            assert.equal doneCalls, 1
+            assert.equal failCalls, 0
+            done()
+         cb null
+      setTimeout(
+         () -> q.trigger()
+         20
+      )
+
    it 'should successfully start in paused state and resume', (done) ->
       flag = false
       q = Job.processJobs('root', 'work', { pollInterval: 10 }, (job, cb) ->
@@ -1307,8 +1377,8 @@ describe 'JobQueue', () ->
    it 'should successfully accept multiple jobs from getWork', (done) ->
       count = 5
       q = Job.processJobs('root', 'workMax', { pollInterval: 100, prefetch: 4 }, (job, cb) ->
-         assert.equal q.length(), count-1
-         assert.equal q.running(), 1
+         assert.equal q.length(), count-1, 'q.length is incorrect'
+         assert.equal q.running(), 1, 'q.running is incorrect'
          if count is 5
             assert.isTrue q.full(), 'q.full should be true'
             assert.isFalse q.idle(), 'q.idle should be false'
@@ -1316,10 +1386,9 @@ describe 'JobQueue', () ->
          count--
          if count is 0
             q.shutdown { quiet: true }, () ->
-               assert.equal doneCalls, 5
-               assert.equal failCalls, 0
+               assert.equal doneCalls, 5, 'doneCalls is incorrect'
+               assert.equal failCalls, 0, 'failCalls is incorrect'
                done()
-
          cb null
       )
 
@@ -1358,6 +1427,7 @@ describe 'JobQueue', () ->
 
    it 'should successfully accept and process multiple simultaneous jobs concurrently and within workers', (done) ->
       count = 0
+      numJobs = 25
       q = Job.processJobs('root', 'workMax', { pollInterval: 100, payload: 5, concurrency: 5 }, (jobs, cb) ->
          count += jobs.length
          setTimeout(
@@ -1388,7 +1458,7 @@ describe 'JobQueue', () ->
             q.shutdown { quiet: true, level: 'soft' }, () ->
                assert count is 0
                assert.equal q.length(), 0
-               assert.isFalse Job.ddp_apply.calledWith("root_jobFail")
+               assert.isFalse Job._ddp_apply.calledWith("root_jobFail")
                assert.equal doneCalls, 5
                assert.equal failCalls, 0
                done()
@@ -1406,7 +1476,7 @@ describe 'JobQueue', () ->
                   q.shutdown { quiet: true, level: 'normal' }, () ->
                      assert.equal count, 3
                      assert.equal q.length(), 0
-                     assert.isTrue Job.ddp_apply.calledWith("root_jobFail")
+                     assert.isTrue Job._ddp_apply.calledWith("root_jobFail")
                      assert.equal doneCalls, 2
                      assert.equal failCalls, 3
                      done()
@@ -1418,6 +1488,7 @@ describe 'JobQueue', () ->
 
    it 'should successfully perform a normal shutdown with both payload and concurrency', (done) ->
       count = 0
+      numJobs = 25
       q = Job.processJobs('root', 'workMax', { pollInterval: 100, payload: 5, concurrency: 2, prefetch: 15 }, (jobs, cb) ->
          count += jobs.length
          setTimeout(
@@ -1429,7 +1500,7 @@ describe 'JobQueue', () ->
                   q.shutdown { quiet: true }, () ->
                      assert.equal q.length(), 0, 'jobs remain in task list'
                      assert.equal count, 0, 'count is wrong value'
-                     assert.isTrue Job.ddp_apply.calledWith("root_jobFail")
+                     assert.isTrue Job._ddp_apply.calledWith("root_jobFail")
                      assert.equal doneCalls, 10
                      assert.equal failCalls, 15
                      done()
@@ -1450,7 +1521,7 @@ describe 'JobQueue', () ->
                   q.shutdown { quiet: true, level: 'hard' }, () ->
                      assert.equal q.length(), 0
                      assert.equal count, 1
-                     assert.isTrue Job.ddp_apply.calledWith("root_jobFail")
+                     assert.isTrue Job._ddp_apply.calledWith("root_jobFail")
                      assert.equal doneCalls, 1, 'wrong number of .done() calls'
                      assert.equal failCalls, 4, 'wrong number of .fail() calls'
                      done()
@@ -1461,8 +1532,8 @@ describe 'JobQueue', () ->
       )
 
    afterEach () ->
-      Job.ddp_apply.reset()
+      Job._ddp_apply.reset()
 
    after () ->
-      Job.ddp_apply.restore()
+      Job._ddp_apply.restore()
 

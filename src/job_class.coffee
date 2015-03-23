@@ -1,5 +1,5 @@
 ############################################################################
-#     Copyright (C) 2014 by Vaughn Iverson
+#     Copyright (C) 2014-2015 by Vaughn Iverson
 #     meteor-job-class is free software released under the MIT/X11 license.
 #     See included LICENSE file for details.
 ############################################################################
@@ -10,11 +10,11 @@ methodCall = (root, method, params, cb, after = ((ret) -> ret)) ->
   # console.warn "Calling: #{root}_#{method} with: ", params
   name = "#{root}_#{method}"
   if cb and typeof cb is 'function'
-    Job.ddp_apply name, params, (err, res) =>
+    Job._ddp_apply name, params, (err, res) =>
       return cb err if err
       cb null, after(res)
   else
-    return after(Job.ddp_apply name, params)
+    return after(Job._ddp_apply name, params)
 
 optionsHelp = (options, cb) ->
   # If cb isn't a function, it's assumed to be options...
@@ -150,6 +150,7 @@ class JobQueue
           @_stoppingTasks()
         else
           _setImmediate @_process.bind(@)
+          _setImmediate @_getWork.bind(@)
       cb = @_only_once next
       @worker job, cb
 
@@ -219,6 +220,10 @@ class JobQueue
       _setImmediate @_process.bind(@)
     @
 
+  trigger: () ->
+    _setImmediate @_getWork.bind(@)
+    @
+
   shutdown: (options..., cb) ->
     [options, cb] = optionsHelp options, cb
     options.level ?= 'normal'
@@ -267,7 +272,9 @@ class Job
   @jobStatusRemovable:   [ 'cancelled', 'completed', 'failed' ]
   @jobStatusRestartable: [ 'cancelled', 'failed' ]
 
-  @ddpMethods = [ 'startJobs', 'stopJobs', 'jobRemove', 'jobPause', 'jobResume'
+  @ddpMethods = [ 'startJobs', 'stopJobs',  # Deprecated!
+                  'startJobServer', 'shutdownJobServer',
+                  'jobRemove', 'jobPause', 'jobResume',
                   'jobCancel', 'jobRestart', 'jobSave', 'jobRerun', 'getWork'
                   'getJob', 'jobLog', 'jobProgress', 'jobDone', 'jobFail' ]
 
@@ -275,8 +282,10 @@ class Job
 
   # These are the four levels of the allow/deny permission heirarchy
   @ddpMethodPermissions =
-    'startJobs': ['startJobs', 'admin']
-    'stopJobs': ['stopJobs', 'admin']
+    'startJobs': ['startJobs', 'admin']  # Deprecated!
+    'stopJobs': ['stopJobs', 'admin']    # Deprecated!
+    'startJobServer': ['startJobServer', 'admin']
+    'shutdownJobServer': ['shutdownJobServer', 'admin']
     'jobRemove': ['jobRemove', 'admin', 'manager']
     'jobPause': ['jobPause', 'admin', 'manager']
     'jobResume': ['jobResume', 'admin', 'manager']
@@ -292,14 +301,41 @@ class Job
     'jobFail': ['jobFail', 'admin', 'worker']
 
   # Automatically work within Meteor, otherwise see @setDDP below
-  @ddp_apply: Meteor?.apply
+  @_ddp_apply: undefined
 
   # Class methods
 
+  @_setDDPApply: (apply) ->
+    if typeof apply is 'function'
+      @_ddp_apply = apply
+    else
+      throw new Error "Bad function in Job.setDDPApply()"
+
   # This needs to be called when not running in Meteor to use the local DDP connection.
-  @setDDP: (ddp) ->
-    if ddp? and ddp.call? and ddp.connect? and ddp.subscribe? # Since all functions have a call method...
-      @ddp_apply = ddp.call.bind ddp
+  @setDDP: (ddp = null, Fiber = null) ->
+    if ddp? and ddp.call? and ddp.close? and ddp.subscribe? # Since all functions have a call method...
+      if ddp.observe?  # This is the npm DDP package
+        if Fiber? # If Fibers in use, then make sure to yield and throw errors when no callback
+          @_setDDPApply (name, params, cb) ->
+            fib = Fiber.current
+            ddp.call name, params, (err, res) ->
+              if cb? and typeof cb is 'function'
+                cb err, res
+              else
+                if err
+                  fib.throwInto err
+                else
+                  fib.run res
+            if cb? and typeof cb is 'function'
+              return 
+            else
+              return Fiber.yield()
+        else
+          @_setDDPApply(ddp.call.bind ddp)
+      else  # This is a Meteor DDP object
+        @_setDDPApply(ddp.apply.bind ddp)
+    else if ddp is null and Meteor?.apply?
+      @_setDDPApply Meteor.apply   # Default to Meteor local server/client
     else
       throw new Error "Bad ddp object in Job.setDDP()"
 
@@ -310,7 +346,7 @@ class Job
     [options, cb] = optionsHelp options, cb
     type = [type] if typeof type is 'string'
     methodCall root, "getWork", [type, options], cb, (res) =>
-      jobs = (new Job(root, doc.type, doc.data, doc) for doc in res) or []
+      jobs = (new Job(root, doc) for doc in res) or []
       if options.maxJobs?
         return jobs
       else
@@ -320,14 +356,14 @@ class Job
   @processJobs: JobQueue
 
   # Makes a job object from a job document
-  @makeJob: (root, doc) ->
-    if root? and typeof root is 'string' and
-        doc? and typeof doc is 'object' and doc.type? and
-        typeof doc.type is 'string' and doc.data? and
-        typeof doc.data is 'object' and doc._id?
-      new Job root, doc.type, doc.data, doc
-    else
-      throw new Error 'makeJob: Bad params'
+  # This method is deprecated and will be removed
+  @makeJob: do () ->
+    depFlag = false
+    (root, doc) ->
+      unless depFlag
+        depFlag = true
+        console.warn "Job.makeJob(root, jobDoc) has been deprecated and will be removed in a future release, use 'new Job(root, jobDoc)' instead."
+      new Job root, doc
 
   # Creates a job object by id from the server queue root
   # returns null if no such job exists
@@ -336,7 +372,7 @@ class Job
     options.getLog ?= false
     methodCall root, "getJob", [id, options], cb, (doc) =>
       if doc
-        new Job root, doc.type, doc.data, doc
+        new Job root, doc
       else
         undefined
 
@@ -411,32 +447,55 @@ class Job
     return retVal
 
   # Start the job queue
+  # Deprecated!
   @startJobs: (root, options..., cb) ->
     [options, cb] = optionsHelp options, cb
     methodCall root, "startJobs", [options], cb
 
   # Stop the job queue, stop all running jobs
+  # Deprecated!
   @stopJobs: (root, options..., cb) ->
     [options, cb] = optionsHelp options, cb
     options.timeout ?= 60*1000
     methodCall root, "stopJobs", [options], cb
 
+  # Start the job queue
+  @startJobServer: (root, options..., cb) ->
+    [options, cb] = optionsHelp options, cb
+    methodCall root, "startJobServer", [options], cb
+
+  # Shutdown the job queue, stop all running jobs
+  @shutdownJobServer: (root, options..., cb) ->
+    [options, cb] = optionsHelp options, cb
+    options.timeout ?= 60*1000
+    methodCall root, "shutdownJobServer", [options], cb
+
   # Job class instance constructor. When "new Job(...)" is run
-  constructor: (@root, type, data, doc = null) ->
+  constructor: (@root, type, data) ->
     unless @ instanceof Job
-      return new Job @root, type, data, doc
-    @ddp_apply = Job.ddp_apply
+      return new Job @root, type, data
+
+    # Handle (root, doc) signature
+    if not data? and type?.data? and type?.type?
+      if type instanceof Job
+        console.warn "new Job: job document is a job object!"
+        return type
+
+      doc = type
+      data = doc.data
+      type = doc.type
+    else
+      doc = {}
+
     unless typeof doc is 'object' and
            typeof data is 'object' and
            typeof type is 'string' and
            typeof @root is 'string'
       throw new Error "new Job: bad parameter(s), #{@root} (#{typeof @root}), #{type} (#{typeof type}), #{data} (#{typeof data}), #{doc} (#{typeof doc})"
-    else if doc?  # This case is used to create local Job objects from DDP calls
-      unless doc.type is type and doc.data is data
-        throw new Error "rebuild Job: bad parameter(s), #{@root} #{type}, #{data}, #{doc}"
+
+    else if doc.type? and doc.data? # This case is used to create local Job objects from DDP calls
       @_doc = doc
-      @type = type
-      @data = data
+
     else  # This is the normal "create a new object" case
       time = new Date()
       @_doc =
@@ -447,9 +506,17 @@ class Job
         updated: time
         created: time
       @priority().retry().repeat().after().progress().depends().log("Constructed")
-      @type = @_doc.type
-      @data = @_doc.data  # Make data a little easier to get to
-      return @
+
+    return @
+
+  # Override point for methods that have an echo option
+  _echo: (message, level = null) ->
+    switch level
+      when 'danger' then console.error message
+      when 'warning' then console.warn message
+      when 'success' then console.log message
+      else console.info message
+    return
 
   # Adds a run dependancy on one or more existing jobs to this job
   # Calling with a falsy value resets the dependencies to []
@@ -577,12 +644,7 @@ class Job
       throw new Error 'Log level options must be one of Job.jobLogLevels'
     if options.echo?
       if options.echo and Job.jobLogLevels.indexOf(options.level) >= Job.jobLogLevels.indexOf(options.echo)
-        out = "LOG: #{options.level}, #{@_doc._id} #{@_doc.runId}: #{message}"
-        switch options.level
-          when 'danger' then console.error out
-          when 'warning' then console.warn out
-          when 'success' then console.log out
-          else console.info out
+        @_echo "LOG: #{options.level}, #{@_doc._id} #{@_doc.runId}: #{message}", options.level
       delete options.echo
     if @_doc._id?
       return methodCall @root, "jobLog", [@_doc._id, @_doc.runId, message, options], cb
@@ -608,7 +670,7 @@ class Job
         percent: 100*completed/total
       if options.echo
         delete options.echo
-        console.info "PROGRESS: #{@_doc._id} #{@_doc.runId}: #{progress.completed} out of #{progress.total} (#{progress.percent}%)"
+        @_echo "PROGRESS: #{@_doc._id} #{@_doc.runId}: #{progress.completed} out of #{progress.total} (#{progress.percent}%)"
       if @_doc._id? and @_doc.runId?
         return methodCall @root, "jobProgress", [@_doc._id, @_doc.runId, completed, total, options], cb, (res) =>
           if res
@@ -640,9 +702,7 @@ class Job
       return methodCall @root, "getJob", [@_doc._id, options], cb, (doc) =>
         if doc?
           @_doc = doc
-          @type = @_doc.type
-          @data = @_doc.data
-          true
+          @
         else
           false
     else
@@ -742,6 +802,18 @@ class Job
     else
       throw new Error "Can't call .remove() on an unsaved job"
     return null
+
+    # Define convenience getters for some document properties
+  Object.defineProperties @prototype,
+    doc:
+      get: () -> @_doc
+      set: () -> console.warn "Job.doc cannot be directly assigned."
+    type:
+      get: () -> @_doc.type
+      set: () -> console.warn "Job.type cannot be directly assigned."
+    data:
+      get: () -> @_doc.data
+      set: () -> console.warn "Job.data cannot be directly assigned."
 
 # Export Job in a npm package
 if module?.exports?

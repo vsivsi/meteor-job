@@ -1,6 +1,12 @@
-#### v.NEXT
+#### v.1.0.0
 
+* j.startJobs and j.stopJobs have been renamed to j.startJobServer and j.shutdownJobServer respectively. The old versions will now generate deprecation warnings.
 * Updated README to reflect name change to job-collection and fix broken links to Atmosphere
+* Deprecated Job.makeJob(root, doc) in favor of "new Job(root, doc)" constructor signature.
+* Added value getters for job.doc, job.type and job.data.
+* Added `jq.trigger()` method to provide a mechanism to trigger `getWork` using an alternative method to `pollInterval`
+* j.refresh() is now chainable
+* Added Fiber support for non-Meteor node.js clients. See `Job.setDDP(ddp, [Fiber])`
 
 #### v0.0.15
 
