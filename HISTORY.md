@@ -1,6 +1,6 @@
 #### v.NEXT
 
-* Added support for using a later.js object as `job.repeat({ later: {...} })`
+* Added support for using a later.js object as `job.repeat({ schedule: {...} })`
 
 #### v.1.0.0
 

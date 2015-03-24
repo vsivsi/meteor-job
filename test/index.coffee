@@ -565,7 +565,7 @@ describe 'Job', () ->
             assert.equal doc.repeatWait, 5000
 
          it 'should accept an option object with later.js object', () ->
-            j = job.repeat { later: { schedules: [{h:[10]}], exceptions: [], other: () -> 0 }}
+            j = job.repeat { schedule: { schedules: [{h:[10]}], exceptions: [], other: () -> 0 }}
             assert.equal j, job
             assert.deepEqual doc.repeatWait, { schedules: [{h:[10]}], exceptions: [] }
 
@@ -586,11 +586,11 @@ describe 'Job', () ->
             assert.throw (() -> job.repeat { wait: -1 }), /bad option: wait must be an integer/
             assert.throw (() -> job.repeat { wait: 3.14 }), /bad option: wait must be an integer/
             assert.throw (() -> job.repeat { until: 'bogus' }), /bad option: until must be a Date object/
-            assert.throw (() -> job.repeat { wait: 5, later: {}}), /bad options: wait and later options are mutually exclusive/
-            assert.throw (() -> job.repeat { later: 'bogus' }), /bad option, later option must be an object/
-            assert.throw (() -> job.repeat { later: {}}), /bad option, later object requires a schedules attribute of type Array/
-            assert.throw (() -> job.repeat { later: { schedules: 5 }}), /bad option, later object requires a schedules attribute of type Array/
-            assert.throw (() -> job.repeat { later: { schedules: [], exceptions: 5 }}), /bad option, later object exceptions attribute must be an Array/
+            assert.throw (() -> job.repeat { wait: 5, schedule: {}}), /bad options: wait and schedule options are mutually exclusive/
+            assert.throw (() -> job.repeat { schedule: 'bogus' }), /bad option, schedule option must be an object/
+            assert.throw (() -> job.repeat { schedule: {}}), /bad option, schedule object requires a schedules attribute of type Array/
+            assert.throw (() -> job.repeat { schedule: { schedules: 5 }}), /bad option, schedule object requires a schedules attribute of type Array/
+            assert.throw (() -> job.repeat { schedule: { schedules: [], exceptions: 5 }}), /bad option, schedule object exceptions attribute must be an Array/
 
       describe '.after()', () ->
 

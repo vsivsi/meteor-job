@@ -601,8 +601,8 @@ class Job
       options = { repeats: options }
     if typeof options isnt 'object'
       throw new Error 'bad parameter: accepts either an integer >= 0 or an options object'
-    if options.wait? and options.later?
-      throw new Error 'bad options: wait and later options are mutually exclusive'
+    if options.wait? and options.schedule?
+      throw new Error 'bad options: wait and schedule options are mutually exclusive'
     if options.repeats?
       unless isInteger(options.repeats) and options.repeats >= 0
         throw new Error 'bad option: repeats must be an integer >= 0'
@@ -618,16 +618,16 @@ class Job
         throw new Error 'bad option: wait must be an integer >= 0'
     else
       options.wait = 5*60*1000
-    if options.later?
-      unless typeof options.later is 'object'
-        throw new Error 'bad option, later option must be an object'
-      unless options.later?.schedules? and options.later.schedules instanceof Array
-        throw new Error 'bad option, later object requires a schedules attribute of type Array.'
-      if options.later.exceptions? and not (options.later.exceptions instanceof Array)
-        throw new Error 'bad option, later object exceptions attribute must be an Array'
+    if options.schedule?
+      unless typeof options.schedule is 'object'
+        throw new Error 'bad option, schedule option must be an object'
+      unless options.schedule?.schedules? and options.schedule.schedules instanceof Array
+        throw new Error 'bad option, schedule object requires a schedules attribute of type Array.'
+      if options.schedule.exceptions? and not (options.schedule.exceptions instanceof Array)
+        throw new Error 'bad option, schedule object exceptions attribute must be an Array'
       options.wait =
-        schedules: options.later.schedules
-        exceptions: options.later.exceptions
+        schedules: options.schedule.schedules
+        exceptions: options.schedule.exceptions
 
     @_doc.repeats = options.repeats
     @_doc.repeatWait = options.wait
