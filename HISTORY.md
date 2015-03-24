@@ -1,3 +1,7 @@
+#### v.NEXT
+
+* Added support for using a later.js object as `job.repeat({ later: {...} })`
+
 #### v.1.0.0
 
 * j.startJobs and j.stopJobs have been renamed to j.startJobServer and j.shutdownJobServer respectively. The old versions will now generate deprecation warnings.

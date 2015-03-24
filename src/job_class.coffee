@@ -595,12 +595,14 @@ class Job
 
   # Sets the number of times to repeatedly run this job
   # and the time to wait between successive runs
-  # Default, repeat forever...
+  # Default: repeat every 5 minutes, forever...
   repeat: (options = 0) ->
     if isInteger(options) and options >= 0
       options = { repeats: options }
     if typeof options isnt 'object'
       throw new Error 'bad parameter: accepts either an integer >= 0 or an options object'
+    if options.wait? and options.later?
+      throw new Error 'bad options: wait and later options are mutually exclusive'
     if options.repeats?
       unless isInteger(options.repeats) and options.repeats >= 0
         throw new Error 'bad option: repeats must be an integer >= 0'
@@ -616,6 +618,16 @@ class Job
         throw new Error 'bad option: wait must be an integer >= 0'
     else
       options.wait = 5*60*1000
+    if options.later?
+      unless typeof options.later is 'object'
+        throw new Error 'bad option, later option must be an object'
+      unless options.later?.schedules? and options.later.schedules instanceof Array
+        throw new Error 'bad option, later object requires a schedules attribute of type Array.'
+      if options.later.exceptions? and not (options.later.exceptions instanceof Array)
+        throw new Error 'bad option, later object exceptions attribute must be an Array'
+      options.wait =
+        schedules: options.later.schedules
+        exceptions: options.later.exceptions
 
     @_doc.repeats = options.repeats
     @_doc.repeatWait = options.wait

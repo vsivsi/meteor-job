@@ -684,6 +684,7 @@ Set how many times this job will be automatically re-run by the job Collection. 
 * `repeats` -- Number of times to rerun the job. Default: `Job.forever`
 * `until` -- Keep repeating until this `Date`, or until the number of repeats is exhausted, whichever comes first. Default: `Job.foreverDate`
 * `wait`  -- How long to wait between re-runs, in ms. Default: `300000` (5 minutes)
+* `later` -- Repeat using a valid [later.js](https://github.com/bunkat/later) schedule. Note: `later` and `wait` are mutually exclusive.
 
 `[options]` may also be a non-negative integer, which is interpreted as `{ repeats: [options] }`
 
@@ -693,6 +694,11 @@ Note that the above stated defaults are those when `.repeat()` is explicitly cal
 job.repeat({
   repeats: 5,   // Rerun this job 5 times,
   wait: 20000   // wait 20 seconds between each re-run.
+});
+
+// Using later.js
+job.repeat({
+  later: later.parse.text('every 5 mins');   // Rerun this job every 5 minutes
 });
 ```
 
