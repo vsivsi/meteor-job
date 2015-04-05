@@ -327,7 +327,7 @@ class Job
                 else
                   fib.run res
             if cb? and typeof cb is 'function'
-              return 
+              return
             else
               return Fiber.yield()
         else
