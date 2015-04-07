@@ -1124,18 +1124,18 @@ describe 'Job', () ->
          describe 'makeJob', () ->
 
             jobDoc = () ->
-               j = Job('root', 'work', {})._doc
+               j = new Job('root', 'work', {})._doc
                j._id = { _str: 'skljfdf9s0ujfsdfl3' }
                return j
 
             it 'should return a valid job instance when called with a valid job document', () ->
-               res = Job.makeJob 'root', jobDoc()
+               res = new Job 'root', jobDoc()
                assert.instanceOf res, Job
 
             it 'should throw when passed invalid params', () ->
-               assert.throw (() -> Job.makeJob()), /bad parameter/
-               assert.throw (() -> Job.makeJob(5, jobDoc())), /bad parameter/
-               assert.throw (() -> Job.makeJob('work', {})), /bad parameter/
+               assert.throw (() -> new Job()), /bad parameter/
+               assert.throw (() -> new Job(5, jobDoc())), /bad parameter/
+               assert.throw (() -> new Job('work', {})), /bad parameter/
 
          describe 'get Job(s) by ID', () ->
 
