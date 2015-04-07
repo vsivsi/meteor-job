@@ -1,6 +1,8 @@
-#### v.NEXT
+
+#### v.1.1.0
 
 * Added support for using a later.js object as `job.repeat({ schedule: {...} })`
+* Bumped npm deps
 
 #### v.1.0.0
 
