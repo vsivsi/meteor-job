@@ -688,7 +688,7 @@ Set how many times this job will be automatically re-run by the job Collection. 
 
 `[options]` may also be a non-negative integer, which is interpreted as `{ repeats: [options] }`
 
-Note that the above stated defaults are those when `.repeat()` is explicitly called. When a new job is created, the default number of `repeats` is `0`.  
+Note that the above stated defaults are those when `.repeat()` is explicitly called. When a new job is created, the default number of `repeats` is `0`.
 
 ```js
 job.repeat({
@@ -698,6 +698,7 @@ job.repeat({
 
 // Using later.js
 job.repeat({
+  // Note that you need to install the later npm package yourself when running under pure node.js
   schedule: later.parse.text('every 5 mins');   // Rerun this job every 5 minutes
 });
 ```
