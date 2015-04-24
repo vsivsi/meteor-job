@@ -110,22 +110,23 @@ class JobQueue
     @resume()
 
   _getWork: () ->
-    numJobsToGet = @prefetch + @payload*(@concurrency - @running()) - @length()
-    if numJobsToGet > 0
-      @_getWorkOutstanding = true
-      Job.getWork @root, @type, { maxJobs: numJobsToGet }, (err, jobs) =>
-        if err
-          console.error "JobQueue: Received error from getWork(): ", err
-        else if jobs? and jobs instanceof Array
-          if jobs.length > numJobsToGet
-            console.error "JobQueue: getWork() returned jobs (#{jobs.length}) in excess of maxJobs (#{numJobsToGet})"
-          for j in jobs
-            @_tasks.push j
-            _setImmediate @_process.bind(@) unless @_stoppingGetWork?
+    unless @_getWorkOutstanding
+      numJobsToGet = @prefetch + @payload*(@concurrency - @running()) - @length()
+      if numJobsToGet > 0
+        @_getWorkOutstanding = true
+        Job.getWork @root, @type, { maxJobs: numJobsToGet }, (err, jobs) =>
           @_getWorkOutstanding = false
-          @_stoppingGetWork() if @_stoppingGetWork?
-        else
-          console.error "JobQueue: Nonarray response from server from getWork()"
+          if err
+            console.error "JobQueue: Received error from getWork(): ", err
+          else if jobs? and jobs instanceof Array
+            if jobs.length > numJobsToGet
+              console.error "JobQueue: getWork() returned jobs (#{jobs.length}) in excess of maxJobs (#{numJobsToGet})"
+            for j in jobs
+              @_tasks.push j
+              _setImmediate @_process.bind(@) unless @_stoppingGetWork?
+            @_stoppingGetWork() if @_stoppingGetWork?
+          else
+            console.error "JobQueue: Nonarray response from server from getWork()"
 
   _only_once: (fn) ->
     called = false

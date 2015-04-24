@@ -1,3 +1,8 @@
+#### v.1.1.1
+
+* Fixed bug that could cause JobQueue to grab more jobs than configured when `q.trigger()` or very short pollIntervals are used.
+* Bumped npm deps
+
 
 #### v.1.1.0
 
