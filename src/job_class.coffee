@@ -9,7 +9,7 @@
 methodCall = (root, method, params, cb, after = ((ret) -> ret)) ->
   apply = root._ddp_apply ? Job._ddp_apply
   name = "#{root.root ? root}_#{method}"
-  # console.warn "Calling: #{name} with: ", params
+  console.warn "Calling: #{name} with: ", params, root.root?
   if cb and typeof cb is 'function'
     apply name, params, (err, res) =>
       return cb err if err
