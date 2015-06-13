@@ -1335,16 +1335,18 @@ describe 'JobQueue', () ->
 
    it 'should send shutdown notice to console when quiet is false', (done) ->
       jobConsole = Job.__get__ 'console'
-      Job.__set__ 'console',
-         info: (params...) -> throw new Error 'info'
-         log: (params...) -> throw new Error 'success'
-         warn: (params...) -> throw new Error 'warning'
-         error: (params...) -> throw new Error 'danger'
+      revert = Job.__set__
+         console:
+            info: (params...) -> throw new Error 'info'
+            log: (params...) -> throw new Error 'success'
+            warn: (params...) -> throw new Error 'warning'
+            error: (params...) -> throw new Error 'danger'
       q = Job.processJobs 'root', 'noWork', { pollInterval: 100 }, (job, cb) ->
          job.done()
          cb null
       assert.instanceOf q, Job.processJobs
       assert.throws (() -> (q.shutdown () -> done())), /warning/
+      revert()
       q.shutdown { quiet: true }, () ->
          assert.equal doneCalls, 0
          assert.equal failCalls, 0
@@ -1552,4 +1554,3 @@ describe 'JobQueue', () ->
 
    after () ->
       Job._ddp_apply.restore()
-
