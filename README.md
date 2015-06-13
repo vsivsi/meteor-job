@@ -1,6 +1,8 @@
 meteor-job
 ======================================
 
+[![Build Status](https://travis-ci.org/vsivsi/meteor-job.svg)](https://travis-ci.org/vsivsi/meteor-job)
+
 ## Intro
 
 Meteor Job is a pure Javascript implementation of the `Job` and `JobQueue` classes that form the foundation of the [`job-collection` Atmosphere package](https://atmospherejs.com/vsivsi/job-collection) for Meteor. This package is used internally by `job-collection` on Meteor, but you should also use it for any job workers you would like to run outside of the Meteor environment as ordinary node.js programs.
