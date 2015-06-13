@@ -7,9 +7,10 @@
 # Exports Job object
 
 methodCall = (root, method, params, cb, after = ((ret) -> ret)) ->
-  apply = root._ddp_apply ? Job._ddp_apply
+  apply = Job._ddp_apply?[root.root ? root] ? Job._ddp_apply
+  unless typeof apply is 'function'
+     throw new Error "Job remote method call error, no valid invocation method found."
   name = "#{root.root ? root}_#{method}"
-  console.warn "Calling: #{name} with: ", params, root.root?
   if cb and typeof cb is 'function'
     apply name, params, (err, res) =>
       return cb err if err
@@ -307,18 +308,28 @@ class Job
 
   # Class methods
 
-  @_setDDPApply: (apply) ->
+  @_setDDPApply: (apply, collectionName) ->
     if typeof apply is 'function'
-      @_ddp_apply = apply
+      if typeof collectionName is 'string'
+         @_ddp_apply ?= {}
+         if typeof @_ddp_apply is 'function'
+            throw new Error "Job.setDDP must specify a collection name if called more than once."
+         @_ddp_apply[collectionName] = apply
+      else
+         @_ddp_apply = apply
     else
       throw new Error "Bad function in Job.setDDPApply()"
 
   # This needs to be called when not running in Meteor to use the local DDP connection.
-  @setDDP: (ddp = null, Fiber = null) ->
+  @setDDP: (ddp = null, collectionName = null, Fiber = null) ->
+    # Handle optional collection string with Fiber present
+    unless typeof collectionName is 'string'
+      Fiber = collectionName
+      collectionName = undefined
     if ddp? and ddp.call? and ddp.close? and ddp.subscribe? # Since all functions have a call method...
       if ddp.observe?  # This is the npm DDP package
         if Fiber? # If Fibers in use, then make sure to yield and throw errors when no callback
-          @_setDDPApply (name, params, cb) ->
+          @_setDDPApply(((name, params, cb) ->
             fib = Fiber.current
             ddp.call name, params, (err, res) ->
               if cb? and typeof cb is 'function'
@@ -332,12 +343,13 @@ class Job
               return
             else
               return Fiber.yield()
+          ), collectionName)
         else
-          @_setDDPApply(ddp.call.bind ddp)
+          @_setDDPApply ddp.call.bind(ddp), collectionName
       else  # This is a Meteor DDP object
-        @_setDDPApply(ddp.apply.bind ddp)
+        @_setDDPApply ddp.apply.bind(ddp), collectionName
     else if ddp is null and Meteor?.apply?
-      @_setDDPApply Meteor.apply   # Default to Meteor local server/client
+      @_setDDPApply Meteor.apply, collectionName  # Default to Meteor local server/client
     else
       throw new Error "Bad ddp object in Job.setDDP()"
 

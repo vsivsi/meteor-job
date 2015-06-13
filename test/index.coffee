@@ -103,17 +103,38 @@ describe 'Job', () ->
 
       it 'properly sets the _ddp_apply class variable', (done) ->
          sinon.stub(ddp, "call").yieldsAsync()
+         Job.setDDP ddp, 'test1'
+         Job._ddp_apply.test1 'test', [], () ->
+            assert ddp.call.calledOnce
+            ddp.call.restore()
+            done()
+
+      it 'properly sets the default _ddp_apply class variable', (done) ->
+         sinon.stub(ddp, "call").yieldsAsync()
          Job.setDDP ddp
          Job._ddp_apply 'test', [], () ->
             assert ddp.call.calledOnce
             ddp.call.restore()
             done()
 
+      afterEach () ->
+         Job._ddp_apply = undefined
+
    describe 'Fiber support', () ->
 
       ddp = new DDP()
 
-      it 'accepts a valid Fiber object and properly yields and runs', (done) ->
+      it 'accepts a valid collection name and Fiber object and properly yields and runs', (done) ->
+         sinon.stub(ddp, "call").yieldsAsync()
+         Job.setDDP ddp, 'test1', Fiber
+         fib = Fiber () ->
+            Job._ddp_apply.test1 'test', []
+         fib.run()
+         assert ddp.call.calledOnce
+         ddp.call.restore()
+         done()
+
+      it 'accepts a default collection name and valid Fiber object and properly yields and runs', (done) ->
          sinon.stub(ddp, "call").yieldsAsync()
          Job.setDDP ddp, Fiber
          fib = Fiber () ->
@@ -139,6 +160,9 @@ describe 'Job', () ->
             assert.throws (() -> Job._ddp_apply 'bad_method', []), /Bad method in call/
             done()
          fib.run()
+
+      afterEach () ->
+         Job._ddp_apply = undefined
 
    describe 'private function', () ->
 
