@@ -98,27 +98,42 @@ describe 'Job', () ->
 
       ddp = new DDP()
 
-      it 'throws if given a non-ddp object', () ->
-         assert.throws (() -> Job.setDDP({})), /Bad ddp object/
+      describe 'default setup', () ->
 
-      it 'properly sets the _ddp_apply class variable', (done) ->
-         sinon.stub(ddp, "call").yieldsAsync()
-         Job.setDDP ddp, 'test1'
-         Job._ddp_apply.test1 'test', [], () ->
-            assert ddp.call.calledOnce
-            ddp.call.restore()
+         it 'throws if given a non-ddp object', () ->
+            assert.throws (() -> Job.setDDP({})), /Bad ddp object/
+
+         it 'properly sets the default _ddp_apply class variable', (done) ->
+            sinon.stub(ddp, "call").yieldsAsync()
+            Job.setDDP ddp
+            Job._ddp_apply 'test', [], () ->
+               assert ddp.call.calledOnce
+               ddp.call.restore()
+               done()
+
+         it 'fails if subsequently called with a collection name', (done) ->
+            assert.throws (() -> Job.setDDP ddp, 'test1'), /Job.setDDP must specify/
             done()
 
-      it 'properly sets the default _ddp_apply class variable', (done) ->
-         sinon.stub(ddp, "call").yieldsAsync()
-         Job.setDDP ddp
-         Job._ddp_apply 'test', [], () ->
-            assert ddp.call.calledOnce
-            ddp.call.restore()
+         after () ->
+            Job._ddp_apply = undefined
+
+      describe 'setup with collection name', () ->
+
+         it 'properly sets the _ddp_apply class variable', (done) ->
+            sinon.stub(ddp, "call").yieldsAsync()
+            Job.setDDP ddp, 'test1'
+            Job._ddp_apply.test1 'test', [], () ->
+               assert ddp.call.calledOnce
+               ddp.call.restore()
+               done()
+
+         it 'fails if subsequently called without a collection name', (done) ->
+            assert.throws (() -> Job.setDDP ddp), /Job.setDDP must specify/
             done()
 
-      afterEach () ->
-         Job._ddp_apply = undefined
+         after () ->
+            Job._ddp_apply = undefined
 
    describe 'Fiber support', () ->
 
@@ -250,6 +265,9 @@ describe 'Job', () ->
 
          afterEach () ->
             ddp.call.reset()
+
+         after () ->
+            Job._ddp_apply = undefined
 
       describe 'optionsHelp', () ->
 
@@ -1302,6 +1320,7 @@ describe 'JobQueue', () ->
    numJobs = 5
 
    before () ->
+      Job._ddp_apply = undefined
       Job.setDDP ddp
       sinon.stub Job, "_ddp_apply", makeDdpStub (name, params) ->
          # console.log "#{name} Called"

@@ -313,10 +313,12 @@ class Job
       if typeof collectionName is 'string'
          @_ddp_apply ?= {}
          if typeof @_ddp_apply is 'function'
-            throw new Error "Job.setDDP must specify a collection name if called more than once."
+            throw new Error "Job.setDDP must specify a collection name each time if called more than once."
          @_ddp_apply[collectionName] = apply
-      else
+      else unless @_ddp_apply
          @_ddp_apply = apply
+      else
+         throw new Error "Job.setDDP must specify a collection name each time if called more than once."
     else
       throw new Error "Bad function in Job.setDDPApply()"
 
