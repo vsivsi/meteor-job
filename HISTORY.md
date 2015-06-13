@@ -1,8 +1,12 @@
+#### v.1.1.2
+
+* Fixed bug the caused issues using more than one job-collection server within Meteor apps
+* Bumped npm deps
+
 #### v.1.1.1
 
 * Fixed bug that could cause JobQueue to grab more jobs than configured when `q.trigger()` or very short pollIntervals are used.
 * Bumped npm deps
-
 
 #### v.1.1.0
 

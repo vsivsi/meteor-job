@@ -7,14 +7,15 @@
 # Exports Job object
 
 methodCall = (root, method, params, cb, after = ((ret) -> ret)) ->
-  # console.warn "Calling: #{root}_#{method} with: ", params
-  name = "#{root}_#{method}"
+  apply = root._ddp_apply ? Job._ddp_apply
+  name = "#{root.root ? root}_#{method}"
+  # console.warn "Calling: #{name} with: ", params
   if cb and typeof cb is 'function'
-    Job._ddp_apply name, params, (err, res) =>
+    apply name, params, (err, res) =>
       return cb err if err
       cb null, after(res)
   else
-    return after(Job._ddp_apply name, params)
+    return after(apply name, params)
 
 optionsHelp = (options, cb) ->
   # If cb isn't a function, it's assumed to be options...
@@ -476,9 +477,12 @@ class Job
     unless @ instanceof Job
       return new Job @root, type, data
 
+    # Keep the original root, whatever type that is
+    @_root = @root
+
     # Handle root as object with obj.root attribute
     if @root?.root? and typeof @root.root is 'string'
-      @root = @root.root
+      @root = @_root.root
 
     # Handle (root, doc) signature
     if not data? and type?.data? and type?.type?
@@ -664,7 +668,7 @@ class Job
         @_echo "LOG: #{options.level}, #{@_doc._id} #{@_doc.runId}: #{message}", options.level
       delete options.echo
     if @_doc._id?
-      return methodCall @root, "jobLog", [@_doc._id, @_doc.runId, message, options], cb
+      return methodCall @_root, "jobLog", [@_doc._id, @_doc.runId, message, options], cb
     else  # Log can be called on an unsaved job
       @_doc.log ?= []
       @_doc.log.push { time: new Date(), runId: null, level: options.level, message: message }
@@ -689,7 +693,7 @@ class Job
         delete options.echo
         @_echo "PROGRESS: #{@_doc._id} #{@_doc.runId}: #{progress.completed} out of #{progress.total} (#{progress.percent}%)"
       if @_doc._id? and @_doc.runId?
-        return methodCall @root, "jobProgress", [@_doc._id, @_doc.runId, completed, total, options], cb, (res) =>
+        return methodCall @_root, "jobProgress", [@_doc._id, @_doc.runId, completed, total, options], cb, (res) =>
           if res
             @_doc.progress = progress
           res
@@ -706,7 +710,7 @@ class Job
   # job is not running and hasn't completed.
   save: (options..., cb) ->
     [options, cb] = optionsHelp options, cb
-    return methodCall @root, "jobSave", [@_doc, options], cb, (id) =>
+    return methodCall @_root, "jobSave", [@_doc, options], cb, (id) =>
       if id
         @_doc._id = id
       id
@@ -716,7 +720,7 @@ class Job
     [options, cb] = optionsHelp options, cb
     options.getLog ?= false
     if @_doc._id?
-      return methodCall @root, "getJob", [@_doc._id, options], cb, (doc) =>
+      return methodCall @_root, "getJob", [@_doc._id, options], cb, (doc) =>
         if doc?
           @_doc = doc
           @
@@ -734,7 +738,7 @@ class Job
     unless result? and typeof result is 'object'
       result = { value: result }
     if @_doc._id? and @_doc.runId?
-      return methodCall @root, "jobDone", [@_doc._id, @_doc.runId, result, options], cb
+      return methodCall @_root, "jobDone", [@_doc._id, @_doc.runId, result, options], cb
     else
       throw new Error "Can't call .done() on an unsaved or non-running job"
     return null
@@ -749,7 +753,7 @@ class Job
       result = { value: result }
     options.fatal ?= false
     if @_doc._id? and @_doc.runId?
-      return methodCall @root, "jobFail", [@_doc._id, @_doc.runId, result, options], cb
+      return methodCall @_root, "jobFail", [@_doc._id, @_doc.runId, result, options], cb
     else
       throw new Error "Can't call .fail() on an unsaved or non-running job"
     return null
@@ -758,7 +762,7 @@ class Job
   pause: (options..., cb) ->
     [options, cb] = optionsHelp options, cb
     if @_doc._id?
-      return methodCall @root, "jobPause", [@_doc._id, options], cb
+      return methodCall @_root, "jobPause", [@_doc._id, options], cb
     else
       @_doc.status = 'paused'
       if cb? and typeof cb is 'function'
@@ -771,7 +775,7 @@ class Job
   resume: (options..., cb) ->
     [options, cb] = optionsHelp options, cb
     if @_doc._id?
-      return methodCall @root, "jobResume", [@_doc._id, options], cb
+      return methodCall @_root, "jobResume", [@_doc._id, options], cb
     else
       @_doc.status = 'waiting'
       if cb? and typeof cb is 'function'
@@ -784,7 +788,7 @@ class Job
     [options, cb] = optionsHelp options, cb
     options.antecedents ?= true
     if @_doc._id?
-      return methodCall @root, "jobCancel", [@_doc._id, options], cb
+      return methodCall @_root, "jobCancel", [@_doc._id, options], cb
     else
       throw new Error "Can't call .cancel() on an unsaved job"
     return null
@@ -795,7 +799,7 @@ class Job
     options.retries ?= 1
     options.dependents ?= true
     if @_doc._id?
-      return methodCall @root, "jobRestart", [@_doc._id, options], cb
+      return methodCall @_root, "jobRestart", [@_doc._id, options], cb
     else
       throw new Error "Can't call .restart() on an unsaved job"
     return null
@@ -806,7 +810,7 @@ class Job
     options.repeats ?= 0
     options.wait ?= @_doc.repeatWait
     if @_doc._id?
-      return methodCall @root, "jobRerun", [@_doc._id, options], cb
+      return methodCall @_root, "jobRerun", [@_doc._id, options], cb
     else
       throw new Error "Can't call .rerun() on an unsaved job"
     return null
@@ -815,7 +819,7 @@ class Job
   remove: (options..., cb) ->
     [options, cb] = optionsHelp options, cb
     if @_doc._id?
-      return methodCall @root, "jobRemove", [@_doc._id, options], cb
+      return methodCall @_root, "jobRemove", [@_doc._id, options], cb
     else
       throw new Error "Can't call .remove() on an unsaved job"
     return null
