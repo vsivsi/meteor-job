@@ -9,7 +9,7 @@ Meteor Job is a pure Javascript implementation of the `Job` and `JobQueue` class
 
 Here's a very basic example that ignores authentication and connection error handling:
 
-```js
+```javascript
 var DDP = require('ddp');
 var Job = require('meteor-job')
 
@@ -67,7 +67,7 @@ make test
 
 First you need to establish a [DDP connection](https://github.com/oortcloud/node-ddp-client) with the Meteor server hosting the jobCollection you wish to work on. You will probably need to authenticate as well unless the Meteor server is wide open for unauthenticated DDP Method calls, which it really shouldn't be. I have written another npm package [ddp-login](https://www.npmjs.org/package/ddp-login) which makes secure authentication with Meteor from node.js a snap.
 
-```js
+```javascript
 var DDP = require('ddp');
 var DDPlogin = require('ddp-login');
 var Job = require('meteor-job')
@@ -107,7 +107,7 @@ ddp.connect(function (err) {
 
 Okay, so you've got an authenticated DDP connection, and you'd like to get to work, now what?
 
-```js
+```javascript
 // 'jobQueue' is the name of the jobCollection on the server
 // 'jobType' is the name of the kind of job you'd like to work on
 Job.getWork('jobQueue', 'jobType', function (err, job) {
@@ -122,7 +122,7 @@ Job.getWork('jobQueue', 'jobType', function (err, job) {
 
 However, `Job.getWork()` is kind of low-level. It only makes one request for a job. What you probably really want is to get some work whenever it becomes available and you aren't too busy:
 
-```js
+```javascript
 var workers = Job.processJobs('jobQueue', 'jobType', { concurrency: 4 },
   function (job, cb) {
     // This will only be called if a job is obtained from Job.getWork()
@@ -139,7 +139,7 @@ var workers = Job.processJobs('jobQueue', 'jobType', { concurrency: 4 },
 
 Once you have a job, you can work on it, log messages, indicate progress and either succeed or fail.
 
-```js
+```javascript
 // This code assumed to be running in a Job.processJobs() callback
 var count = 0;
 
@@ -187,7 +187,7 @@ if (networkDown()) {
 The error handling mechanism in the above code seems pretty clunky... How do those failed messages get retried?
 This approach probably will probably be easier to manage:
 
-```js
+```javascript
 var workers = Job.processJobs('jobQueue', 'jobType', { payload: 20 },
   function (jobs, cb) {
     // jobs is an array of jobs, between 1 and 20 long,
@@ -221,7 +221,7 @@ The jobQueue object returned by `Job.processJobs()` has methods that can be used
 
 If you'd like to create an entirely new job and submit it to a jobCollection, here's how:
 
-```js
+```javascript
 var job = new Job('jobQueue', 'jobType', { work: "to", be: "done" });
 
 // Set some options on the new job before submitting it. These option setting
@@ -247,7 +247,7 @@ job.save(function (err, result) {
 
 Management of the jobCollection itself is accomplished using a mixture of Job class methods and methods on individual job objects:
 
-```js
+```javascript
 // Get a job object by Id
 Job.getJob('jobQueue', id, function (err, job) {
   // Note, this is NOT the same a Job.getWork()
@@ -309,11 +309,11 @@ Job.cancelJobs('jobQueue', Ids, function(err, result) {
 
 `Job` has a bunch of Class methods and properties to help with creating and managing Jobs and getting work for them.
 
-### `Job.setDDP(ddp, [Fiber])`
+### `Job.setDDP(ddp, [collectionName], [Fiber])`
 
 This class method binds `Job` to a specific instance of `DDPClient`. See [node-ddp-client](https://github.com/oortcloud/node-ddp-client) for more details. Currently it's only possible to use a single DDP connection at a time.
 
-```js
+```javascript
 var ddp = new DDP({
   host: "127.0.0.1",
   port: 3000,
@@ -323,9 +323,19 @@ var ddp = new DDP({
 Job.setDDP(ddp);
 ```
 
+If you will be running multiple DDP connections, then you must run `setDDP()` for each collection using the `collectionName` parameter, to tell `Job` which collection corresponds to which DDP connection:
+
+```javascript
+// Provide the name for each collection as a string
+// Each named collection may only use one DDP connection
+Job.setDDP(ddp1, 'JC1');
+Job.setDDP(ddp2, 'JC2');
+Job.setDDP(ddp2, 'JC3'); // Two collections on ddp2 must each register
+```
+
 If you would like to use [Fibers](https://www.npmjs.com/package/fibers) to write non-Meteor node.js in a synchronous style as you can on a Meteor Server, you can enable this support by providing the `Fiber` object to this method, and then running your code within one or more active fibers:
 
-```js
+```javascript
 Fiber = require('fibers');
 
 Job.setDDP(ddp, Fiber);
@@ -340,6 +350,7 @@ Fiber(function () {
 });
 ```
 
+
 ### `Job.getWork(root, type, [options], [callback])`
 
 Get one or more jobs from the job Collection, setting status to `'running'`.
@@ -350,7 +361,7 @@ Get one or more jobs from the job Collection, setting status to `'running'`.
 
 `callback(error, result)` -- Result will be an array or single value depending on `options.maxJobs`. Optional only on Meteor Server or with Fiber support, in which case errors will throw and the result is the return value.
 
-```js
+```javascript
 if (Meteor.isServer) {
   job = Job.getWork(  // Job will be undefined or contain a Job object
     'jobQueue',  // name of job Collection
@@ -395,7 +406,7 @@ Creates a job object by id from the server job Collection, returns `undefined` i
 
 `callback(error, result)` -- `result` is a job object or `undefined`. Optional only on Meteor Server or with Fiber support, in which case errors will throw and the result is the return value.
 
-```js
+```javascript
 if (Meteor.isServer) {
   job = Job.getJob(  // Job will be undefined or contain a Job object
     'jobQueue',  // name of job Collection
@@ -453,7 +464,7 @@ Starts the server job Collection.
 
 `callback(error, result)` -- Result is true if successful. On Meteor Server or with Fiber support, errors will throw and the return value is the result.
 
-```js
+```javascript
 Job.startJobServer('jobQueue');  // Callback is optional
 ```
 
@@ -467,7 +478,7 @@ Shuts down the server job Collection.
 
 `callback(error, result)` -- Result is true if successful.
 
-```js
+```javascript
 Job.shutdownJobServer(
   'jobQueue',
   {
@@ -480,7 +491,7 @@ Job.shutdownJobServer(
 
 Constant value used to indicate the count of something should repeat forever.
 
-```js
+```javascript
 job = new Job('jobQueue', 'jobType', { work: "to", be: "done" })
    .retry({ retries: Job.forever })    // Default for .retry()
    .repeat({ repeats: Job.forever });  // Default for .repeat()
@@ -490,7 +501,7 @@ job = new Job('jobQueue', 'jobType', { work: "to", be: "done" })
 
 Constant value used to indicate a future Date that will never arrive.
 
-```js
+```javascript
 job = new Job('jobQueue', 'jobType', { work: "to", be: "done" })
    .retry({ until: Job.foreverDate })    // Default for .retry()
    .repeat({ until: Job.foreverDate });  // Default for .repeat()
@@ -500,7 +511,7 @@ job = new Job('jobQueue', 'jobType', { work: "to", be: "done" })
 
 Valid non-numeric job priorities.
 
-```js
+```javascript
 Job.jobPriorities = { low: 10, normal: 0, medium: -5,
                       high: -10, critical: -15 };
 ```
@@ -509,7 +520,7 @@ Job.jobPriorities = { low: 10, normal: 0, medium: -5,
 
 Valid retry backoff methods.
 
-```js
+```javascript
 jobRetryBackoffMethods = [ 'constant', 'exponential' ];
 ```
 
@@ -517,7 +528,7 @@ jobRetryBackoffMethods = [ 'constant', 'exponential' ];
 
 Possible states for the status of a job in the job collection.
 
-```js
+```javascript
 Job.jobStatuses = [ 'waiting', 'paused', 'ready', 'running',
                     'failed', 'cancelled', 'completed' ];
 ```
@@ -526,7 +537,7 @@ Job.jobStatuses = [ 'waiting', 'paused', 'ready', 'running',
 
 Valid log levels. If these look familiar, it's because they correspond to some the Bootstrap [context](http://getbootstrap.com/css/#helper-classes) and [alert](http://getbootstrap.com/components/#alerts) classes.
 
-```js
+```javascript
 Job.jobLogLevels = [ 'info', 'success', 'warning', 'danger' ];
 ```
 
@@ -534,7 +545,7 @@ Job.jobLogLevels = [ 'info', 'success', 'warning', 'danger' ];
 
 Job status states that can be cancelled.
 
-```js
+```javascript
 Job.jobStatusCancellable = [ 'running', 'ready', 'waiting', 'paused' ];
 ```
 
@@ -542,7 +553,7 @@ Job.jobStatusCancellable = [ 'running', 'ready', 'waiting', 'paused' ];
 
 Job status states that can be paused.
 
-```js
+```javascript
 Job.jobStatusPausable = [ 'ready', 'waiting' ];
 ```
 
@@ -550,7 +561,7 @@ Job.jobStatusPausable = [ 'ready', 'waiting' ];
 
 Job status states that can be removed.
 
-```js
+```javascript
 Job.jobStatusRemovable = [ 'cancelled', 'completed', 'failed' ];
 ```
 
@@ -558,7 +569,7 @@ Job.jobStatusRemovable = [ 'cancelled', 'completed', 'failed' ];
 
 Job status states that can be restarted.
 
-```js
+```javascript
 Job.jobStatusRestartable = [ 'cancelled', 'failed' ];
 ```
 
@@ -566,7 +577,7 @@ Job.jobStatusRestartable = [ 'cancelled', 'failed' ];
 
 Array of the names of all DDP methods used by `Job`
 
-```js
+```javascript
 Job.ddpMethods = [
     'startJobServer', 'stopJobServer', 'jobRemove', 'jobPause',
     'jobResume', 'jobCancel', 'jobRestart', 'jobSave', 'jobRerun',
@@ -578,7 +589,7 @@ Job.ddpMethods = [
 
 Array of the predefined DDP method permission levels
 
-```js
+```javascript
 Job.ddpPermissionLevels = [ 'admin', 'manager', 'creator', 'worker' ];
 ```
 
@@ -586,7 +597,7 @@ Job.ddpPermissionLevels = [ 'admin', 'manager', 'creator', 'worker' ];
 
 Object mapping permission levels to DDP method names.
 
-```js
+```javascript
 Job.ddpMethodPermissions = {
     'startJobServer': ['startJobServer', 'admin'],
     'shutdownJobServer': ['shutdownJobServer', 'admin'],
@@ -612,7 +623,7 @@ Job.ddpMethodPermissions = {
 
 Create a new `Job` object.  Data should be reasonably small, if worker requires a lot of data (e.g. video, image or sound files), they should be included by reference (e.g. with a URL pointing to the data, and another to where the result should be saved).
 
-```js
+```javascript
 job = new Job(  // new is optional
   'jobQueue',   // job collection name
   'jobType',    // type of the job
@@ -624,7 +635,7 @@ job = new Job(  // new is optional
 
 Make a Job object from a job Collection document. Creates a new `Job` object. This is used in cases where a valid Job document is obtained from another source, such as a database lookup.
 
-```js
+```javascript
 job = new Job(  // new is optional
   'jobQueue',   // job collection name
   { /* ... */ } // any valid Job document
@@ -636,7 +647,7 @@ job = new Job(  // new is optional
 Adds jobs that this job depends upon (antecedents). This job will not run until these jobs have successfully completed. Defaults to an empty array (no dependencies). Returns `job`, so it is chainable.
 Added jobs must have already had `.save()` run on them, so they will have the `_id` attribute that is used to form the dependency. Calling `j.depends()` with a falsy value will clear any existing dependencies for this job.
 
-```js
+```javascript
  // job1 and job2 are Job objects, and they both
  // must successfully complete before job will run
 job.depends([job1, job2]);
@@ -647,7 +658,7 @@ job.depends();  // Clear any dependencies previously added on this job
 
 Sets the priority of this job. Can be integer numeric or one of `Job.jobPriorities`. Defaults to `'normal'` priority, which is priority `0`. Returns `job`, so it is chainable.
 
-```js
+```javascript
 job.priority('high');  // Maps to -10
 job.priority(-10);     // Same as above
 ```
@@ -669,7 +680,7 @@ Set how failing jobs are rescheduled and retried by the job Collection. Returns 
 
 Note that the above stated defaults are those when `.retry()` is explicitly called. When a new job is created, the default number of `retries` is `0`.
 
-```js
+```javascript
 job.retry({
   retries: 5,   // Retry 5 times,
   wait: 20000,  // waiting 20 seconds between attempts
@@ -692,7 +703,7 @@ Set how many times this job will be automatically re-run by the job Collection. 
 
 Note that the above stated defaults are those when `.repeat()` is explicitly called. When a new job is created, the default number of `repeats` is `0`.
 
-```js
+```javascript
 job.repeat({
   repeats: 5,   // Rerun this job 5 times,
   wait: 20000   // wait 20 seconds between each re-run.
@@ -709,7 +720,7 @@ job.repeat({
 
 How long to wait until this job can be run, counting from when it is initially saved to the job Collection. Returns `job`, so it is chainable.
 
-```js
+```javascript
 job.delay(0);   // Do not wait. This is the default.
 ```
 
@@ -717,7 +728,7 @@ job.delay(0);   // Do not wait. This is the default.
 
 `time` is a date object. This sets the time after which a job may be run. It is not guaranteed to run "at" this time because there may be no workers available when it is reached. Returns `job`, so it is chainable.
 
-```js
+```javascript
 // Run the job anytime after right now. This is the default.
 job.after(new Date());
 ```
@@ -733,7 +744,7 @@ Add an entry to this job's log. May be called before a new job is saved. `messag
 
 `callback(error, result)` -- Result is true if logging was successful. When running on Meteor Server or with Fibers, for a saved object the callback may be omitted, and then errors will throw and the return value is the result. If called on an unsaved object, the result is `job` and can be chained.
 
-```js
+```javascript
 job.log(
   "This is a message",
   {
@@ -761,7 +772,7 @@ Update the progress of a running job. May be called before a new job is saved. `
 
 `callback(error, result)` -- Result is true if progress update was successful. When running on Meteor Server or with Fibers, for a saved object the callback may be omitted, and then errors will throw and the return value is the result. If called on an unsaved object, the result is `job` and can be chained.
 
-```js
+```javascript
 job.progress(
   50,
   100,    // Half done!
@@ -786,7 +797,7 @@ Submits this job to the job Collection. Only valid if this is a new job, or if t
 
 `callback(error, result)` -- Result is true if save was successful. When running on Meteor Server or with Fibers, the callback may be omitted, and then errors will throw and the return value is the result.
 
-```js
+```javascript
 job.save(
   {
     // Cancel any jobs of the same type,
@@ -807,7 +818,7 @@ Refreshes the current job object state with the state on the remote job Collecti
 
 `callback(error, result)` -- Result is the Job object if refresh was successful. When running as `Meteor.isServer` or with Fibers, the callback may be omitted and the return value is the result, so in this case this method is chainable and any errors will cause a throw.
 
-```js
+```javascript
 job.refresh(function (err, result) {
   if (result) {
     // Refreshed
@@ -823,7 +834,7 @@ Change the state of a running job to `'completed'`. `result` is any EJSON object
 
 `callback(error, result)` -- Result is true if completion was successful. When running on Meteor Server or with Fibers, the callback may be omitted, and then errors will throw and the return value is the result.
 
-```js
+```javascript
 job.done(function (err, result) {
   if (result) {
     // Status updated
@@ -846,7 +857,7 @@ Cause this job to fail. It's next state depends on how the job's `job.retry()` s
 
 `callback(error, result)` -- Result is true if failure was successful (heh). When running on Meteor Server or with Fibers, the callback may be omitted, and then errors will throw and the return value is the result.
 
-```js
+```javascript
 job.fail(
   {
     reason: 'This job has failed again!',
@@ -876,7 +887,7 @@ Change the state of a job to `'paused'`. Only `'ready'` and `'waiting'` jobs may
 
 `callback(error, result)` -- Result is true if pausing was successful. When running on Meteor Server or with Fibers, the callback may be omitted, and then errors will throw and the return value is the result.
 
-```js
+```javascript
 job.pause(function (err, result) {
   if (result) {
     // Status updated
@@ -892,7 +903,7 @@ Change the state of a job from `'paused'` to `'waiting'`.
 
 `callback(error, result)` -- Result is true if resuming was successful. When running on Meteor Server or with Fibers, the callback may be omitted, and then errors will throw and the return value is the result.
 
-```js
+```javascript
 job.resume(function (err, result) {
   if (result) {
     // Status updated
@@ -911,7 +922,7 @@ Change the state of a job to `'cancelled'`. Any job that isn't `'completed'`, `'
 
 `callback(error, result)` -- Result is true if cancellation was successful. When running on Meteor Server or with Fibers, the callback may be omitted, and then errors will throw and the return value is the result.
 
-```js
+```javascript
 job.cancel(
   {
     antecedents: false,
@@ -938,7 +949,7 @@ Change the state of a `'failed'` or `'cancelled'` job to `'waiting'` to be retri
 
 `callback(error, result)` -- Result is true if restart was successful. When running on Meteor Server or with Fibers, the callback may be omitted, and then errors will throw and the return value is the result.
 
-```js
+```javascript
 job.restart(
   {
     antecedents: true,  // Also restart all jobs that must
@@ -966,7 +977,7 @@ Clone a completed job and run it again.
 
 `callback(error, result)` -- Result is true if rerun was successful. When running on Meteor Server or with Fibers, the callback may be omitted, and then errors will throw and the return value is the result.
 
-```js
+```javascript
 job.rerun(
   {
     repeats: 0,         // Only repeat this once. This is the default.
@@ -989,7 +1000,7 @@ Permanently remove this job from the job collection. The job must be `'completed
 
 `callback(error, result)` -- Result is true if removal was successful. When running on Meteor Server or with Fibers, the callback may be omitted, and then errors will throw and the return value is the result.
 
-```js
+```javascript
 job.remove(function (err, result) {
   if (result) {
     // Job removed from server.
@@ -1031,7 +1042,7 @@ Note, if you are running in a non-Meteor node.js environment with Fiber support,
 * `result` -- either a single job object or an array of job objects depending on `options.payload`.
 * `callback` -- must be eventually called exactly once when `job.done()` or `job.fail()` has been called on all jobs in result.
 
-```js
+```javascript
 queue = Job.processJobs(
   'jobQueue',   // name of job Collection
   'jobType',    // type of job to request, can also be an array of job types
@@ -1058,7 +1069,7 @@ queue.shutdown();
 
 Pause the JobQueue. This means that no more work will be requested from the job collection, and no new workers will be called with jobs that already exist in this local queue. Jobs that are already running locally will run to completion. Note that a JobQueue may be created in the paused state by running `q.pause()` immediately on the returned new jobQueue.
 
-```js
+```javascript
 q.pause()
 ```
 
@@ -1066,7 +1077,7 @@ q.pause()
 
 Undoes a `q.pause()`, returning the queue to the normal running state.
 
-```js
+```javascript
 q.resume()
 ```
 
@@ -1074,7 +1085,7 @@ q.resume()
 
 This method manually causes the same action that expiration of the `pollInterval` does internally within JobQueue. This is useful for creating responsive JobQueues that are triggered by a Meteor [observe](http://docs.meteor.com/#/full/observe) or DDP [observe](https://www.npmjs.com/package/ddp) based mechanisms, rather than time based polling.
 
-```js
+```javascript
 // Simple observe based queue
 var q = jc.processJobs(
   // Type of job to request
@@ -1109,7 +1120,7 @@ Shutdown levels:
 * `'normal'` -- Allow all running jobs to finish, but do not request any more work and fail any jobs that are in the local queue but haven't started to run. Normal program exit should be possible.
 * `'hard'` -- Fail all local jobs, running or not. Return as soon as the server has been updated. Note: after a hard shutdown, there may still be outstanding work in the event loop. To exit immediately may require `process.exit()` depending on how often asynchronous workers invoke `'job.progress()'` and whether they die when it fails.
 
-```js
+```javascript
 q.shutdown({ quiet: true, level: 'soft' }, function () {
   // shutdown complete
 });

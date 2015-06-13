@@ -1,3 +1,7 @@
+#### v.1.1.3
+
+* Added optional `collectionName` parameter to `setDDP`, enabling multiple DDP connections to be used by providing a mapping between collection names and connections.
+
 #### v.1.1.2
 
 * Fixed bug the caused issues using more than one job-collection server within Meteor apps
