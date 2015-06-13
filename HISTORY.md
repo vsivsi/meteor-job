@@ -1,4 +1,4 @@
-#### v.1.1.3
+#### v.1.2.0
 
 * Added optional `collectionName` parameter to `setDDP`, enabling multiple DDP connections to be used by providing a mapping between collection names and connections.
 
