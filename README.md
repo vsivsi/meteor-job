@@ -329,8 +329,10 @@ If you will be running multiple DDP connections, then you must run `setDDP()` fo
 // Provide the name for each collection as a string
 // Each named collection may only use one DDP connection
 Job.setDDP(ddp1, 'JC1');
-Job.setDDP(ddp2, 'JC2');
-Job.setDDP(ddp2, 'JC3'); // Two collections on ddp2 must each register
+Job.setDDP(ddp2, 'JC2'); // Two collections on ddp2 must each register
+Job.setDDP(ddp2, 'JC3');
+// For convenience, the above two lines may also be expressed in one call:
+Job.setDDP(ddp2, ['JC2','JC3']);
 ```
 
 If you would like to use [Fibers](https://www.npmjs.com/package/fibers) to write non-Meteor node.js in a synchronous style as you can on a Meteor Server, you can enable this support by providing the `Fiber` object to this method, and then running your code within one or more active fibers:

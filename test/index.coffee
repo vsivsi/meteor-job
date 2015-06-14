@@ -128,6 +128,15 @@ describe 'Job', () ->
                ddp.call.restore()
                done()
 
+         it 'properly sets the _ddp_apply class variable when called with array', (done) ->
+            sinon.stub(ddp, "call").yieldsAsync()
+            Job.setDDP ddp, ['test2','test3']
+            Job._ddp_apply.test2 'test', [], () ->
+               Job._ddp_apply.test3 'test', [], () ->
+                  assert.equal ddp.call.callCount, 2
+                  ddp.call.restore()
+                  done()
+
          it 'fails if subsequently called without a collection name', (done) ->
             assert.throws (() -> Job.setDDP ddp), /Job.setDDP must specify/
             done()
