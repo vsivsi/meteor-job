@@ -389,9 +389,9 @@ class Job
   @getWork: (root, type, options..., cb) ->
     [options, cb] = optionsHelp options, cb
     type = [type] if typeof type is 'string'
-    if options.timeout?
-      unless isInteger(options.timeout) and options.timeout > 0
-        throw new Error 'getWork timeout must be a positive integer'
+    if options.workTimeout?
+      unless isInteger(options.workTimeout) and options.workTimeout > 0
+        throw new Error 'getWork: workTimeout must be a positive integer'
     methodCall root, "getWork", [type, options], cb, (res) =>
       jobs = (new Job(root, doc) for doc in res) or []
       if options.maxJobs?

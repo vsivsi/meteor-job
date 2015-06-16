@@ -1167,9 +1167,9 @@ describe 'Job', () ->
                assert.lengthOf res, 0
 
             it 'should throw when given on invalid value for the timeout option', () ->
-               assert.throw (() -> Job.getWork('root', 'nowork', { timeout: "Bad" })), /timeout must be a positive integer/
-               assert.throw (() -> Job.getWork('root', 'nowork', { timeout: 0 })), /timeout must be a positive integer/
-               assert.throw (() -> Job.getWork('root', 'nowork', { timeout: -1 })), /timeout must be a positive integer/
+               assert.throw (() -> Job.getWork('root', 'nowork', { workTimeout: "Bad" })), /must be a positive integer/
+               assert.throw (() -> Job.getWork('root', 'nowork', { workTimeout: 0 })), /must be a positive integer/
+               assert.throw (() -> Job.getWork('root', 'nowork', { workTimeout: -1 })), /must be a positive integer/
 
             afterEach () ->
                Job._ddp_apply.reset()
