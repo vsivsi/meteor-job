@@ -97,10 +97,27 @@ class JobQueue
     unless @ instanceof JobQueue
       return new JobQueue @root, @type, options..., @worker
     [options, @worker] = optionsHelp options, @worker
+
     @pollInterval = options.pollInterval ? 5000  # ms
+    unless isInteger(@pollInterval) and @pollInterval >= 0
+      throw new Error "JobQueue: Invalid pollInterval, must be a positive integer"
+
     @concurrency = options.concurrency ? 1
+    unless isInteger(@concurrency) and @concurrency >= 0
+      throw new Error "JobQueue: Invalid concurrency, must be a positive integer"
+
     @payload = options.payload ? 1
+    unless isInteger(@payload) and @payload >= 0
+      throw new Error "JobQueue: Invalid payload, must be a positive integer"
+
     @prefetch = options.prefetch ? 0
+    unless isInteger(@prefetch) and @prefetch >= 0
+      throw new Error "JobQueue: Invalid prefetch, must be a positive integer"
+
+    @workTimeout = options.workTimeout  # No default
+    if @workTimeout? and not (isInteger(@workTimeout) and @workTimeout >= 0)
+      throw new Error "JobQueue: Invalid workTimeout, must be a positive integer"
+
     @_workers = {}
     @_tasks = []
     @_taskNumber = 0
@@ -116,7 +133,9 @@ class JobQueue
       numJobsToGet = @prefetch + @payload*(@concurrency - @running()) - @length()
       if numJobsToGet > 0
         @_getWorkOutstanding = true
-        Job.getWork @root, @type, { maxJobs: numJobsToGet }, (err, jobs) =>
+        options = { maxJobs: numJobsToGet }
+        options.timeout = @workTimeout if @workTimeout?
+        Job.getWork @root, @type, options, (err, jobs) =>
           @_getWorkOutstanding = false
           if err
             console.error "JobQueue: Received error from getWork(): ", err
@@ -370,6 +389,9 @@ class Job
   @getWork: (root, type, options..., cb) ->
     [options, cb] = optionsHelp options, cb
     type = [type] if typeof type is 'string'
+    if options.timeout?
+      unless isInteger(options.timeout) and options.timeout > 0
+        throw new Error 'getWork timeout must be a positive integer'
     methodCall root, "getWork", [type, options], cb, (res) =>
       jobs = (new Job(root, doc) for doc in res) or []
       if options.maxJobs?

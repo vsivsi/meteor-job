@@ -1,3 +1,7 @@
+#### v.1.3.0
+
+* Added ability for workers to specify a timeout for running jobs, so that if they crash or lose connectivity the job can fail and be restarted.
+
 #### v.1.2.0
 
 * Added optional `collectionName` parameter to `setDDP`, enabling multiple DDP connections to be used by providing a mapping between collection names and connections.

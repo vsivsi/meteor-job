@@ -1166,6 +1166,11 @@ describe 'Job', () ->
                assert.isArray res
                assert.lengthOf res, 0
 
+            it 'should throw when given on invalid value for the timeout option', () ->
+               assert.throw (() -> Job.getWork('root', 'nowork', { timeout: "Bad" })), /timeout must be a positive integer/
+               assert.throw (() -> Job.getWork('root', 'nowork', { timeout: 0 })), /timeout must be a positive integer/
+               assert.throw (() -> Job.getWork('root', 'nowork', { timeout: -1 })), /timeout must be a positive integer/
+
             afterEach () ->
                Job._ddp_apply.reset()
 
@@ -1374,6 +1379,39 @@ describe 'JobQueue', () ->
       failCalls = 0
       doneCalls = 0
       numJobs = 5
+
+   it 'should throw when an invalid options are used', (done) ->
+     assert.throws (() ->
+       Job.processJobs 'root', 'noWork', { pollInterval: 'Bad' }, (job, cb) -> ),
+       /must be a positive integer/
+     assert.throws (() ->
+       Job.processJobs 'root', 'noWork', { pollInterval: -1 }, (job, cb) -> ),
+       /must be a positive integer/
+     assert.throws (() ->
+       Job.processJobs 'root', 'noWork', { concurrency: 'Bad' }, (job, cb) -> ),
+       /must be a positive integer/
+     assert.throws (() ->
+       Job.processJobs 'root', 'noWork', { concurrency: -1 }, (job, cb) -> ),
+       /must be a positive integer/
+     assert.throws (() ->
+       Job.processJobs 'root', 'noWork', { payload: 'Bad' }, (job, cb) -> ),
+       /must be a positive integer/
+     assert.throws (() ->
+       Job.processJobs 'root', 'noWork', { payload: -1 }, (job, cb) -> ),
+       /must be a positive integer/
+     assert.throws (() ->
+       Job.processJobs 'root', 'noWork', { prefetch: 'Bad' }, (job, cb) -> ),
+       /must be a positive integer/
+     assert.throws (() ->
+       Job.processJobs 'root', 'noWork', { prefetch: -1 }, (job, cb) -> ),
+       /must be a positive integer/
+     assert.throws (() ->
+       Job.processJobs 'root', 'noWork', { workTimeout: 'Bad' }, (job, cb) -> ),
+       /must be a positive integer/
+     assert.throws (() ->
+       Job.processJobs 'root', 'noWork', { workTimeout: -1 }, (job, cb) -> ),
+       /must be a positive integer/
+     done()
 
    it 'should return a valid JobQueue when called', (done) ->
       q = Job.processJobs 'root', 'noWork', { pollInterval: 100 }, (job, cb) ->
