@@ -134,7 +134,7 @@ class JobQueue
       if numJobsToGet > 0
         @_getWorkOutstanding = true
         options = { maxJobs: numJobsToGet }
-        options.timeout = @workTimeout if @workTimeout?
+        options.workTimeout = @workTimeout if @workTimeout?
         Job.getWork @root, @type, options, (err, jobs) =>
           @_getWorkOutstanding = false
           if err
