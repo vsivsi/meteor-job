@@ -1382,9 +1382,6 @@ describe 'JobQueue', () ->
 
    it 'should throw when an invalid options are used', (done) ->
      assert.throws (() ->
-       Job.processJobs 'root', 'noWork', { pollInterval: 'Bad' }, (job, cb) -> ),
-       /must be a positive integer/
-     assert.throws (() ->
        Job.processJobs 'root', 'noWork', { pollInterval: -1 }, (job, cb) -> ),
        /must be a positive integer/
      assert.throws (() ->
@@ -1452,13 +1449,15 @@ describe 'JobQueue', () ->
          cb null
 
    it 'should invoke worker when work is returned from a manual trigger', (done) ->
-      q = Job.processJobs 'root', 'work', { pollInterval: Job.forever }, (job, cb) ->
+      q = Job.processJobs 'root', 'work', { pollInterval: 0 }, (job, cb) ->
          job.done()
          q.shutdown { quiet: true }, () ->
             assert.equal doneCalls, 1
             assert.equal failCalls, 0
             done()
          cb null
+      assert.equal q.pollInterval, Job.forever
+      assert.isNull q._interval
       setTimeout(
          () -> q.trigger()
          20

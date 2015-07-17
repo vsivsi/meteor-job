@@ -1038,7 +1038,7 @@ Note, if you are running in a non-Meteor node.js environment with Fiber support,
 
 * `concurrency` -- Maximum number of async calls to `worker` that can be outstanding at a time. Default: `1`
 * `payload` -- Maximum number of job objects to provide to each worker, Default: `1` If `payload > 1` the first paramter to `worker` will be an array of job objects rather than a single job object.
-* `pollInterval` -- How often to ask the remote job Collection for more work, in ms. Default: `5000` (5 seconds)
+* `pollInterval` -- How often to ask the remote job Collection for more work, in ms. Any falsy value for this parameter will completely disable polling (see `q.trigger()` for an alternative way to drive the queue), and any truthy, non-numeric value will yield the default poll interval. Default: `5000` (5 seconds)
 * `prefetch` -- How many extra jobs to request beyond the capacity of all workers (`concurrency * payload`) to compensate for latency getting more work.
 * `workTimeout` -- When requesting work, tells the server to automatically fail the requested job(s) if more than `workTimeout` milliseconds elapses between updates (`job.progress()`, `job.log()`) from the worker, before processing on the job is completed. This is optional, and allows the server to automatically demote and retry running jobs that may never finish because a worker went down or lost connectivity. Default: `undefined`
 

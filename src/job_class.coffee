@@ -98,7 +98,13 @@ class JobQueue
       return new JobQueue @root, @type, options..., @worker
     [options, @worker] = optionsHelp options, @worker
 
-    @pollInterval = options.pollInterval ? 5000  # ms
+    @pollInterval =
+      if options.pollInterval? and not options.pollInterval
+        Job.forever
+      else if not (options.pollInterval? and isInteger(options.pollInterval))
+        5000  # ms
+      else
+        options.pollInterval
     unless isInteger(@pollInterval) and @pollInterval >= 0
       throw new Error "JobQueue: Invalid pollInterval, must be a positive integer"
 
@@ -229,7 +235,8 @@ class JobQueue
 
   pause: () ->
     return if @paused
-    _clearInterval @_interval
+    unless @pollInterval >= Job.forever
+      _clearInterval @_interval
     @paused = true
     @
 
@@ -237,12 +244,14 @@ class JobQueue
     return unless @paused
     @paused = false
     _setImmediate @_getWork.bind(@)
-    @_interval = _setInterval @_getWork.bind(@), @pollInterval
+    unless @pollInterval >= Job.forever
+      @_interval = _setInterval @_getWork.bind(@), @pollInterval
     for w in [1..@concurrency]
       _setImmediate @_process.bind(@)
     @
 
   trigger: () ->
+    return if @paused
     _setImmediate @_getWork.bind(@)
     @
 
