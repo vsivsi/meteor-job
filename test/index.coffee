@@ -950,10 +950,13 @@ describe 'Job', () ->
                   id = params[0]
                   runId = params[1]
                   result = params[2]
+                  options = params[3]
                   if ( id is 'thisId' and
                        runId is 'thatId' and
                        typeof result is 'object')
                      res = result
+                  else if options.resultId
+                     res = result.resultId
                   else
                      res = false
                   return [null, res]
@@ -993,6 +996,13 @@ describe 'Job', () ->
             it 'should throw when called on a nonrunning job', () ->
                doc._id = 'thisId'
                assert.throw (() -> job.done()), /an unsaved or non-running job/
+
+            it 'should properly pass the repeatId option', () ->
+               doc._id = 'someId'
+               doc.runId = 'otherId'
+               job.done { repeatId: "testID" }, { repeatId: true }, (err, res) ->
+                  assert.deepEqual res, "testID"
+                  done()
 
             afterEach () ->
                Job._ddp_apply.reset()

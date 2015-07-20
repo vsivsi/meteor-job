@@ -790,6 +790,7 @@ class Job
     [options, cb] = optionsHelp options, cb
     unless result? and typeof result is 'object'
       result = { value: result }
+    options.repeatId ?= false
     if @_doc._id? and @_doc.runId?
       return methodCall @_root, "jobDone", [@_doc._id, @_doc.runId, result, options], cb
     else

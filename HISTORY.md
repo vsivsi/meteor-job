@@ -3,6 +3,7 @@
 * Added ability for workers to specify a timeout for running jobs, so that if they crash or lose connectivity the job can fail and be restarted.
 * Providing a falsy value of option `pollInterval` when calling `Job.processJobs()` will now disable polling in favor of using `q.trigger` exclusively.
 * Fixed bug where `q.trigger()` caused a `getWork()` call, even when the queue is paused.
+* Added `repeatId` option to `job.done()` which when `true` will cause the successful return value of a repeating job to be the `_id` of the newly scheduled job. Thanks to @tcastelli for this idea.
 
 #### v.1.2.0
 
