@@ -836,7 +836,7 @@ Change the state of a running job to `'completed'`. `result` is any EJSON object
 
 `options:`
 
-* `repeatId` -- If true, changes the return value of successful call from `true` to be the `_id` of the newly scheduled job, or just `true` if no new job was scheduled. Default: `false`
+* `repeatId` -- If true, changes the return value of successful call from `true` to be the `_id` of a newly scheduled job if this is a repeating job. Default: `false`
 
 `callback(error, result)` -- Result is true if completion was successful. When running on Meteor Server or with Fibers, the callback may be omitted, and then errors will throw and the return value is the result.
 
