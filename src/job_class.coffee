@@ -305,7 +305,7 @@ class Job
 
   @ddpMethods = [ 'startJobs', 'stopJobs',  # Deprecated!
                   'startJobServer', 'shutdownJobServer',
-                  'jobRemove', 'jobPause', 'jobResume',
+                  'jobRemove', 'jobPause', 'jobResume', 'jobReady'
                   'jobCancel', 'jobRestart', 'jobSave', 'jobRerun', 'getWork'
                   'getJob', 'jobLog', 'jobProgress', 'jobDone', 'jobFail' ]
 
@@ -321,6 +321,7 @@ class Job
     'jobPause': ['jobPause', 'admin', 'manager']
     'jobResume': ['jobResume', 'admin', 'manager']
     'jobCancel': ['jobCancel', 'admin', 'manager']
+    'jobReady': ['jobReady', 'admin', 'manager']
     'jobRestart': ['jobRestart', 'admin', 'manager']
     'jobSave': ['jobSave', 'admin', 'creator']
     'jobRerun': ['jobRerun', 'admin', 'creator']
@@ -458,7 +459,7 @@ class Job
       retVal ||= methodCall root, "jobPause", [chunkOfIds, options], myCb
     return retVal
 
-  # Pause this job, only Ready and Waiting jobs can be paused
+  # Resume this job, only Paused jobs can be resumed
   # Calling this toggles the paused state. Unpaused jobs go to waiting
   @resumeJobs: (root, ids, options..., cb) ->
     [options, cb] = optionsHelp options, cb
@@ -467,6 +468,18 @@ class Job
     myCb = reduceCallbacks(cb, chunksOfIds.length)
     for chunkOfIds in chunksOfIds
       retVal ||= methodCall root, "jobResume", [chunkOfIds, options], myCb
+    return retVal
+
+  # Move waiting jobs to the ready state, jobs with dependencies will not
+  # be made ready unless force is used.
+  @readyJobs: (root, ids, options..., cb) ->
+    [options, cb] = optionsHelp options, cb
+    options.force ?= false
+    retVal = false
+    chunksOfIds = splitLongArray ids, 256
+    myCb = reduceCallbacks(cb, chunksOfIds.length)
+    for chunkOfIds in chunksOfIds
+      retVal ||= methodCall root, "jobReady", [chunkOfIds, options], myCb
     return retVal
 
   # Cancel this job if it is running or able to run (waiting, ready)
@@ -835,6 +848,16 @@ class Job
       if cb? and typeof cb is 'function'
         _setImmediate cb, null, true  # DO NOT release Zalgo
       return @
+    return null
+
+  # Make a waiting job ready to run. Jobs with dependencies only when forced
+  ready: (options..., cb) ->
+    [options, cb] = optionsHelp options, cb
+    options.force ?= false
+    if @_doc._id?
+      return methodCall @_root, "jobReady", [@_doc._id, options], cb
+    else
+      throw new Error "Can't call .ready() on an unsaved job"
     return null
 
   # Cancel this job if it is running or able to run (waiting, ready)

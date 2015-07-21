@@ -1136,6 +1136,7 @@ describe 'Job', () ->
 
             makeJobControl 'pause', 'jobPause'
             makeJobControl 'resume', 'jobResume'
+            makeJobControl 'ready', 'jobReady'
             makeJobControl 'cancel', 'jobCancel'
             makeJobControl 'restart', 'jobRestart'
             makeJobControl 'rerun', 'jobRerun'

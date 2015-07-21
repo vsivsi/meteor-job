@@ -448,6 +448,10 @@ Like `job.pause()` except it pauses a list of jobs by id.
 
 Like `job.resume()` except it resumes a list of jobs by id.
 
+### `Job.readyJobs(root, ids, [options], [callback])`
+
+Like `job.ready()` except it readies a list of jobs by id.
+
 ### `Job.cancelJobs(root, ids, [options], [callback])`
 
 Like `job.cancel()` except it cancels a list of jobs by id.
@@ -915,6 +919,29 @@ job.resume(function (err, result) {
     // Status updated
   }
 });
+```
+
+### `j.ready([options], [callback])`
+
+Change the state of a job to `'ready'`. Any job that is `'waiting'` may be readied. Jobs with unsatisfied dependencies will not be changed to `'ready'` unless the `force` option is used.
+
+`options:`
+
+* `force` -- Force all dependencies to be satisfied. Default: `false`
+
+`callback(error, result)` -- Result is true if state was changed to ready. When running on Meteor Server or with Fibers, the callback may be omitted, and then errors will throw and the return value is the result.
+
+```javascript
+job.ready(
+  {
+    force: false
+  },
+  function (err, result) {
+    if (result) {
+      // Status updated
+    }
+  }
+);
 ```
 
 ### `j.cancel([options], [callback])`
