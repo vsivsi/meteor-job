@@ -438,31 +438,31 @@ if (Meteor.isServer) {
 
 ### `Job.getJobs(root, ids, [options], [callback])`
 
-Like `Job.getJob` except it takes an array of ids and is much more efficient than calling `Job.getJob()` in a loop because it gets Jobs from the server in batches.
+Like `Job.getJob` except it takes an array of ids and is much more efficient than calling `job.getJob()` in a loop because it gets Jobs from the server in batches.
+
+### `Job.readyJobs(root, [ids], [options], [callback])`
+
+Like `job.ready()` except it readies a list of jobs by id. It is valid to call `Job.readyJobs()` without `ids` (or with an empty array), in which case all `'waiting'` jobs that are ready to run (any waiting period has passed) and have no dependencies will have their status changed to `'ready'`. This call uses the `force` and `time` options just the same as `job.ready()`. This is  much more efficient than calling `job.ready()` in a loop because it gets Jobs from the server in batches.
 
 ### `Job.pauseJobs(root, ids, [options], [callback])`
 
-Like `job.pause()` except it pauses a list of jobs by id.
+Like `job.pause()` except it pauses a list of jobs by id and is much more efficient than calling `job.pause()` in a loop because it gets Jobs from the server in batches.
 
 ### `Job.resumeJobs(root, ids, [options], [callback])`
 
-Like `job.resume()` except it resumes a list of jobs by id.
-
-### `Job.readyJobs(root, ids, [options], [callback])`
-
-Like `job.ready()` except it readies a list of jobs by id.
+Like `job.resume()` except it resumes a list of jobs by id and is much more efficient than calling `job.resume()` in a loop because it gets Jobs from the server in batches.
 
 ### `Job.cancelJobs(root, ids, [options], [callback])`
 
-Like `job.cancel()` except it cancels a list of jobs by id.
+Like `job.cancel()` except it cancels a list of jobs by id and is much more efficient than calling `job.cancel()` in a loop because it gets Jobs from the server in batches.
 
 ### `Job.restartJobs(root, ids, [options], [callback])`
 
-Like `job.restart()` except it restarts a list of jobs by id.
+Like `job.restart()` except it restarts a list of jobs by id and is much more efficient than calling `job.restart()` in a loop because it gets Jobs from the server in batches.
 
 ### `Job.removeJobs(root, ids, [options], [callback])`
 
-Like `job.remove()` except it removes a list of jobs by id.
+Like `job.remove()` except it removes a list of jobs by id and is much more efficient than calling `job.remove()` in a loop because it gets Jobs from the server in batches.
 
 ### `Job.startJobServer(root, [options], [callback])`
 
@@ -927,13 +927,15 @@ Change the state of a job to `'ready'`. Any job that is `'waiting'` may be readi
 
 `options:`
 
-* `force` -- Force all dependencies to be satisfied. Default: `false`
+* `time` -- A `Date` object. If the job was set to run before the specified time, it will be set to `'ready'` now. Default: the current time
+* `force` -- Force all remaining dependencies to be satisfied. Default: `false`
 
 `callback(error, result)` -- Result is true if state was changed to ready. When running on Meteor Server or with Fibers, the callback may be omitted, and then errors will throw and the return value is the result.
 
 ```javascript
 job.ready(
   {
+    time: new Date(), // Job.foreverDate would make this unconditional
     force: false
   },
   function (err, result) {
