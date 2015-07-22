@@ -10,7 +10,7 @@ digraph jobStatus {
   failed;
   removed [shape=box];
   created -> waiting [label=".save()" weight=100.0];
-  waiting -> ready [label=".ready() or automatic" weight=100.0];
+  waiting -> ready [label=<.ready() /<BR/><I>automatic</I>> weight=100.0];
   ready -> running [label=".getWork()" weight=100.0];
   running -> completed [label=".done()" weight=100.0];
   running -> failed [label=".fail()"];
