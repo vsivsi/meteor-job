@@ -472,11 +472,12 @@ class Job
 
   # Move waiting jobs to the ready state, jobs with dependencies will not
   # be made ready unless force is used.
-  @readyJobs: (root, ids, options..., cb) ->
+  @readyJobs: (root, ids = [], options..., cb) ->
     [options, cb] = optionsHelp options, cb
     options.force ?= false
     retVal = false
     chunksOfIds = splitLongArray ids, 256
+    chunksOfIds = [[]] unless chunksOfIds.length > 0
     myCb = reduceCallbacks(cb, chunksOfIds.length)
     for chunkOfIds in chunksOfIds
       retVal ||= methodCall root, "jobReady", [chunkOfIds, options], myCb
