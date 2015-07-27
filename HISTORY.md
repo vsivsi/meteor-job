@@ -1,3 +1,7 @@
+#### 1.3.1
+
+* Don't automatically set the default value of the `repeatId` option to `job.done()` to maintain compatibility with older servers.
+
 #### 1.3.0
 
 * Added ability for workers to specify a timeout for running jobs, so that if they crash or lose connectivity the job can fail and be restarted. Providing a falsy value of option `pollInterval` when calling `Job.processJobs()` will now disable polling in favor of using `q.trigger` exclusively.
