@@ -842,6 +842,8 @@ Change the state of a running job to `'completed'`. `result` is any EJSON object
 
 * `repeatId` -- If true, changes the return value of successful call from `true` to be the `_id` of a newly scheduled job if this is a repeating job. Default: `false`
 
+* `delayDeps` -- Integer. If defined, this sets the number of milliseconds before dependent jobs will run. It is equivalent to setting `job.delay(delayDeps)` on each dependent job, with a check to ensure that such jobs will not run sooner than they would have otherwise. Default: undefined.
+
 `callback(error, result)` -- Result is true if completion was successful. When running on Meteor Server or with Fibers, the callback may be omitted, and then errors will throw and the return value is the result.
 
 ```javascript
