@@ -1,3 +1,8 @@
+#### 1.3.2
+
+* Documentation update to support new server-side delayDeps option on `job.done()`.
+* Updated npm dependencies
+
 #### 1.3.1
 
 * Don't automatically set the default value of the `repeatId` option to `job.done()` to maintain compatibility with older servers.
