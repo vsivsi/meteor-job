@@ -1498,6 +1498,14 @@ describe 'JobQueue', () ->
          20
       )
 
+   it 'should fail the job when an exception is thrown within the worker', (done) ->
+      q = Job.processJobs 'root', 'work', { pollInterval: 100 }, (job, cb) ->
+         throw new Error
+      q.shutdown { quiet: true }, () ->
+         assert.equal doneCalls, 0
+         assert.equal failCalls, 1
+         done()
+
    it 'should successfully accept multiple jobs from getWork', (done) ->
       count = 5
       q = Job.processJobs('root', 'workMax', { pollInterval: 100, prefetch: 4 }, (job, cb) ->
