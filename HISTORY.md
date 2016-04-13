@@ -1,6 +1,6 @@
 #### 1.3.3
 
-* Fix error affecting all of the *Jobs functions which caused them to only process the first 256 jobs in the provided list of Id values.
+* Fixed error affecting all of the *Jobs functions which caused them to only process the first 256 jobs in the provided list of Id values.
 * Updated npm dependencies
 
 #### 1.3.2
