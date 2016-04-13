@@ -456,7 +456,7 @@ class Job
     chunksOfIds = splitLongArray ids, 256
     myCb = reduceCallbacks(cb, chunksOfIds.length)
     for chunkOfIds in chunksOfIds
-      retVal ||= methodCall root, "jobPause", [chunkOfIds, options], myCb
+      retVal = methodCall(root, "jobPause", [chunkOfIds, options], myCb) || retVal
     return retVal
 
   # Resume this job, only Paused jobs can be resumed
@@ -467,7 +467,7 @@ class Job
     chunksOfIds = splitLongArray ids, 256
     myCb = reduceCallbacks(cb, chunksOfIds.length)
     for chunkOfIds in chunksOfIds
-      retVal ||= methodCall root, "jobResume", [chunkOfIds, options], myCb
+      retVal = methodCall(root, "jobResume", [chunkOfIds, options], myCb) || retVal
     return retVal
 
   # Move waiting jobs to the ready state, jobs with dependencies will not
@@ -480,7 +480,7 @@ class Job
     chunksOfIds = [[]] unless chunksOfIds.length > 0
     myCb = reduceCallbacks(cb, chunksOfIds.length)
     for chunkOfIds in chunksOfIds
-      retVal ||= methodCall root, "jobReady", [chunkOfIds, options], myCb
+      retVal = methodCall(root, "jobReady", [chunkOfIds, options], myCb) || retVal
     return retVal
 
   # Cancel this job if it is running or able to run (waiting, ready)
@@ -491,7 +491,7 @@ class Job
     chunksOfIds = splitLongArray ids, 256
     myCb = reduceCallbacks(cb, chunksOfIds.length)
     for chunkOfIds in chunksOfIds
-      retVal ||= methodCall root, "jobCancel", [chunkOfIds, options], myCb
+      retVal = methodCall(root, "jobCancel", [chunkOfIds, options], myCb) || retVal
     return retVal
 
   # Restart a failed or cancelled job
@@ -503,7 +503,7 @@ class Job
     chunksOfIds = splitLongArray ids, 256
     myCb = reduceCallbacks(cb, chunksOfIds.length)
     for chunkOfIds in chunksOfIds
-      retVal ||= methodCall root, "jobRestart", [chunkOfIds, options], myCb
+      retVal = methodCall(root, "jobRestart", [chunkOfIds, options], myCb) || retVal
     return retVal
 
   # Remove a job that is not able to run (completed, cancelled, failed) from the queue
@@ -513,7 +513,7 @@ class Job
     chunksOfIds = splitLongArray ids, 256
     myCb = reduceCallbacks(cb, chunksOfIds.length)
     for chunkOfIds in chunksOfIds
-      retVal ||= methodCall root, "jobRemove", [chunkOfIds, options], myCb
+      retVal = methodCall(root, "jobRemove", [chunkOfIds, options], myCb) || retVal
     return retVal
 
   # Start the job queue

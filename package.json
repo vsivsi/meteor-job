@@ -1,6 +1,6 @@
 {
   "name": "meteor-job",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "description": "Class for Meteor jobCollection for use both within meteor.js and with pure node.js workers",
   "main": "lib/job_class.js",
   "dependencies": {
@@ -11,7 +11,7 @@
     "rewire": "^2.5.1",
     "sinon": "^1.17.3",
     "chai": "^3.5.0",
-    "fibers": "^1.0.8"
+    "fibers": "^1.0.10"
   },
   "scripts": {
     "prepublish": "coffee --compile --output lib/ src/",
