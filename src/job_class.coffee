@@ -65,6 +65,8 @@ concatReduce = (a, b) ->
 
 isInteger = (i) -> typeof i is 'number' and Math.floor(i) is i
 
+isBoolean = (b) -> typeof b is 'boolean'
+
 # This smooths over the various different implementations...
 _setImmediate = (func, args...) ->
   if Meteor?.setTimeout?
@@ -124,6 +126,10 @@ class JobQueue
     if @workTimeout? and not (isInteger(@workTimeout) and @workTimeout >= 0)
       throw new Error "JobQueue: Invalid workTimeout, must be a positive integer"
 
+    @callbackStrict = options.callbackStrict
+    if @callbackStrict? and not isBoolean(@callbackStrict)
+      throw new Error "JobQueue: Invalid callbackStrict, must be a boolean"
+
     @_workers = {}
     @_tasks = []
     @_taskNumber = 0
@@ -159,8 +165,9 @@ class JobQueue
     called = false
     return () =>
       if called
-        console.error "Callback called multiple times in JobQueue"
-        throw new Error "Callback was already called."
+        console.error "Worker callback called multiple times in JobQueue"
+        if @callbackStrict
+          throw new Error "JobQueue worker callback was invoked multiple times"
       called = true
       fn.apply @, arguments
 

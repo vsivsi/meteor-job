@@ -1425,6 +1425,9 @@ describe 'JobQueue', () ->
      assert.throws (() ->
        Job.processJobs 'root', 'noWork', { workTimeout: -1 }, (job, cb) -> ),
        /must be a positive integer/
+     assert.throws (() ->
+       Job.processJobs 'root', 'noWork', { callbackStrict: 1 }, (job, cb) -> ),
+       /must be a boolean/
      done()
 
    it 'should return a valid JobQueue when called', (done) ->
@@ -1653,6 +1656,29 @@ describe 'JobQueue', () ->
             time
          )
          time += 20
+      )
+
+   it 'should throw when using callbackStrict option and multiple callback invokes happen', (done) ->
+      q = Job.processJobs('root', 'work', { callbackStrict: true, pollInterval: 100, concurrency: 1, prefetch: 0 }, (job, cb) ->
+         job.done()
+         cb()
+         assert.throws(cb, /callback was invoked multiple times/)
+         q.shutdown { quiet: true }, () ->
+            assert.equal doneCalls, 1
+            assert.equal failCalls, 0
+            done()
+      )
+
+   it 'should throw when using callbackStrict option and multiple callback invokes happen 2', (done) ->
+      q = Job.processJobs('root', 'work', { callbackStrict: true, pollInterval: 100, concurrency: 1, prefetch: 0 }, (job, cb) ->
+         job.done () ->
+            cb()
+            q.shutdown { level: 'hard', quiet: true }, () ->
+               assert.equal doneCalls, 1
+               assert.equal failCalls, 0
+               done()
+
+         # assert.throws(cb, /callback was invoked multiple times/)
       )
 
    afterEach () ->
