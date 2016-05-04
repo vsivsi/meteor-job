@@ -861,7 +861,7 @@ job.done("Done!");
 
 ### `j.fail(error, [options], [callback])`
 
-Cause this job to fail. It's next state depends on how the job's `job.retry()` settings are configured. It will either become `'failed'` or go to `'waiting'` for the next retry. `error` is any EJSON object. Error will be saved as an object. If passed error is not an object, it will be wrapped in one.
+Cause this job to fail. It's next state depends on how the job's `job.retry()` settings are configured. It will either become `'failed'` or go to `'waiting'` for the next retry. `error` is any EJSON object. Error will be saved as an object. If passed error is not an object, it will be wrapped in one. If the job becomes 'failed', all dependent jobs will be cancelled.
 
 `options:`
 
