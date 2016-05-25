@@ -1659,7 +1659,7 @@ describe 'JobQueue', () ->
       )
 
    it 'should throw when using callbackStrict option and multiple callback invokes happen', (done) ->
-      q = Job.processJobs('root', 'work', { callbackStrict: true, pollInterval: 100, concurrency: 1, prefetch: 0 }, (job, cb) ->
+      q = Job.processJobs('root', 'work', { callbackStrict: true, pollInterval: 500, concurrency: 1, prefetch: 0 }, (job, cb) ->
          console.log "A Running: #{q.running()} Length: #{q.length()}"
          job.done()
          console.log "B Running: #{q.running()} Length: #{q.length()}"
