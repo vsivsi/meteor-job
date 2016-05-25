@@ -180,7 +180,9 @@ class JobQueue
       job._taskId = "Task_#{@_taskNumber++}"
       @_workers[job._taskId] = job
       next = () =>
+        console.log "In _process next #{@running()} #{@length()}"
         delete @_workers[job._taskId]
+        console.log "In _process next after delete #{@running()} #{@length()}"
         if @_stoppingTasks? and @running() is 0 and @length() is 0
           @_stoppingTasks()
         else
@@ -203,10 +205,12 @@ class JobQueue
       _setImmediate callback  # No Zalgo, thanks
 
   _failJobs: (tasks, callback) ->
+    console.log "In _failJobs: #{@running()} #{@length()}"
     _setImmediate callback if tasks.length is 0  # No Zalgo, thanks
     count = 0
     for job in tasks
       job.fail "Worker shutdown", (err, res) =>
+        console.log "In _failJobs job.fail callback: count: #{count} #{@running()} #{@length()}"
         count++
         if count is tasks.length
           callback()
@@ -222,10 +226,13 @@ class JobQueue
 
   _stop: (callback) ->
     @paused = true
+    console.log "In _stop: #{@running()} #{@length()}"
     @_stopGetWork () =>
+      console.log "In _stop, _stopGetWork callback: #{@running()} #{@length()}"
       tasks = @_tasks
       @_tasks = []
       @_waitForTasks () =>
+        console.log "In _stop, _stopGetWork _waitForTasks callback: #{@running()} #{@length()}"
         @_failJobs tasks, callback
 
   _soft: (callback) ->
