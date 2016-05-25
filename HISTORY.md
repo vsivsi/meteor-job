@@ -1,3 +1,7 @@
+#### 1.4.0
+
+* Added support for new "callbackStrict" option to `processJobs()`. When `true` (default `false`) `processJobs()` will throw an error if a worker function calls its callback more than once. Previously it only wrote a message to stderr in all cases. That functionality is preserved with this change.
+
 #### 1.3.3
 
 * Fixed error affecting all of the *Jobs functions which caused them to only process the first 256 jobs in the provided list of Id values.
