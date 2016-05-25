@@ -194,14 +194,18 @@ class JobQueue
   _stopGetWork: (callback) ->
     _clearInterval @_interval
     if @_getWorkOutstanding
+      console.log "In _stopGetWork: _getWorkOutstanding is TRUE"
       @_stoppingGetWork = callback
     else
+      console.log "In _stopGetWork: _getWorkOutstanding is FALSE"
       _setImmediate callback  # No Zalgo, thanks
 
   _waitForTasks: (callback) ->
     unless @running() is 0
+      console.log "In _waitForTasks: @running() is NOT 0"
       @_stoppingTasks = callback
     else
+      console.log "In _waitForTasks: @running() is 0"
       _setImmediate callback  # No Zalgo, thanks
 
   _failJobs: (tasks, callback) ->
