@@ -1660,28 +1660,32 @@ describe 'JobQueue', () ->
 
    it 'should throw when using callbackStrict option and multiple callback invokes happen', (done) ->
       q = Job.processJobs('root', 'work', { callbackStrict: true, pollInterval: 100, concurrency: 1, prefetch: 0 }, (job, cb) ->
+         console.log "A Running: #{q.running()} Length: #{q.length()}"
          job.done()
+         console.log "B Running: #{q.running()} Length: #{q.length()}"
          cb()
+         console.log "C Running: #{q.running()} Length: #{q.length()}"
          # assert.throws(cb, /callback was invoked multiple times/)
          q.shutdown { quiet: true }, () ->
+            console.log "D Running: #{q.running()} Length: #{q.length()}"
             assert.equal doneCalls, 1
             assert.equal failCalls, 0
             done()
       )
 
-   it 'should throw when using callbackStrict option and multiple callback invokes happen 2', (done) ->
-      q = Job.processJobs('root', 'work', { callbackStrict: true, pollInterval: 100, concurrency: 1, prefetch: 0 }, (job, cb) ->
-         job.done () ->
-            assert.equal doneCalls, 1
-            assert.equal failCalls, 0
-            cb()
-            q.shutdown { level: 'hard', quiet: true }, () ->
-               assert.equal doneCalls, 1
-               assert.equal failCalls, 0
-               done()
-
-         # assert.throws(cb, /callback was invoked multiple times/)
-      )
+   # it 'should throw when using callbackStrict option and multiple callback invokes happen 2', (done) ->
+   #    q = Job.processJobs('root', 'work', { callbackStrict: true, pollInterval: 100, concurrency: 1, prefetch: 0 }, (job, cb) ->
+   #       job.done () ->
+   #          assert.equal doneCalls, 1
+   #          assert.equal failCalls, 0
+   #          cb()
+   #          q.shutdown { level: 'hard', quiet: true }, () ->
+   #             assert.equal doneCalls, 1
+   #             assert.equal failCalls, 0
+   #             done()
+   #
+   #       # assert.throws(cb, /callback was invoked multiple times/)
+   #    )
 
    afterEach () ->
       Job._ddp_apply.reset()
