@@ -659,6 +659,7 @@ class Job
       options.backoff = 'constant'
 
     @_doc.retries = options.retries
+    @_doc.repeatRetries = options.retries
     @_doc.retryWait = options.wait
     @_doc.retried ?= 0
     @_doc.retryBackoff = options.backoff
