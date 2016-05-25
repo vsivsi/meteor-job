@@ -147,6 +147,7 @@ class JobQueue
         @_getWorkOutstanding = true
         options = { maxJobs: numJobsToGet }
         options.workTimeout = @workTimeout if @workTimeout?
+        console.log "In _getWork #{@running()} #{@length()}"
         Job.getWork @root, @type, options, (err, jobs) =>
           @_getWorkOutstanding = false
           if err
@@ -157,6 +158,7 @@ class JobQueue
             for j in jobs
               @_tasks.push j
               _setImmediate @_process.bind(@) unless @_stoppingGetWork?
+            console.log "In getWork callback #{@running()} #{@length()}"
             @_stoppingGetWork() if @_stoppingGetWork?
           else
             console.error "JobQueue: Nonarray response from server from getWork()"
