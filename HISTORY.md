@@ -1,3 +1,7 @@
+#### v.NEXT
+
+* Added support for new "callbackStrict" option to `processJobs()`. When `true` (default `false`) `processJobs()` will throw an error if a worker function calls its callback more than once. Previously it only wrote a message to stderr in all cases. That functionality is preserved with this change.
+
 #### 1.3.2
 
 * Documentation update to support new server-side delayDeps option on `job.done()`.
