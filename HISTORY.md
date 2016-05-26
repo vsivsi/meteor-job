@@ -1,6 +1,8 @@
 #### 1.4.0
 
 * Added support for new "callbackStrict" option to `processJobs()`. When `true` (default `false`) `processJobs()` will throw an error if a worker function calls its callback more than once. Previously it only wrote a message to stderr in all cases. That functionality is preserved with this change.
+* Fixed race condition in `processJobs()` that could cause `Job.getWork()` to run after the queue is paused or stopped, leading to a zombie job on the server.
+* Added support for new optional `repeatRetries` job document attribute.
 
 #### 1.3.3
 
