@@ -142,7 +142,7 @@ class JobQueue
 
   _getWork: () ->
     # Don't reenter, or run when paused or stopping
-    unless @_getWorkOutstanding or not @_interval?
+    unless @_getWorkOutstanding or @paused
       numJobsToGet = @prefetch + @payload*(@concurrency - @running()) - @length()
       if numJobsToGet > 0
         @_getWorkOutstanding = true
