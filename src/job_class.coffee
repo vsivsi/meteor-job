@@ -141,7 +141,8 @@ class JobQueue
     @resume()
 
   _getWork: () ->
-    unless @_getWorkOutstanding
+    # Don't reenter, or run when paused or stopping
+    unless @_getWorkOutstanding or not @_interval?
       numJobsToGet = @prefetch + @payload*(@concurrency - @running()) - @length()
       if numJobsToGet > 0
         @_getWorkOutstanding = true
@@ -195,6 +196,7 @@ class JobQueue
 
   _stopGetWork: (callback) ->
     _clearInterval @_interval
+    @_interval = null
     if @_getWorkOutstanding
       console.log "In _stopGetWork: _getWorkOutstanding is TRUE #{@running()} #{@length()}"
       @_stoppingGetWork = callback
@@ -257,6 +259,7 @@ class JobQueue
     return if @paused
     unless @pollInterval >= Job.forever
       _clearInterval @_interval
+      @_interval = null
     @paused = true
     @
 
