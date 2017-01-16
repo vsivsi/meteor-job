@@ -2,6 +2,7 @@ meteor-job
 ======================================
 
 [![Build Status](https://travis-ci.org/vsivsi/meteor-job.svg)](https://travis-ci.org/vsivsi/meteor-job)
+[![Known Vulnerabilities](https://snyk.io/test/github/vsivsi/meteor-job/badge.svg)](https://snyk.io/test/github/vsivsi/meteor-job)
 
 ## Intro
 
