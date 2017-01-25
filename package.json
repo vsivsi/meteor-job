@@ -1,17 +1,17 @@
 {
   "name": "meteor-job",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Class for Meteor jobCollection for use both within meteor.js and with pure node.js workers",
   "main": "lib/job_class.js",
   "dependencies": {
   },
   "devDependencies": {
-    "coffee-script": "^1.10.0",
-    "mocha": "^2.5.3",
-    "rewire": "^2.5.1",
-    "sinon": "^1.17.4",
+    "coffee-script": "^1.12.3",
+    "mocha": "^3.2.0",
+    "rewire": "^2.5.2",
+    "sinon": "^1.17.7",
     "chai": "^3.5.0",
-    "fibers": "^1.0.13"
+    "fibers": "^1.0.15"
   },
   "scripts": {
     "prepublish": "coffee --compile --output lib/ src/",
