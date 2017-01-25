@@ -67,6 +67,8 @@ isInteger = (i) -> typeof i is 'number' and Math.floor(i) is i
 
 isBoolean = (b) -> typeof b is 'boolean'
 
+isFunction = (f) -> typeof f is 'function'
+
 isNonEmptyString = (s) -> typeof s is 'string' and s.length > 0
 
 # This smooths over the various different implementations...
@@ -107,6 +109,14 @@ class JobQueue
 
     unless isNonEmptyString(@type)
       throw new Error("JobQueue: Invalid type, must be nonempty string")
+
+    unless isFunction(@worker)
+      throw new Error("JobQueue: Invalid worker, must be a function")
+
+    @errorCallback = options.errorCallback ? (e) ->
+      console.error "JobQueue: ", e
+    unless isFunction(@errorCallback)
+      throw new Error("JobQueue: Invalid errorCallback, must be a function")
 
     @pollInterval =
       if options.pollInterval? and not options.pollInterval
@@ -159,24 +169,24 @@ class JobQueue
         Job.getWork @root, @type, options, (err, jobs) =>
           @_getWorkOutstanding = false
           if err
-            console.error "JobQueue: Received error from getWork(): ", err
+            @errorCallback new Error "Received error from getWork(): ", err
           else if jobs? and jobs instanceof Array
             if jobs.length > numJobsToGet
-              console.error "JobQueue: getWork() returned jobs (#{jobs.length}) in excess of maxJobs (#{numJobsToGet})"
+              @errorCallback new Error "getWork() returned jobs (#{jobs.length}) in excess of maxJobs (#{numJobsToGet})"
             for j in jobs
               @_tasks.push j
               _setImmediate @_process.bind(@) unless @_stoppingGetWork?
             @_stoppingGetWork() if @_stoppingGetWork?
           else
-            console.error "JobQueue: Nonarray response from server from getWork()"
+            @errorCallback new Error "Nonarray response from server from getWork()"
 
   _only_once: (fn) ->
     called = false
     return () =>
       if called
-        console.error "Worker callback called multiple times in JobQueue"
+        @errorCallback new Error "Worker callback called multiple times"
         if @callbackStrict
-          throw new Error "JobQueue worker callback was invoked multiple times"
+          throw new Error "JobQueue: worker callback was invoked multiple times"
       called = true
       fn.apply @, arguments
 

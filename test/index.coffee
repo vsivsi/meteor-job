@@ -1388,6 +1388,8 @@ describe 'JobQueue', () ->
                            max = numJobs
                         numJobs -= max
                         res = (makeJobDoc(i) for i in [1..max])
+                     when 'returnError'
+                        err = new Error "MongoError: connection n to w.x.y.z:27017 timed out"
             else
                throw new Error "Bad method name: #{name}"
          return [err, res]
@@ -1440,6 +1442,9 @@ describe 'JobQueue', () ->
      assert.throws (() ->
        Job.processJobs 'root', 'noWork', { callbackStrict: 1 }, (job, cb) -> ),
        /must be a boolean/
+     assert.throws (() ->
+       Job.processJobs 'root', 'noWork', { errorCallback: 1 }, (job, cb) -> ),
+       /must be a function/
      done()
 
    it 'should return a valid JobQueue when called', (done) ->
@@ -1658,7 +1663,6 @@ describe 'JobQueue', () ->
                if count is 1
                   job.done()
                   q.shutdown { level: 'hard', quiet: true }, () ->
-                     console.warn "Shut down"
                      assert.equal q.length(), 0
                      assert.equal count, 1
                      assert.isTrue Job._ddp_apply.calledWith("root_jobFail")
@@ -1700,6 +1704,16 @@ describe 'JobQueue', () ->
             25
          )
       )
+
+   it 'should invoke errorCallback when an error is returned from getWork', (done) ->
+      ecb = (err, res) ->
+         assert.instanceOf err, Error
+         q.shutdown { level: 'hard', quiet: true }, () ->
+            assert.equal doneCalls, 0
+            assert.equal failCalls, 0
+            done()
+
+      q = Job.processJobs('root', 'returnError', { pollInterval: 100, concurrency: 1, prefetch: 0, errorCallback: ecb }, (job, cb) -> )
 
    afterEach () ->
       Job._ddp_apply.reset()
