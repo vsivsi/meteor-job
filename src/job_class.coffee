@@ -67,6 +67,8 @@ isInteger = (i) -> typeof i is 'number' and Math.floor(i) is i
 
 isBoolean = (b) -> typeof b is 'boolean'
 
+isNonEmptyString = (s) -> typeof s is 'string' and s.length > 0
+
 # This smooths over the various different implementations...
 _setImmediate = (func, args...) ->
   if Meteor?.setTimeout?
@@ -99,6 +101,12 @@ class JobQueue
     unless @ instanceof JobQueue
       return new JobQueue @root, @type, options..., @worker
     [options, @worker] = optionsHelp options, @worker
+
+    unless isNonEmptyString(@root)
+      throw new Error("JobQueue: Invalid root, must be nonempty string")
+
+    unless isNonEmptyString(@type)
+      throw new Error("JobQueue: Invalid type, must be nonempty string")
 
     @pollInterval =
       if options.pollInterval? and not options.pollInterval

@@ -1399,6 +1399,18 @@ describe 'JobQueue', () ->
 
    it 'should throw when an invalid options are used', (done) ->
      assert.throws (() ->
+       Job.processJobs 42, 'noWork', { }, (job, cb) -> ),
+       /must be nonempty string/
+     assert.throws (() ->
+       Job.processJobs '', 'noWork', { }, (job, cb) -> ),
+       /must be nonempty string/
+     assert.throws (() ->
+       Job.processJobs 'root', 42, { }, (job, cb) -> ),
+       /must be nonempty string/
+     assert.throws (() ->
+       Job.processJobs 'root', '', { }, (job, cb) -> ),
+       /must be nonempty string/
+     assert.throws (() ->
        Job.processJobs 'root', 'noWork', { pollInterval: -1 }, (job, cb) -> ),
        /must be a positive integer/
      assert.throws (() ->
