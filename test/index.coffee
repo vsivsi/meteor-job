@@ -1642,10 +1642,11 @@ describe 'JobQueue', () ->
       q = Job.processJobs('root', 'workMax', { pollInterval: 100, concurrency: 2, prefetch: 3 }, (job, cb) ->
          setTimeout(
             () ->
-               job.done()
                count++
                if count is 1
-                  q.shutdown { quiet: true, level: 'hard' }, () ->
+                  job.done()
+                  q.shutdown { level: 'hard', quiet: true }, () ->
+                     console.warn "Shut down"
                      assert.equal q.length(), 0
                      assert.equal count, 1
                      assert.isTrue Job._ddp_apply.calledWith("root_jobFail")
@@ -1660,24 +1661,32 @@ describe 'JobQueue', () ->
 
    it 'should throw when using callbackStrict option and multiple callback invokes happen', (done) ->
       q = Job.processJobs('root', 'work', { callbackStrict: true, pollInterval: 100, concurrency: 1, prefetch: 0 }, (job, cb) ->
-         job.done()
-         cb()
-         assert.throws(cb, /callback was invoked multiple times/)
-         q.shutdown { quiet: true }, () ->
-            assert.equal doneCalls, 1
-            assert.equal failCalls, 0
-            done()
+         setTimeout(
+            () ->
+               job.done()
+               cb()
+               assert.throws(cb, /callback was invoked multiple times/)
+               q.shutdown { level: 'hard', quiet: true }, () ->
+                  assert.equal doneCalls, 1
+                  assert.equal failCalls, 0
+                  done()
+            25
+         )
       )
 
    it 'should throw when using callbackStrict option and multiple callback invokes happen 2', (done) ->
       q = Job.processJobs('root', 'work', { callbackStrict: true, pollInterval: 100, concurrency: 1, prefetch: 0 }, (job, cb) ->
-         job.done () ->
-            assert.throws(cb, /callback was invoked multiple times/)
-            q.shutdown { level: 'hard', quiet: true }, () ->
-               assert.equal doneCalls, 1
-               assert.equal failCalls, 0
-               done()
-         cb()
+         setTimeout(
+            () ->
+               job.done () ->
+                  assert.throws(cb, /callback was invoked multiple times/)
+                  q.shutdown { level: 'hard', quiet: true }, () ->
+                     assert.equal doneCalls, 1
+                     assert.equal failCalls, 0
+                     done()
+               cb()
+            25
+         )
       )
 
    afterEach () ->
