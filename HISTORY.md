@@ -1,5 +1,7 @@
-#### v.NEXT
+#### 1.5.0
 
+* Added `errorCallback` option to `job.processJobs()`. This gives workers a way to log network and other errors and do something other than write them to `console.error` (the default and previous behavior).
+* Fixed an intermittent unit test failure due to a race condition in a prior test. 
 * Updated npm dependencies
 
 #### 1.4.0
