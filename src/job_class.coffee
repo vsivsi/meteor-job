@@ -188,7 +188,10 @@ class JobQueue
           _setImmediate @_process.bind(@)
           _setImmediate @_getWork.bind(@)
       cb = @_only_once next
-      @worker job, cb
+      try
+         @worker job, cb
+      catch err
+         cb()
 
   _stopGetWork: (callback) ->
     _clearInterval @_interval
