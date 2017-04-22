@@ -4,6 +4,7 @@
 * Fixed an intermittent unit test failure due to a race condition in a prior test.
 * Fixed a deprecation warning on “Job constructor should work without "new"” unit test
 * Changed npm prepublish test to prepare test so that coffee-script compile still works on npm install
+* Added additional node.js versions to TravisCI tests
 * Updated npm dependencies
 
 #### 1.4.0
