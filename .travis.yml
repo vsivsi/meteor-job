@@ -5,4 +5,4 @@ node_js:
   - "4"
   - "0.12.18"
   - "0.10.48"
-dist: precise
+dist: trusty
