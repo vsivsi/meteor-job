@@ -569,12 +569,14 @@ class Job
     methodCall root, "shutdownJobServer", [options], cb
 
   # Job class instance constructor. When "new Job(...)" is run
-  constructor: (@root, type, data) ->
+  constructor: (rootVal, type, data) ->
     unless @ instanceof Job
-      return new Job @root, type, data
+      return new Job rootVal, type, data
 
-    # Keep the original root, whatever type that is
-    @_root = @root
+    # Set the root value
+    @root = rootVal
+    # Keep a copy of the original root value, whatever type that is
+    @_root = rootVal
 
     # Handle root as object with obj.root attribute
     if @root?.root? and typeof @root.root is 'string'
