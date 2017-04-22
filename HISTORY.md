@@ -5,6 +5,7 @@
 * Fixed a deprecation warning on “Job constructor should work without "new"” unit test
 * Changed npm prepublish test to prepare test so that coffee-script compile still works on npm install
 * Added additional node.js versions to TravisCI tests
+* Switch TravisCI to use "trusty" image instead of "precise" to resolve node-gyp build issues for nodejs 7.9
 * Updated npm dependencies
 
 #### 1.4.0
