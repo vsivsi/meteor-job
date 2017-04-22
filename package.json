@@ -6,7 +6,7 @@
   "dependencies": {
   },
   "devDependencies": {
-    "coffee-script": "^1.12.3",
+    "coffee-script": "^1.12.5",
     "mocha": "^3.2.0",
     "rewire": "^2.5.2",
     "sinon": "^1.17.7",
@@ -14,7 +14,7 @@
     "fibers": "^1.0.15"
   },
   "scripts": {
-    "prepublish": "coffee --compile --output lib/ src/",
+    "prepare": "coffee --compile --output lib/ src/",
     "test": "make test"
   },
   "repository": {
