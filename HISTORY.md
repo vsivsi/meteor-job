@@ -1,7 +1,9 @@
 #### 1.5.0
 
 * Added `errorCallback` option to `job.processJobs()`. This gives workers a way to log network and other errors and do something other than write them to `console.error` (the default and previous behavior).
-* Fixed an intermittent unit test failure due to a race condition in a prior test. 
+* Fixed an intermittent unit test failure due to a race condition in a prior test.
+* Fixed a deprecation warning on “Job constructor should work without "new"” unit test
+* Changed npm prepublish test to prepare test so that coffee-script compile still works on npm install
 * Updated npm dependencies
 
 #### 1.4.0
