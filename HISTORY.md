@@ -1,3 +1,7 @@
+#### 1.5.1
+
+* Fixed issue introduced in 1.5.0 which caused `processJobs()` with arrays of jobType strings to fail a new type check.  Thanks @danielparas!
+
 #### 1.5.0
 
 * Added `errorCallback` option to `job.processJobs()`. This gives workers a way to log network and other errors and do something other than write them to `console.error` (the default and previous behavior).

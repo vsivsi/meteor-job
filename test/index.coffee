@@ -1408,10 +1408,19 @@ describe 'JobQueue', () ->
        /must be nonempty string/
      assert.throws (() ->
        Job.processJobs 'root', 42, { }, (job, cb) -> ),
-       /must be nonempty string/
+       /must be nonempty string or array of nonempty strings/
      assert.throws (() ->
        Job.processJobs 'root', '', { }, (job, cb) -> ),
-       /must be nonempty string/
+       /must be nonempty string or array of nonempty strings/
+     assert.throws (() ->
+       Job.processJobs 'root', [], { }, (job, cb) -> ),
+       /must be nonempty string or array of nonempty strings/
+     assert.throws (() ->
+       Job.processJobs 'root', [''], { }, (job, cb) -> ),
+       /must be nonempty string or array of nonempty strings/
+     assert.throws (() ->
+       Job.processJobs 'root', ['noWork',''], { }, (job, cb) -> ),
+       /must be nonempty string or array of nonempty strings/
      assert.throws (() ->
        Job.processJobs 'root', 'noWork', { pollInterval: -1 }, (job, cb) -> ),
        /must be a positive integer/
@@ -1449,6 +1458,16 @@ describe 'JobQueue', () ->
 
    it 'should return a valid JobQueue when called', (done) ->
       q = Job.processJobs 'root', 'noWork', { pollInterval: 100 }, (job, cb) ->
+         job.done()
+         cb null
+      assert.instanceOf q, Job.processJobs
+      q.shutdown { quiet: true }, () ->
+         assert.equal doneCalls, 0
+         assert.equal failCalls, 0
+         done()
+
+   it 'should return a valid JobQueue when called with array of job types', (done) ->
+      q = Job.processJobs 'root', ['noWork', 'noWork2'], { pollInterval: 100 }, (job, cb) ->
          job.done()
          cb null
       assert.instanceOf q, Job.processJobs

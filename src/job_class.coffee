@@ -71,6 +71,12 @@ isFunction = (f) -> typeof f is 'function'
 
 isNonEmptyString = (s) -> typeof s is 'string' and s.length > 0
 
+isNonEmptyStringOrArrayOfNonEmptyStrings = (sa) ->
+   isNonEmptyString(sa) or
+      sa instanceof Array and
+      sa.length isnt 0 and 
+      (s for s in sa when isNonEmptyString(s)).length is sa.length
+
 # This smooths over the various different implementations...
 _setImmediate = (func, args...) ->
   if Meteor?.setTimeout?
@@ -107,8 +113,8 @@ class JobQueue
     unless isNonEmptyString(@root)
       throw new Error("JobQueue: Invalid root, must be nonempty string")
 
-    unless isNonEmptyString(@type)
-      throw new Error("JobQueue: Invalid type, must be nonempty string")
+    unless isNonEmptyStringOrArrayOfNonEmptyStrings(@type)
+      throw new Error("JobQueue: Invalid type, must be nonempty string or array of nonempty strings")
 
     unless isFunction(@worker)
       throw new Error("JobQueue: Invalid worker, must be a function")
