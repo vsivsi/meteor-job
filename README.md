@@ -803,7 +803,7 @@ Submits this job to the job Collection. Only valid if this is a new job, or if t
 
 * `cancelRepeats`: If true and this job is an infinitely repeating job, will cancel any existing jobs of the same job type. This is useful for background maintenance jobs that may get added on each server restart (potentially with new parameters). Default is `false`.
 
-`callback(error, result)` -- Result is true if save was successful. When running on Meteor Server or with Fibers, the callback may be omitted, and then errors will throw and the return value is the result.
+`callback(error, result)` -- Result is the job `_id` value if save was successful. When running on Meteor Server or with Fibers, the callback may be omitted, and then errors will throw and the return value is the result.
 
 ```javascript
 job.save(
