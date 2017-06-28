@@ -707,7 +707,7 @@ describe 'Job', () ->
          describe '.save()', () ->
 
             before () ->
-               sinon.stub Job, "_ddp_apply", makeDdpStub (name, params) ->
+               sinon.stub(Job, "_ddp_apply").callsFake makeDdpStub (name, params) ->
                   throw new Error 'Bad method name' unless name is 'root_jobSave'
                   doc = params[0]
                   options = params[1]
@@ -735,7 +735,7 @@ describe 'Job', () ->
                assert.throw (() -> job.save({ cancelRepeats: true }, () -> )), /cancelRepeats/
 
             afterEach () ->
-               Job._ddp_apply.reset()
+               Job._ddp_apply.resetHistory()
 
             after () ->
                Job._ddp_apply.restore()
@@ -743,7 +743,7 @@ describe 'Job', () ->
          describe '.refresh()', () ->
 
             before () ->
-               sinon.stub Job, "_ddp_apply", makeDdpStub (name, params) ->
+               sinon.stub(Job, "_ddp_apply").callsFake makeDdpStub (name, params) ->
                   throw new Error 'Bad method name' unless name is 'root_getJob'
                   id = params[0]
                   options = params[1]
@@ -782,7 +782,7 @@ describe 'Job', () ->
                assert.throw (() -> job.refresh()), /on an unsaved job/
 
             afterEach () ->
-               Job._ddp_apply.reset()
+               Job._ddp_apply.resetHistory()
 
             after () ->
                Job._ddp_apply.restore()
@@ -790,7 +790,7 @@ describe 'Job', () ->
          describe '.log()', () ->
 
             before () ->
-               sinon.stub Job, "_ddp_apply", makeDdpStub (name, params) ->
+               sinon.stub(Job, "_ddp_apply").callsFake makeDdpStub (name, params) ->
                   throw new Error 'Bad method name' unless name is 'root_jobLog'
                   id = params[0]
                   runId = params[1]
@@ -873,7 +873,7 @@ describe 'Job', () ->
                   Job.__set__ 'console', jobConsole
 
             afterEach () ->
-               Job._ddp_apply.reset()
+               Job._ddp_apply.resetHistory()
 
             after () ->
                Job._ddp_apply.restore()
@@ -881,7 +881,7 @@ describe 'Job', () ->
          describe '.progress()', () ->
 
             before () ->
-               sinon.stub Job, "_ddp_apply", makeDdpStub (name, params) ->
+               sinon.stub(Job, "_ddp_apply").callsFake makeDdpStub (name, params) ->
                   throw new Error 'Bad method name' unless name is 'root_jobProgress'
                   id = params[0]
                   runId = params[1]
@@ -943,7 +943,7 @@ describe 'Job', () ->
                assert.throw (() -> job.progress -2, -1), /job.progress: something is wrong with progress params/
 
             afterEach () ->
-               Job._ddp_apply.reset()
+               Job._ddp_apply.resetHistory()
 
             after () ->
                Job._ddp_apply.restore()
@@ -951,7 +951,7 @@ describe 'Job', () ->
          describe '.done()', () ->
 
             before () ->
-               sinon.stub Job, "_ddp_apply", makeDdpStub (name, params) ->
+               sinon.stub(Job, "_ddp_apply").callsFake makeDdpStub (name, params) ->
                   throw new Error 'Bad method name' unless name is 'root_jobDone'
                   id = params[0]
                   runId = params[1]
@@ -1011,7 +1011,7 @@ describe 'Job', () ->
                   done()
 
             afterEach () ->
-               Job._ddp_apply.reset()
+               Job._ddp_apply.resetHistory()
 
             after () ->
                Job._ddp_apply.restore()
@@ -1019,7 +1019,7 @@ describe 'Job', () ->
          describe '.fail()', () ->
 
             before () ->
-               sinon.stub Job, "_ddp_apply", makeDdpStub (name, params) ->
+               sinon.stub(Job, "_ddp_apply").callsFake makeDdpStub (name, params) ->
                   throw new Error 'Bad method name' unless name is 'root_jobFail'
                   id = params[0]
                   runId = params[1]
@@ -1075,7 +1075,7 @@ describe 'Job', () ->
                assert.throw (() -> job.fail()), /an unsaved or non-running job/
 
             afterEach () ->
-               Job._ddp_apply.reset()
+               Job._ddp_apply.resetHistory()
 
             after () ->
                Job._ddp_apply.restore()
@@ -1087,7 +1087,7 @@ describe 'Job', () ->
                describe op, () ->
 
                   before () ->
-                     sinon.stub Job, "_ddp_apply", makeDdpStub (name, params) ->
+                     sinon.stub(Job, "_ddp_apply").callsFake makeDdpStub (name, params) ->
                         throw new Error "Bad method name: #{name}" unless name is "root_#{method}"
                         id = params[0]
                         if id is 'thisId'
@@ -1135,7 +1135,7 @@ describe 'Job', () ->
                         assert.throw (() -> job[op]()), /on an unsaved job/
 
                   afterEach () ->
-                     Job._ddp_apply.reset()
+                     Job._ddp_apply.resetHistory()
 
                   after () ->
                      Job._ddp_apply.restore()
@@ -1153,7 +1153,7 @@ describe 'Job', () ->
          describe 'getWork', () ->
 
             before () ->
-               sinon.stub Job, "_ddp_apply", makeDdpStub (name, params) ->
+               sinon.stub(Job, "_ddp_apply").callsFake makeDdpStub (name, params) ->
                   throw new Error 'Bad method name' unless name is 'root_getWork'
                   type = params[0][0]
                   max = params[1]?.maxJobs ? 1
@@ -1189,7 +1189,7 @@ describe 'Job', () ->
                assert.throw (() -> Job.getWork('root', 'nowork', { workTimeout: -1 })), /must be a positive integer/
 
             afterEach () ->
-               Job._ddp_apply.reset()
+               Job._ddp_apply.resetHistory()
 
             after () ->
                Job._ddp_apply.restore()
@@ -1234,7 +1234,7 @@ describe 'Job', () ->
             describe 'getJob', () ->
 
                before () ->
-                  sinon.stub Job, "_ddp_apply", makeDdpStub getJobStub
+                  sinon.stub(Job, "_ddp_apply").callsFake makeDdpStub getJobStub
 
                it 'should return a valid job instance when called with a good id', () ->
                   res = Job.getJob 'root', 'goodID'
@@ -1245,7 +1245,7 @@ describe 'Job', () ->
                   assert.isUndefined res
 
                afterEach () ->
-                  Job._ddp_apply.reset()
+                  Job._ddp_apply.resetHistory()
 
                after () ->
                   Job._ddp_apply.restore()
@@ -1253,7 +1253,7 @@ describe 'Job', () ->
             describe 'getJobs', () ->
 
                before () ->
-                  sinon.stub Job, "_ddp_apply", makeDdpStub getJobStub
+                  sinon.stub(Job, "_ddp_apply").callsFake makeDdpStub getJobStub
 
                it 'should return valid job instances for good IDs only', () ->
                   res = Job.getJobs 'root', ['goodID', 'badID', 'goodID']
@@ -1270,7 +1270,7 @@ describe 'Job', () ->
                   assert.lengthOf res, 0
 
                afterEach () ->
-                  Job._ddp_apply.reset()
+                  Job._ddp_apply.resetHistory()
 
                after () ->
                   Job._ddp_apply.restore()
@@ -1282,7 +1282,7 @@ describe 'Job', () ->
                describe op, () ->
 
                   before () ->
-                     sinon.stub Job, "_ddp_apply", makeDdpStub (name, params) ->
+                     sinon.stub(Job, "_ddp_apply").callsFake makeDdpStub (name, params) ->
                         throw new Error "Bad method name: #{name}" unless name is "root_#{method}"
                         ids = params[0]
                         return [null, ids.indexOf('goodID') isnt -1]
@@ -1302,7 +1302,7 @@ describe 'Job', () ->
                      assert.isFalse res
 
                   afterEach () ->
-                     Job._ddp_apply.reset()
+                     Job._ddp_apply.resetHistory()
 
                   after () ->
                      Job._ddp_apply.restore()
@@ -1320,7 +1320,7 @@ describe 'Job', () ->
                describe op, () ->
 
                   before () ->
-                     sinon.stub Job, "_ddp_apply", makeDdpStub (name, params) ->
+                     sinon.stub(Job, "_ddp_apply").callsFake makeDdpStub (name, params) ->
                         throw new Error "Bad method name: #{name}" unless name is "root_#{op}"
                         return [null, true]
 
@@ -1331,7 +1331,7 @@ describe 'Job', () ->
                      assert.isBoolean res
 
                   afterEach () ->
-                     Job._ddp_apply.reset()
+                     Job._ddp_apply.resetHistory()
 
                   after () ->
                      Job._ddp_apply.restore()
@@ -1353,8 +1353,7 @@ describe 'JobQueue', () ->
    before () ->
       Job._ddp_apply = undefined
       Job.setDDP ddp
-      sinon.stub Job, "_ddp_apply", makeDdpStub (name, params) ->
-         # console.log "#{name} Called"
+      sinon.stub(Job, "_ddp_apply").callsFake makeDdpStub (name, params) ->
          err = null
          res = null
          makeJobDoc = (idx=0) ->
@@ -1735,7 +1734,7 @@ describe 'JobQueue', () ->
       q = Job.processJobs('root', 'returnError', { pollInterval: 100, concurrency: 1, prefetch: 0, errorCallback: ecb }, (job, cb) -> )
 
    afterEach () ->
-      Job._ddp_apply.reset()
+      Job._ddp_apply.resetHistory()
 
    after () ->
       Job._ddp_apply.restore()
