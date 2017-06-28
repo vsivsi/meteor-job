@@ -1,3 +1,8 @@
+#### V.NEXT
+
+* Fixed issue where errors from `getWork()` calls within `processJobs()` weren't being correctly annotated when passed to the `errorCallback` function. Thanks @bjarketrux.
+* Documentation improvements
+
 #### 1.5.1
 
 * Fixed issue introduced in 1.5.0 which caused `processJobs()` with arrays of jobType strings to fail a new type check.  Thanks @danielparas!

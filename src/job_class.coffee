@@ -74,7 +74,7 @@ isNonEmptyString = (s) -> typeof s is 'string' and s.length > 0
 isNonEmptyStringOrArrayOfNonEmptyStrings = (sa) ->
    isNonEmptyString(sa) or
       sa instanceof Array and
-      sa.length isnt 0 and 
+      sa.length isnt 0 and
       (s for s in sa when isNonEmptyString(s)).length is sa.length
 
 # This smooths over the various different implementations...
@@ -175,7 +175,7 @@ class JobQueue
         Job.getWork @root, @type, options, (err, jobs) =>
           @_getWorkOutstanding = false
           if err
-            @errorCallback new Error "Received error from getWork(): ", err
+            @errorCallback new Error "Received error from getWork(): #{err}"
           else if jobs? and jobs instanceof Array
             if jobs.length > numJobsToGet
               @errorCallback new Error "getWork() returned jobs (#{jobs.length}) in excess of maxJobs (#{numJobsToGet})"
