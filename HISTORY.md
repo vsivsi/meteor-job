@@ -1,4 +1,4 @@
-#### V.NEXT
+#### 1.5.2
 
 * Fixed issue where errors from `getWork()` calls within `processJobs()` weren't being correctly annotated when passed to the `errorCallback` function. Thanks @bjarketrux.
 * Updated dependencies, including test changes for Sinon 2.0 and fibers 2.0
